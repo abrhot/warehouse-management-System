@@ -1,24 +1,18 @@
-import type { Metadata } from "next";
-import "./globals.css";
-// Make sure the path is correct and the file exists
-// Update the import path if your components folder is inside 'src'
-import AppProviders from "../components/AppProviders";
-export const metadata: Metadata = {
-  title: "EthioTele WMS",
-  description: "Warehouse Management System for Ethio Telecom",
+// src/app/layout.tsx
+
+import AppProviders from "../providers/AppProviders";
+import "@/styles/globals.css"; // Don't forget global styles
+
+export const metadata = {
+  title: "Warehouse Management System",
+  description: "EthioTele WMS",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en">
       <body>
-        <AppProviders>
-          {children}
-        </AppProviders>
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   );

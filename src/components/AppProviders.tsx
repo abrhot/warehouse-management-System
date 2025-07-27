@@ -1,9 +1,22 @@
-import React from 'react'
+// src/providers/AppProviders.tsx
 
-const AppProviders = () => {
+"use client";
+
+import React from "react";
+
+type Props = {
+  children: React.ReactNode;
+};
+
+const AppProviders = ({ children }: Props) => {
+  // You can wrap AuthProvider, ThemeProvider, etc. here
   return (
-    <div>AppProviders</div>
-  )
-}
+    <>
+      {/* Example: <AuthProvider> */}
+      {children}
+      {/* </AuthProvider> */}
+    </>
+  );
+};
 
-export default AppProviders
+export default AppProviders;

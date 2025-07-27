@@ -1,32 +1,28 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+// middleware.ts
 
-const publicPaths = ['/login', '/', '/landing']
+import { NextRequest, NextResponse } from 'next/server'
 
 export function middleware(request: NextRequest) {
-  const path = request.nextUrl.pathname
-  const isPublicPath = publicPaths.some(publicPath => 
-    path === publicPath || path.startsWith(`${publicPath}/`)
-  )
+  const isLoggedIn = request.cookies.get('authToken')
 
-  // Check for auth token in cookies
-  const token = request.cookies.get('next-auth.session-token')?.value || 
-                request.cookies.get('__Secure-next-auth.session-token')?.value
-
-  // Redirect logic
-  if (!isPublicPath && !token) {
-    return NextResponse.redirect(new URL('/login', request.nextUrl))
-  }
-
-  if (isPublicPath && token && path !== '/dashboard') {
-    return NextResponse.redirect(new URL('/dashboard', request.nextUrl))
+  // Redirect to login if not authenticated and trying to access protected route
+  if (!isLoggedIn && request.nextUrl.pathname.startsWith('/dashboard')) {
+    return NextResponse.redirect(new URL('/login', request.url))
   }
 
   return NextResponse.next()
 }
 
+// Define which paths the middleware applies to (optional but recommended)
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-  ],
+    '/dashboard/:path*',
+    '/products/:path*',
+    '/stock-in/:path*',
+    '/stock-out/:path*',
+    '/users/:path*',
+    '/profile',
+    '/reports',
+    '/notifications'
+  ]
 }
