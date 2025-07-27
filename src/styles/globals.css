@@ -1,8 +1,10 @@
+/* ✅ ALWAYS put @import at the very top of your CSS file */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;700;900&family=Public+Sans:wght@400;500;700;900&display=swap');
+
 @import "tailwindcss/preflight";
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;700;900&family=Public+Sans:wght@400;500;700;900&display=swap');
-
+/* Your custom styles should go AFTER imports */
 body {
   font-family: 'Public Sans', 'Noto Sans', sans-serif;
 }
