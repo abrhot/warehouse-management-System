@@ -1,10 +1,11 @@
-import React from "react";
+// src/app/(main)/layout.tsx
+
+import React from 'react';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   return (
-    <main className="min-h-screen bg-gray-100 p-4">
-      {/* Optional: header/sidebar */}
+    <div className="min-h-screen bg-white text-[#141810]">
       {children}
-    </main>
+    </div>
   );
 }
