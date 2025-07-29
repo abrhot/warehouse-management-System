@@ -1,19 +1,20 @@
-// src/app/layout.tsx
-
-import AppProviders from "../providers/AppProviders";
-import "@/styles/globals.css"; // Don't forget global styles
+import "@/styles/globals.css";
 
 export const metadata = {
-  title: "Warehouse Management System",
-  description: "EthioTele WMS",
+  title: "WMS",
+  description: "Warehouse Management System",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body>
-        <AppProviders>{children}</AppProviders>
-      </body>
+      <head>
+{/* Custom fonts are now loaded via _document.tsx for best practices */}
+
+        <link rel="icon" href="/favicon.ico" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />  
+      </head>
+      <body>{children}</body>
     </html>
   );
 }
