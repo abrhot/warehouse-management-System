@@ -6,6 +6,7 @@ import InventorySummaryChart from '@/components/reports/InventorySummaryChart'
 import CategoryChart from '@/components/reports/CategoryChart'
 import LowStockTable from '@/components/reports/LowStockTable'
 import ReportsActions from '@/components/reports/ReportsActions'
+import Link from "next/link";
 
 export default function ReportsPage() {
   return (

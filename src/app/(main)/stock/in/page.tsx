@@ -1,6 +1,7 @@
 import { StockInForm } from "@/components/stock/StockInForm";
 import { StockInHistoryTable } from "@/components/stock/StockInHistoryTable";
 import { PageHeader } from "@/components/ui/PageHeader";
+import Link from "next/link";
 
 export default function StockInPage() {
   return (

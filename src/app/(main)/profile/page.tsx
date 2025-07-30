@@ -5,6 +5,7 @@ import ProfileForm from "@/components/profile/ProfileForm";
 import PasswordForm from "@/components/profile/PasswordForm";
 import Preferences from "@/components/profile/Preferences";
 import ActivityLogs from "@/components/profile/ActivityLogs";
+import Link from "next/link";
 
 export default function ProfilePage() {
   return (

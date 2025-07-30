@@ -1,6 +1,7 @@
 // src/app/(main)/stock/out/page.tsx
 import StockOutForm from '@/components/stock/StockOutForm'
 import StockOutTable from '@/components/stock/StockOutTable'
+import Link from "next/link";
 
 export default function StockOutPage() {
   return (
