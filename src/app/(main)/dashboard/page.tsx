@@ -26,7 +26,7 @@ export default function DashboardPage() {
         </div>
         <div className="flex items-center gap-4">
           <button className="rounded-lg bg-[#78df24] px-4 py-2 font-bold text-sm">Logout</button>
-          <button className="rounded-lg bg-[#edf3e8] px-4 py-2 font-bold text-sm">Hi, Supervisor Tewodros</button>
+          <button className="rounded-lg bg-[#edf3e8] px-4 py-2 font-bold text-sam">Hi, Supervisor Tewodros</button>
           <button className="rounded-lg bg-[#edf3e8] p-2">
             {/* Bell icon */}
             <svg width="20" height="20" fill="currentColor" viewBox="0 0 256 256">
@@ -151,3 +151,4 @@ export default function DashboardPage() {
 >
   Logout
 </button>
+
