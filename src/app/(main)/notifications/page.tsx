@@ -5,6 +5,7 @@ import Header from '@/components/dashboard/Header';
 import StatsCards from '@/components/dashboard/StatsCards';
 import ActivityTable from '@/components/dashboard/ActivityTable';
 import NotificationList from '@/components/notfications/NotificationList';
+import Link from "next/link";
 
 export default function NotificationPage() {
   return (

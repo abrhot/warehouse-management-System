@@ -3,6 +3,7 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 // If you want only the DashboardPage here, remove LoginPage entirely.
 // If you want LoginPage, move it to a separate file (e.g., src/app/(main)/login/page.tsx).

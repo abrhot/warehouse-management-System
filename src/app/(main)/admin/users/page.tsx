@@ -4,7 +4,7 @@ import UsersSearchBar from '@/components/admin/UsersSearchBar'
 import UsersFilterBar from '@/components/admin/UsersFilterBar'
 import UsersTable from '@/components/admin/UsersTable'
 import UsersPagination from '@/components/admin/UsersPagination'
-
+import Link from "next/link";
 export default function UsersPage() {
   return (
     <div className="px-40 flex justify-center py-5 bg-[#fafbf9] min-h-screen">

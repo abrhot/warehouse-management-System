@@ -4,7 +4,7 @@
 import { ProductHeader } from '@/components/products/ProductHeader';
 // import { ProductTable } from '@/components/products/ProductTable';
 import { ProductTable } from '@/components/products/ProductTable';
-
+import Link from "next/link";
 
 export default function ProductsPage() {
   return (
