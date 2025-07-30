@@ -1,8 +1,11 @@
-// src/app/layout.tsx
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+import React from "react";
+import MainNav from "@/components/layout/MainNav";
+
+export default function MainLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body>{children}</body>
-    </html>
+    <div className="min-h-screen bg-[#fafbf9] text-[#141810] flex flex-col">
+      <MainNav />
+      <main className="flex-1 px-6 py-4">{children}</main>
+    </div>
   );
 }
