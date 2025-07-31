@@ -2,10 +2,32 @@
 
 import { useState } from 'react';
 
-const initialProducts = [
+const initialProducts =  [
   { id: '12345', name: 'Modem X100', category: 'Modem', quantity: 150, reorderLevel: 50, location: 'Warehouse A' },
   { id: '67890', name: 'Cable Type A', category: 'Cable', quantity: 200, reorderLevel: 100, location: 'Warehouse B' },
-  // ... other products
+  { id: '11223', name: 'Router Z200', category: 'Router', quantity: 50, reorderLevel: 20, location: 'Warehouse C' },
+  { id: '33445', name: 'Connector B50', category: 'Connector', quantity: 300, reorderLevel: 150, location: 'Warehouse A' },
+  { id: '55667', name: 'Antenna G300', category: 'Antenna', quantity: 75, reorderLevel: 30, location: 'Warehouse B' },
+  { id: '77889', name: 'Splitter S100', category: 'Splitter', quantity: 100, reorderLevel: 50, location: 'Warehouse C' },
+  { id: '99001', name: 'Amplifier A200', category: 'Amplifier', quantity: 25, reorderLevel: 10, location: 'Warehouse A' },
+  { id: '22334', name: 'Converter C400', category: 'Converter', quantity: 125, reorderLevel: 60, location: 'Warehouse B' },
+  { id: '44556', name: 'Filter F100', category: 'Filter', quantity: 175, reorderLevel: 80, location: 'Warehouse C' },
+  { id: '66778', name: 'Isolator I50', category: 'Isolator', quantity: 60, reorderLevel: 25, location: 'Warehouse A' },
+  { id: '88990', name: 'Repeater R20', category: 'Repeater', quantity: 40, reorderLevel: 15, location: 'Warehouse C' },
+  { id: '34567', name: 'Cable Type B', category: 'Cable', quantity: 180, reorderLevel: 90, location: 'Warehouse B' },
+  { id: '56789', name: 'Modem X200', category: 'Modem', quantity: 130, reorderLevel: 70, location: 'Warehouse A' },
+  { id: '78901', name: 'Connector C100', category: 'Connector', quantity: 210, reorderLevel: 110, location: 'Warehouse B' },
+  { id: '90123', name: 'Antenna G500', category: 'Antenna', quantity: 90, reorderLevel: 40, location: 'Warehouse C' },
+  { id: '13579', name: 'Splitter S200', category: 'Splitter', quantity: 85, reorderLevel: 35, location: 'Warehouse A' },
+  { id: '24680', name: 'Amplifier A300', category: 'Amplifier', quantity: 30, reorderLevel: 15, location: 'Warehouse B' },
+  { id: '36912', name: 'Router Z300', category: 'Router', quantity: 60, reorderLevel: 25, location: 'Warehouse C' },
+  { id: '48126', name: 'Converter C500', category: 'Converter', quantity: 140, reorderLevel: 70, location: 'Warehouse A' },
+  { id: '59247', name: 'Filter F200', category: 'Filter', quantity: 160, reorderLevel: 90, location: 'Warehouse B' },
+  { id: '61358', name: 'Isolator I100', category: 'Isolator', quantity: 70, reorderLevel: 30, location: 'Warehouse C' },
+  { id: '72469', name: 'Repeater R40', category: 'Repeater', quantity: 45, reorderLevel: 20, location: 'Warehouse A' },
+  { id: '83570', name: 'Modem X300', category: 'Modem', quantity: 110, reorderLevel: 60, location: 'Warehouse B' },
+  { id: '94681', name: 'Connector D200', category: 'Connector', quantity: 250, reorderLevel: 130, location: 'Warehouse C' },
+  { id: '05792', name: 'Amplifier A500', category: 'Amplifier', quantity: 20, reorderLevel: 10, location: 'Warehouse A' },
 ];
 
 export const ProductTable = () => {
