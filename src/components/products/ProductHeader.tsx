@@ -1,13 +1,16 @@
+import Link from "next/link";
+
 export const ProductHeader = () => (
-  <>
+
     <div className="flex flex-wrap justify-between gap-3 p-4">
       <p className="text-[#141b0e] tracking-light text-[32px] font-bold leading-tight min-w-72">
         Product Management
       </p>
-      <button className="rounded-xl bg-[#edf3e8] h-8 px-4 text-sm font-medium text-[#141b0e]">
-        ➕ Add Product
-      </button>
-    </div>
+     <Link href="/stock/in">
+  <button className="rounded-xl bg-[#edf3e8] h-8 px-4 text-sm font-medium text-[#141b0e]">
+    ➕ Add Product
+  </button>
+</Link>
 
     <div className="px-4 py-3">
       <label className="flex flex-col min-w-40 h-12 w-full">
@@ -31,5 +34,5 @@ export const ProductHeader = () => (
         Availability ⌄
       </button>
     </div>
-  </>
+  </div>
 );
