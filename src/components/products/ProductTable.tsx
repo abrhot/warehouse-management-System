@@ -131,3 +131,28 @@ export const ProductTable = () => {
     </div>
   );
 };
+
+interface ProductTableProps {
+  searchValue: string;
+  category: string;
+  availability: string;
+}
+
+export const ProductTable: React.FC<ProductTableProps> = ({
+  searchValue,
+  category,
+  availability,
+}) => {
+  // Example: you could fetch or filter product data here
+  // based on the search/category/availability props
+
+  return (
+    <div className="mt-6">
+      {/* Render filtered products */}
+      <p className="text-sm text-gray-600">
+        Showing results for: "{searchValue}", category: {category}, availability: {availability}
+      </p>
+      {/* TODO: Add real product table here */}
+    </div>
+  );
+};
