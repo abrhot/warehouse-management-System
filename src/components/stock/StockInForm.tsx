@@ -1,42 +1,112 @@
-export const StockInForm = () => (
-  <>
-    <div className="space-y-4 px-4">
-      {[
-        { label: "Category", type: "input" },
-        { label: "Quantity Received", type: "input", placeholder: "Quantity Received" },
-        { label: "Supplier / Source", type: "input", placeholder: "Supplier / Source" },
-        { label: "Warehouse Location", type: "select", options: ["Warehouse A", "Warehouse B"] },
-        { label: "Date & Time", type: "input" },
-        { label: "Handled By", type: "input" },
-        { label: "Remarks / Notes", type: "textarea", placeholder: "Enter remarks or notes" },
-      ].map((field, idx) => (
-        <label key={idx} className="block">
-          <p className="pb-2 text-[#141b0e] text-base font-medium">{field.label}</p>
-          {field.type === "input" && (
-            <input
-              placeholder={field.placeholder}
-              className="w-full h-14 rounded-xl border border-[#dae6d1] bg-[#fafbf8] p-4 text-[#141b0e] placeholder:text-[#6f9550]"
-            />
-          )}
-          {field.type === "select" && (
-            <select className="w-full h-14 rounded-xl border border-[#dae6d1] bg-[#fafbf8] p-4 text-[#141b0e]">
-              {field.options?.map((opt) => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
-          )}
-          {field.type === "textarea" && (
-            <textarea
-              placeholder={field.placeholder}
-              className="w-full min-h-36 rounded-xl border border-[#dae6d1] bg-[#fafbf8] p-4 text-[#141b0e] placeholder:text-[#6f9550]"
-            ></textarea>
-          )}
-        </label>
-      ))}
+'use client';
+
+import React, { useState } from "react";
+
+export const StockInForm = () => {
+  const [category, setCategory] = useState("");
+  const [quantity, setQuantity] = useState("");
+  const [supplier, setSupplier] = useState("");
+  const [location, setLocation] = useState("Warehouse A");
+  const [time, setTime] = useState("");
+  const [handler, setHandler] = useState("");
+  const [notes, setNotes] = useState("");
+
+  const handleAddStock = () => {
+    const newEntry = {
+      category,
+      quantity,
+      supplier,
+      location,
+      time,
+      handler,
+      notes,
+    };
+
+    const existingData = JSON.parse(localStorage.getItem("stockInData") || "[]");
+    const updatedData = [...existingData, newEntry];
+    localStorage.setItem("stockInData", JSON.stringify(updatedData));
+
+    // Clear form
+    setCategory("");
+    setQuantity("");
+    setSupplier("");
+    setLocation("Warehouse A");
+    setTime("");
+    setHandler("");
+    setNotes("");
+
+    alert("✅ Stock successfully added!");
+  };
+
+  return (
+    <div className="space-y-5 px-4">
+      <input
+        placeholder="Category"
+        value={category}
+        onChange={(e) => setCategory(e.target.value)}
+        className="w-full h-12 px-4 border rounded-xl bg-[#fafbf8] border-[#dae6d1]"
+      />
+      <input
+        placeholder="Quantity"
+        value={quantity}
+        onChange={(e) => setQuantity(e.target.value)}
+        className="w-full h-12 px-4 border rounded-xl bg-[#fafbf8] border-[#dae6d1]"
+      />
+      <input
+        placeholder="Supplier"
+        value={supplier}
+        onChange={(e) => setSupplier(e.target.value)}
+        className="w-full h-12 px-4 border rounded-xl bg-[#fafbf8] border-[#dae6d1]"
+      />
+      <select
+        value={location}
+        onChange={(e) => setLocation(e.target.value)}
+        className="w-full h-12 px-4 border rounded-xl bg-[#fafbf8] border-[#dae6d1]"
+      >
+        <option>Warehouse A</option>
+        <option>Warehouse B</option>
+      </select>
+      <input
+        placeholder="Date and Time"
+        value={time}
+        onChange={(e) => setTime(e.target.value)}
+        className="w-full h-12 px-4 border rounded-xl bg-[#fafbf8] border-[#dae6d1]"
+      />
+      <input
+        placeholder="Handled By"
+        value={handler}
+        onChange={(e) => setHandler(e.target.value)}
+        className="w-full h-12 px-4 border rounded-xl bg-[#fafbf8] border-[#dae6d1]"
+      />
+      <textarea
+        placeholder="Notes"
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        className="w-full h-24 px-4 py-2 border rounded-xl bg-[#fafbf8] border-[#dae6d1]"
+      />
+
+      <div className="flex justify-end gap-3">
+        <button
+          onClick={() => {
+            setCategory("");
+            setQuantity("");
+            setSupplier("");
+            setLocation("Warehouse A");
+            setTime("");
+            setHandler("");
+            setNotes("");
+          }}
+          className="bg-gray-200 px-4 py-2 rounded-full font-bold"
+        >
+          Reset Form
+        </button>
+        <button
+          onClick={handleAddStock}
+          className="bg-green-500 text-white px-4 py-2 rounded-full font-bold"
+        >
+          ➕ Add Stock
+        </button>
+      </div>
     </div>
-    <div className="flex justify-end gap-3 px-4 py-4">
-      <button className="h-10 px-4 rounded-full bg-[#edf3e8] text-sm font-bold">Reset Form</button>
-      <button className="h-10 px-4 rounded-full bg-[#75df1f] text-sm font-bold">➕ Add Stock</button>
-    </div>
-  </>
-);
+  );
+};

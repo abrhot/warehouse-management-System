@@ -1,5 +1,5 @@
 'use client';
-import Link from "next/link";
+import Link from 'next/link';
 import { useState } from 'react';
 
 const initialProducts = [
@@ -52,30 +52,31 @@ export const ProductTable = () => {
 
   return (
     <div className="px-4 py-3 @container">
-      {/* Search + Header */}
+      {/* Search + Add Product */}
       <div className="flex flex-wrap justify-between items-center gap-4 mb-4">
-      
-        <div className="flex items-center gap-3text-[#6f9550]">🔍
-          <input
-            type="text"
-            placeholder="Search by name or ID"         
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search by name or ID"
+              className="rounded-xl h-10 pl-10 pr-4 text-sm text-[#141b0e] placeholder-[#6f9550] bg-[#edf3e8] focus:outline-none"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <div className="absolute top-2.5 left-3 text-[#6f9550]">🔍</div>
+          </div>
 
-            className="rounded-xl h-10 px-4 text-sm text-[#141b0e] placeholder-[#6f9550] bg-[#edf3e8] focus:outline-none"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-
-  <Link href="/stock/in">
-      <button className="rounded-xl bg-[#edf3e8] h-8 px-4 text-sm font-medium text-[#141b0e]">
-        ➕ Add Product
-      </button>
-    </Link>
+          <Link href="/stock/in">
+            <button className="rounded-xl bg-[#edf3e8] h-10 px-4 text-sm font-medium text-[#141b0e] hover:bg-[#dbe9d2]">
+              ➕ Add Product
+            </button>
+          </Link>
         </div>
       </div>
 
       {/* Product Table */}
-      <div className="flex overflow-hidden rounded-xl border border-[#dae6d1] bg-[#fafbf8]">
-        <table className="flex-1 w-full">
+      <div className="overflow-auto rounded-xl border border-[#dae6d1] bg-[#fafbf8]">
+        <table className="w-full min-w-[800px]">
           <thead>
             <tr className="bg-[#fafbf8]">
               <th className="px-4 py-3 text-left text-sm font-medium text-[#141b0e]">Product ID</th>
@@ -124,35 +125,10 @@ export const ProductTable = () => {
         </table>
       </div>
 
-      {/* Pagination Info */}
+      {/* Footer Summary */}
       <p className="text-[#6f9550] text-sm font-normal pb-3 pt-4 px-4 text-center">
         Showing {filteredProducts.length} of {products.length} products
       </p>
-    </div>
-  );
-};
-
-interface ProductTableProps {
-  searchValue: string;
-  category: string;
-  availability: string;
-}
-
-export const ProductTable: React.FC<ProductTableProps> = ({
-  searchValue,
-  category,
-  availability,
-}) => {
-  // Example: you could fetch or filter product data here
-  // based on the search/category/availability props
-
-  return (
-    <div className="mt-6">
-      {/* Render filtered products */}
-      <p className="text-sm text-gray-600">
-        Showing results for: "{searchValue}", category: {category}, availability: {availability}
-      </p>
-      {/* TODO: Add real product table here */}
     </div>
   );
 };
