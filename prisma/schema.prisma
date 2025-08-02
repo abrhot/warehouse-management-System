@@ -1,8 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// prisma/schema.prisma
 
 generator client {
   provider = "prisma-client-js"
@@ -21,9 +17,52 @@ model User {
   password  String
   role      Role     @default(USER)
   createdAt DateTime @default(now())
+
+  requests  StockRequest[] @relation("RequestedBy")
+  approvals StockRequest[] @relation("ApprovedBy")
+}
+
+model Product {
+  id        String   @id @default(uuid())
+  name      String
+  quantity  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  stockRequests StockRequest[]
+}
+
+model StockRequest {
+  id        String        @id @default(uuid())
+  type      StockType
+  quantity  Int
+  status    RequestStatus @default(PENDING)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  // Relations
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  requestedBy String
+  requester   User   @relation("RequestedBy", fields: [requestedBy], references: [id])
+
+  approvedBy String?
+  approver   User?   @relation("ApprovedBy", fields: [approvedBy], references: [id])
 }
 
 enum Role {
   ADMIN
   USER
+}
+
+enum StockType {
+  IN
+  OUT
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
