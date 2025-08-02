@@ -10,7 +10,7 @@ export default function DashboardPage() {
   const handleLogout = () => {
     // Remove token cookie (client-side fallback)
     document.cookie = "authToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    router.push("/"); // Redirect to landing page
+    router.push("/landing"); // Redirect to landing page
   };
 
   return (
