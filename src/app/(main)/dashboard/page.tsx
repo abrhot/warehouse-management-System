@@ -1,51 +1,55 @@
 "use client";
-// src/app/(main)/dashboard/page.tsx
 
 import React from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-// If you want only the DashboardPage here, remove LoginPage entirely.
-// If you want LoginPage, move it to a separate file (e.g., src/app/(main)/login/page.tsx).
-// The following removes LoginPage from this file.
-
-
 export default function DashboardPage() {
+  const router = useRouter();
+
+  const handleLogout = () => {
+    // Remove token cookie (client-side fallback)
+    document.cookie = "authToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    router.push("/"); // Redirect to landing page
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-[#fafbf8] text-[#141b0e] font-['Manrope','Noto_Sans',sans-serif]">
       {/* Header */}
       <header className="flex items-center justify-between border-b border-[#edf3e8] px-10 py-3">
         <div className="flex items-center gap-4">
           <div className="w-4 h-4">
-            {/* Logo SVG */}
             <svg viewBox="0 0 48 48" fill="currentColor">
-              <path d="M8.57829 8.57829C5.52816 11.6284 3.451 15.5145 2.60947 19.7452..." />
+              <path d="M8.57829 8.57829C5.52816 11.6284..." />
             </svg>
           </div>
           <h2 className="text-lg font-bold tracking-tight">EthioTele WMS</h2>
         </div>
         <div className="flex items-center gap-4">
-          <button className="rounded-lg bg-[#78df24] px-4 py-2 font-bold text-sm">Logout</button>
-          <button className="rounded-lg bg-[#edf3e8] px-4 py-2 font-bold text-sam">Hi, Supervisor Tewodros</button>
+          <button
+            onClick={handleLogout}
+            className="rounded-lg bg-[#78df24] px-4 py-2 font-bold text-sm"
+          >
+            Logout
+          </button>
+          <button className="rounded-lg bg-[#edf3e8] px-4 py-2 font-bold text-sm">
+            Hi, Supervisor Tewodros
+          </button>
           <button className="rounded-lg bg-[#edf3e8] p-2">
-            {/* Bell icon */}
             <svg width="20" height="20" fill="currentColor" viewBox="0 0 256 256">
               <path d="M221.8,175.94C216.25,166.38..." />
             </svg>
           </button>
           <div
             className="w-10 h-10 rounded-full bg-cover bg-center"
-            style={{
-              backgroundImage: `url("/images/supervisor.jpg")` // Place image in /public/images
-            }}
+            style={{ backgroundImage: `url("/images/supervisor.jpg")` }}
           />
         </div>
       </header>
 
-      {/* Body */}
+      {/* Main */}
       <main className="flex flex-col items-center px-10 py-5">
         <div className="w-full max-w-[960px]">
-          {/* Dashboard Cards */}
           <h2 className="text-2xl font-bold px-4 pb-3">Dashboard</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 px-4 pb-6">
             {[
@@ -119,19 +123,6 @@ export default function DashboardPage() {
               </tbody>
             </table>
           </div>
-
-          {/* Quick Actions */}
-          <h2 className="text-xl font-bold px-4 pt-6 pb-3">Quick Actions</h2>
-          <div className="flex flex-wrap gap-3 px-4 pb-6">
-            {["Manage Products", "Add Product", "View Reports", "Stock In", "Stock Out"].map(action => (
-              <button
-                key={action}
-                className="rounded-lg bg-[#78df24] px-4 py-2 text-sm font-bold text-[#141b0e]"
-              >
-                {action}
-              </button>
-            ))}
-          </div>
         </div>
       </main>
 
@@ -142,13 +133,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-<button
-  onClick={() => {
-    document.cookie = "authToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    window.location.href = "/login";
-  }}
-  className="rounded-lg bg-[#78df24] px-4 py-2 font-bold text-sm"
->
-  Logout
-</button>
-
