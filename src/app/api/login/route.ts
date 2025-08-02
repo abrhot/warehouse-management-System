@@ -1,6 +1,6 @@
 // src/app/api/login/route.ts
 import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma"; // This assumes your tsconfig paths are set correctly
+import prisma from "@/lib/prisma";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
@@ -23,11 +23,17 @@ export async function POST(req: Request) {
     expiresIn: "1d",
   });
 
-  const response = NextResponse.json({ message: "Login successful" });
+  const { id, role } = user;
+
+  const response = NextResponse.json({
+    message: "Login successful",
+    user: { id, email, role },
+  });
 
   response.cookies.set("authToken", token, {
     httpOnly: true,
     path: "/",
+    maxAge: 60 * 60 * 24, // 1 day
   });
 
   return response;
