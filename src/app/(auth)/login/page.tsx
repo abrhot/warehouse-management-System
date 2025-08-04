@@ -10,30 +10,30 @@ export default function LoginPage() {
   const [error, setError] = useState("");
 
   const handleLogin = async () => {
-    try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+  try {
+    const res = await fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
 
-      if (res.ok) {
-        const { user } = await res.json();
+    if (res.ok) {
+      const { user } = await res.json();
 
-        // Redirect based on role
-        if (user.role === "ADMIN") {
-          router.push("/dashboard/admin");
-        } else {
-          router.push("/dashboard/user");
-        }
+      // Redirect based on role
+      if (user.role === "ADMIN") {
+        router.push("/dashboard/admin");
       } else {
-        const data = await res.json();
-        setError(data.error || "Invalid credentials");
+        router.push("/dashboard/user");
       }
-    } catch (err) {
-      setError("Something went wrong. Try again.");
+    } else {
+      const data = await res.json();
+      setError(data.error || "Invalid credentials");
     }
-  };
+  } catch (err) {
+    setError("Something went wrong. Try again.");
+  }
+};
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-[#fafbf8]">
