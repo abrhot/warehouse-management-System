@@ -44,11 +44,17 @@ model StockRequest {
   productId String
   product   Product @relation(fields: [productId], references: [id])
 
-  requestedBy String
-  requester   User   @relation("RequestedBy", fields: [requestedBy], references: [id])
+  requests StockRequest[] @relation("RequestedBy")
 
-  approvedBy String?
-  approver   User?   @relation("ApprovedBy", fields: [approvedBy], references: [id])
+  approvals      StockRequest[] @relation("ApprovedBy")
+  User           User?          @relation(fields: [userId], references: [id])
+  userId         Int?
+  User           User?          @relation(fields: [userId], references: [id])
+  userId         Int?
+  StockRequest   StockRequest?  @relation(fields: [stockRequestId], references: [id])
+  stockRequestId String?
+  StockRequest   StockRequest?  @relation(fields: [stockRequestId], references: [id])
+  stockRequestId String?
 }
 
 enum Role {
