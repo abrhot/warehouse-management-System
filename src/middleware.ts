@@ -21,6 +21,15 @@ export function middleware(request: NextRequest) {
   try {
     const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
     const userRole = decoded.role;
+    try {
+  const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+  const userRole = decoded.role;
+  // proceed with userRole
+} catch (err) {
+  console.error("JWT verification failed:", err);
+  // Handle the error (e.g., redirect to login, return 401, etc.)
+}
+  
 
     // 🔒 Restrict admin-only routes
     const adminOnlyRoutes = ["/users", "/notifications"];
