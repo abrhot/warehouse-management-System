@@ -11,11 +11,11 @@ export default function LoginPage() {
 
   const handleLogin = async () => {
   try {
-    const res = await fetch("api\auth\login\route.ts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
+    const res = await fetch("/api/auth/login", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ email, password }),
+});
 
     if (res.ok) {
       const { user } = await res.json();
