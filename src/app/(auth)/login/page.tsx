@@ -22,9 +22,9 @@ export default function LoginPage() {
 
       // Redirect based on role
       if (user.role === "ADMIN") {
-        router.push("/dashboard/admin");
+        router.push("/dashboard");
       } else {
-        router.push("/dashboard/user");
+        router.push("/dashboard");
       }
     } else {
       const data = await res.json();
