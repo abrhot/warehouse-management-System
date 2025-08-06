@@ -22,25 +22,49 @@ export default function StockOutForm() {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const existingData = JSON.parse(localStorage.getItem('stockOutData') || '[]');
-    const updatedData = [...existingData, formData];
-    localStorage.setItem('stockOutData', JSON.stringify(updatedData));
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    alert('✅ Stock Out recorded!');
-    setFormData({
-      productName: '',
-      category: '',
-      quantity: '',
-      issuedTo: '',
-      reason: '',
-      location: '',
-      dateTime: '',
-      handler: '',
-      notes: '',
+  if (!formData.productName || !formData.quantity) {
+    alert("Product and quantity required");
+    return;
+  }
+
+  try {
+    const res = await fetch("/api/stock/request", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        productId: formData.productName,
+        quantity: Number(formData.quantity),
+        type: "OUT", // 👈 important!
+      }),
     });
-  };
+
+    if (res.ok) {
+      alert("✅ Stock-out request sent for approval!");
+
+      setFormData({
+        productName: '',
+        category: '',
+        quantity: '',
+        issuedTo: '',
+        reason: '',
+        location: '',
+        dateTime: '',
+        handler: '',
+        notes: '',
+      });
+    } else {
+      const { error } = await res.json();
+      alert("❌ Error: " + error);
+    }
+  } catch (err) {
+    console.error("Stock out error", err);
+    alert("❌ Failed to send stock-out request");
+  }
+};
+
 
   const handleReset = () => {
     setFormData({
