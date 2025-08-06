@@ -1,9 +1,9 @@
-'use client';
+'use client'
 
 import React, { useState } from "react";
 
 export const StockInForm = () => {
-  const [category, setCategory] = useState("");
+  const [productId, setProductId] = useState(""); // Ideally select from real product list
   const [quantity, setQuantity] = useState("");
   const [supplier, setSupplier] = useState("");
   const [location, setLocation] = useState("Warehouse A");
@@ -11,39 +11,48 @@ export const StockInForm = () => {
   const [handler, setHandler] = useState("");
   const [notes, setNotes] = useState("");
 
-  const handleAddStock = () => {
-    const newEntry = {
-      category,
-      quantity,
-      supplier,
-      location,
-      time,
-      handler,
-      notes,
-    };
+  const handleAddStock = async () => {
+    if (!productId || !quantity) {
+      alert("Please fill product and quantity");
+      return;
+    }
 
-    const existingData = JSON.parse(localStorage.getItem("stockInData") || "[]");
-    const updatedData = [...existingData, newEntry];
-    localStorage.setItem("stockInData", JSON.stringify(updatedData));
+    try {
+      const res = await fetch("/api/stock/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId,
+          quantity: Number(quantity),
+          type: "IN", // 👈 important!
+        }),
+      });
 
-    // Clear form
-    setCategory("");
-    setQuantity("");
-    setSupplier("");
-    setLocation("Warehouse A");
-    setTime("");
-    setHandler("");
-    setNotes("");
-
-    alert("✅ Stock successfully added!");
+      if (res.ok) {
+        alert("✅ Stock-in request sent for approval!");
+        setProductId("");
+        setQuantity("");
+        setSupplier("");
+        setLocation("Warehouse A");
+        setTime("");
+        setHandler("");
+        setNotes("");
+      } else {
+        const { error } = await res.json();
+        alert("❌ Failed: " + error);
+      }
+    } catch (err) {
+      console.error("Failed to submit stock-in", err);
+      alert("❌ Error occurred");
+    }
   };
 
   return (
     <div className="space-y-5 px-4">
       <input
-        placeholder="Category"
-        value={category}
-        onChange={(e) => setCategory(e.target.value)}
+        placeholder="Product ID"
+        value={productId}
+        onChange={(e) => setProductId(e.target.value)}
         className="w-full h-12 px-4 border rounded-xl bg-[#fafbf8] border-[#dae6d1]"
       />
       <input
@@ -52,6 +61,7 @@ export const StockInForm = () => {
         onChange={(e) => setQuantity(e.target.value)}
         className="w-full h-12 px-4 border rounded-xl bg-[#fafbf8] border-[#dae6d1]"
       />
+      {/* Keep the rest for display purpose only */}
       <input
         placeholder="Supplier"
         value={supplier}
@@ -88,7 +98,7 @@ export const StockInForm = () => {
       <div className="flex justify-end gap-3">
         <button
           onClick={() => {
-            setCategory("");
+            setProductId("");
             setQuantity("");
             setSupplier("");
             setLocation("Warehouse A");
@@ -104,7 +114,7 @@ export const StockInForm = () => {
           onClick={handleAddStock}
           className="bg-green-500 text-white px-4 py-2 rounded-full font-bold"
         >
-          ➕ Add Stock
+          ➕ Request Stock In
         </button>
       </div>
     </div>
