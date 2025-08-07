@@ -75,7 +75,6 @@ export const ProductTable: React.FC<ProductTableProps> = ({
               <th className="px-4 py-3 text-left text-sm font-medium text-[#141b0e]">Product Name</th>
               <th className="px-4 py-3 text-left text-sm font-medium text-[#141b0e]">Category</th>
               <th className="px-4 py-3 text-left text-sm font-medium text-[#141b0e]">Quantity</th>
-              <th className="px-4 py-3 text-left text-sm font-medium text-[#6f9550]">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -93,18 +92,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                   <td className="px-4 py-2 text-sm text-[#6f9550]">{product.category}</td>
                   <td className="px-4 py-2 text-sm font-bold text-[#141b0e]">{product.quantity}</td>
                   <td className="px-4 py-2 text-sm text-[#6f9550] font-bold">
-                    <button
-                      onClick={() => handleEdit(product.id)}
-                      className="text-blue-600 hover:underline mr-2"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(product.id)}
-                      className="text-red-600 hover:underline"
-                    >
-                      Delete
-                    </button>
+                    
                   </td>
                 </tr>
               ))
