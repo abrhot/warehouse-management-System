@@ -3,7 +3,8 @@
 import React, { useState } from "react";
 
 export const StockInForm = () => {
-  const [productId, setProductId] = useState(""); // Ideally select from real product list
+  const [name, setName] = useState("");
+  const [category, setCategory] = useState("");
   const [quantity, setQuantity] = useState("");
   const [supplier, setSupplier] = useState("");
   const [location, setLocation] = useState("Warehouse A");
@@ -12,8 +13,13 @@ export const StockInForm = () => {
   const [notes, setNotes] = useState("");
 
   const handleAddStock = async () => {
-    if (!productId || !quantity) {
-      alert("Please fill product and quantity");
+    if (!name || !category || !quantity) {
+      alert("Please fill in product name, category, and quantity");
+      return;
+    }
+
+    if (isNaN(Number(quantity)) || Number(quantity) <= 0) {
+      alert("Quantity must be a positive number");
       return;
     }
 
@@ -22,20 +28,21 @@ export const StockInForm = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          productId,
+          name,
+          category,
           quantity: Number(quantity),
-          type: "IN", // 👈 this helps the backend distinguish stock type
-          supplier,
           location,
-          time,
           handler,
           notes,
+          time,
+          supplier,
         }),
       });
 
       if (res.ok) {
         alert("✅ Stock-in request sent!");
-        setProductId("");
+        setName("");
+        setCategory("");
         setQuantity("");
         setSupplier("");
         setLocation("Warehouse A");
@@ -55,16 +62,24 @@ export const StockInForm = () => {
   return (
     <div className="space-y-5 px-4">
       <input
-        placeholder="Product ID"
-        value={productId}
-        onChange={(e) => setProductId(e.target.value)}
+        placeholder="Product Name"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
         className="w-full h-12 px-4 border rounded-xl bg-[#fafbf8] border-[#dae6d1]"
       />
       <input
+        placeholder="Category"
+        value={category}
+        onChange={(e) => setCategory(e.target.value)}
+        className="w-full h-12 px-4 border rounded-xl bg-[#fafbf8] border-[#dae6d1]"
+      />
+      <input
+        type="number"
         placeholder="Quantity"
         value={quantity}
         onChange={(e) => setQuantity(e.target.value)}
         className="w-full h-12 px-4 border rounded-xl bg-[#fafbf8] border-[#dae6d1]"
+        min="1"
       />
       <input
         placeholder="Supplier"
@@ -102,7 +117,8 @@ export const StockInForm = () => {
       <div className="flex justify-end gap-3">
         <button
           onClick={() => {
-            setProductId("");
+            setName("");
+            setCategory("");
             setQuantity("");
             setSupplier("");
             setLocation("Warehouse A");
