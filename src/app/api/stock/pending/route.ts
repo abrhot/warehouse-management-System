@@ -8,11 +8,10 @@ export async function GET() {
         status: 'PENDING',
       },
       include: {
-        // Include related product and user info to display on the dashboard
         product: {
           select: {
             name: true,
-            quantity: true, // Show current stock
+            quantity: true,
           },
         },
         requester: {
@@ -23,7 +22,7 @@ export async function GET() {
         },
       },
       orderBy: {
-        createdAt: 'asc', // Show the oldest requests first
+        createdAt: 'asc',
       },
     });
     return NextResponse.json(pendingRequests);

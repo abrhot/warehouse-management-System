@@ -1,6 +1,9 @@
+// This is your Prisma schema file.
+// Remember to run `npx prisma migrate dev` and `npx prisma generate` after changes.
+
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
+  output   = "../src/generated/prisma" // Your specified output path
 }
 
 datasource db {
@@ -8,6 +11,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// User model for authentication and roles
 model User {
   id        Int      @id @default(autoincrement())
   name      String?
@@ -16,42 +20,53 @@ model User {
   role      Role     @default(USER)
   createdAt DateTime @default(now())
 
-  // Relations to StockRequest:
+  // Relations to StockRequest
   requests  StockRequest[] @relation("RequestedBy")
   approvals StockRequest[] @relation("ApprovedBy")
 }
 
+// Product model for inventory items
 model Product {
-  id        String   @id @default(uuid())
-  name      String
-  category  String // add this line
-  quantity  Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(uuid())
+  sku          String?  @unique // 👈 Change this to optional with a '?'
+  name         String
+  category     String
+  quantity     Int      @default(0)
+  location     String? // Optional field for warehouse location
+  reorderLevel Int      @default(10) // Threshold to trigger reorder alerts
+  supplier     String? // Optional: name of the product supplier
+  costPrice    Decimal  @default(0) // Price to acquire one unit
+  sellingPrice Decimal? // Optional: price to sell one unit
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   stockRequests StockRequest[]
+
+  // Ensures that the combination of name and category is unique
+  @@unique([name, category])
 }
 
+// StockRequest model for tracking all stock movements
 model StockRequest {
   id        String        @id @default(uuid())
   type      StockType
   quantity  Int
   status    RequestStatus @default(PENDING)
+  notes     String?
+  reason    String? // Optional reason, e.g., "Customer Sale", "Internal Use"
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
 
   // Relations
-
-  productId String
-  product   Product @relation(fields: [productId], references: [id])
-
+  productId   String
+  product     Product @relation(fields: [productId], references: [id])
   requestedBy Int
-  requester   User @relation("RequestedBy", fields: [requestedBy], references: [id])
-
-  approvedBy Int?
-  approver   User? @relation("ApprovedBy", fields: [approvedBy], references: [id])
+  requester   User    @relation("RequestedBy", fields: [requestedBy], references: [id])
+  approvedBy  Int?
+  approver    User?   @relation("ApprovedBy", fields: [approvedBy], references: [id])
 }
 
+// Enums for defining roles, stock types, and request statuses
 enum Role {
   ADMIN
   USER

@@ -2,12 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 
-// Define a type for the detailed request data
+// Update the interface to include the 'notes' field
 interface PendingRequest {
   id: string;
   type: 'IN' | 'OUT';
   quantity: number;
   createdAt: string;
+  notes: string | null; // The new optional notes field
   product: {
     name: string;
     quantity: number;
@@ -25,6 +26,7 @@ export default function PendingRequests() {
 
   const fetchRequests = async () => {
     setLoading(true);
+    setError(null);
     try {
       const res = await fetch('/api/stock/pending');
       if (!res.ok) throw new Error('Failed to fetch requests');
@@ -48,25 +50,20 @@ export default function PendingRequests() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ requestId, newStatus }),
       });
-
       const data = await res.json();
-
       if (!res.ok) {
         throw new Error(data.error || 'Failed to process request');
       }
-
       alert(`✅ Request successfully ${newStatus.toLowerCase()}!`);
-      // Remove the processed request from the list
       setRequests((prevRequests) => prevRequests.filter((req) => req.id !== requestId));
-
     } catch (err: any) {
       console.error(err);
       alert(`❌ Error: ${err.message}`);
     }
   };
 
-  if (loading) return <p>Loading pending requests...</p>;
-  if (error) return <p className="text-red-500">Error: {error}</p>;
+  if (loading) return <p className="p-4 text-center">Loading pending requests...</p>;
+  if (error) return <p className="p-4 text-center text-red-500">Error: {error}</p>;
 
   return (
     <div className="space-y-4 p-4">
@@ -76,32 +73,42 @@ export default function PendingRequests() {
       ) : (
         <ul className="space-y-3">
           {requests.map((req) => (
-            <li key={req.id} className="bg-gray-100 p-4 rounded-lg shadow">
-              <div className="flex justify-between items-center">
-                <div>
+            <li key={req.id} className="bg-white p-4 rounded-lg shadow-sm border">
+              <div className="flex justify-between items-start gap-4">
+                <div className="flex-grow">
                   <p className="font-bold text-lg">
-                    {req.product.name} -{' '}
+                    {req.product.name}
+                  </p>
+                  <p className="text-sm font-semibold">
                     <span className={req.type === 'IN' ? 'text-green-600' : 'text-red-600'}>
-                       {req.type} ({req.quantity})
+                       {req.type} ({req.quantity} units)
                     </span>
                   </p>
-                  <p className="text-sm text-gray-600">
-                    Current Stock: {req.product.quantity} | Requested by: {req.requester.name || req.requester.email}
+                  <p className="text-sm text-gray-600 mt-1">
+                    Requested by: <strong>{req.requester.name || req.requester.email}</strong>
                   </p>
-                  <p className="text-xs text-gray-500">
+                  
+                  {/* Display notes if they exist */}
+                  {req.notes && (
+                    <div className="mt-2 text-sm text-gray-700 bg-gray-100 p-2 border-l-4 border-gray-300">
+                      <strong>Notes:</strong> {req.notes}
+                    </div>
+                  )}
+                  
+                  <p className="text-xs text-gray-400 pt-2">
                     {new Date(req.createdAt).toLocaleString()}
                   </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-col gap-2 flex-shrink-0">
                   <button
                     onClick={() => handleProcessRequest(req.id, 'APPROVED')}
-                    className="bg-green-500 text-white px-3 py-1 rounded-md font-semibold"
+                    className="bg-green-500 text-white px-3 py-1 text-sm rounded-md font-semibold hover:bg-green-600"
                   >
                     Approve
                   </button>
                   <button
                     onClick={() => handleProcessRequest(req.id, 'REJECTED')}
-                    className="bg-red-500 text-white px-3 py-1 rounded-md font-semibold"
+                    className="bg-red-500 text-white px-3 py-1 text-sm rounded-md font-semibold hover:bg-red-600"
                   >
                     Reject
                   </button>
