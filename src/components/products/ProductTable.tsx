@@ -1,54 +1,46 @@
 'use client';
 import Link from 'next/link';
-import { useState } from 'react';
 
-const initialProducts = [
-  { id: '12345', name: 'Modem X100', category: 'Modem', quantity: 150, reorderLevel: 50, location: 'Warehouse A' },
-  { id: '67890', name: 'Cable Type A', category: 'Cable', quantity: 200, reorderLevel: 100, location: 'Warehouse B' },
-  { id: '11223', name: 'Router Z200', category: 'Router', quantity: 50, reorderLevel: 20, location: 'Warehouse C' },
-  { id: '33445', name: 'Connector B50', category: 'Connector', quantity: 300, reorderLevel: 150, location: 'Warehouse A' },
-  { id: '55667', name: 'Antenna G300', category: 'Antenna', quantity: 75, reorderLevel: 30, location: 'Warehouse B' },
-  { id: '77889', name: 'Splitter S100', category: 'Splitter', quantity: 100, reorderLevel: 50, location: 'Warehouse C' },
-  { id: '99001', name: 'Amplifier A200', category: 'Amplifier', quantity: 25, reorderLevel: 10, location: 'Warehouse A' },
-  { id: '22334', name: 'Converter C400', category: 'Converter', quantity: 125, reorderLevel: 60, location: 'Warehouse B' },
-  { id: '44556', name: 'Filter F100', category: 'Filter', quantity: 175, reorderLevel: 80, location: 'Warehouse C' },
-  { id: '66778', name: 'Isolator I50', category: 'Isolator', quantity: 60, reorderLevel: 25, location: 'Warehouse A' },
-  { id: '88990', name: 'Repeater R20', category: 'Repeater', quantity: 40, reorderLevel: 15, location: 'Warehouse C' },
-  { id: '34567', name: 'Cable Type B', category: 'Cable', quantity: 180, reorderLevel: 90, location: 'Warehouse B' },
-  { id: '56789', name: 'Modem X200', category: 'Modem', quantity: 130, reorderLevel: 70, location: 'Warehouse A' },
-  { id: '78901', name: 'Connector C100', category: 'Connector', quantity: 210, reorderLevel: 110, location: 'Warehouse B' },
-  { id: '90123', name: 'Antenna G500', category: 'Antenna', quantity: 90, reorderLevel: 40, location: 'Warehouse C' },
-  { id: '13579', name: 'Splitter S200', category: 'Splitter', quantity: 85, reorderLevel: 35, location: 'Warehouse A' },
-  { id: '24680', name: 'Amplifier A300', category: 'Amplifier', quantity: 30, reorderLevel: 15, location: 'Warehouse B' },
-  { id: '36912', name: 'Router Z300', category: 'Router', quantity: 60, reorderLevel: 25, location: 'Warehouse C' },
-  { id: '48126', name: 'Converter C500', category: 'Converter', quantity: 140, reorderLevel: 70, location: 'Warehouse A' },
-  { id: '59247', name: 'Filter F200', category: 'Filter', quantity: 160, reorderLevel: 90, location: 'Warehouse B' },
-  { id: '61358', name: 'Isolator I100', category: 'Isolator', quantity: 70, reorderLevel: 30, location: 'Warehouse C' },
-  { id: '72469', name: 'Repeater R40', category: 'Repeater', quantity: 45, reorderLevel: 20, location: 'Warehouse A' },
-  { id: '83570', name: 'Modem X300', category: 'Modem', quantity: 110, reorderLevel: 60, location: 'Warehouse B' },
-  { id: '94681', name: 'Connector D200', category: 'Connector', quantity: 250, reorderLevel: 130, location: 'Warehouse C' },
-  { id: '05792', name: 'Amplifier A500', category: 'Amplifier', quantity: 20, reorderLevel: 10, location: 'Warehouse A' },
-];
+// Define the shape of the props this component expects
+interface ProductTableProps {
+  products: Array<{
+    id: string;
+    name: string;
+    category: string;
+    quantity: number;
+    // Add other fields if they exist in your data
+  }>;
+  searchTerm: string;
+  onSearchChange: (value: string) => void;
+  isLoading: boolean;
+  error: string | null;
+}
 
-export const ProductTable = () => {
-  const [products, setProducts] = useState(initialProducts);
-  const [search, setSearch] = useState('');
+export const ProductTable: React.FC<ProductTableProps> = ({
+  products,
+  searchTerm,
+  onSearchChange,
+  isLoading,
+  error,
+}) => {
 
   const handleDelete = (id: string) => {
-    const confirmed = window.confirm('Are you sure you want to delete this product?');
-    if (confirmed) {
-      setProducts(products.filter(product => product.id !== id));
-    }
+    // In a real app, you would call an API to delete the product
+    // For now, we just show an alert.
+    alert(`This would call an API to delete product with ID: ${id}`);
+    // Example API call:
+    // fetch(`/api/products/${id}`, { method: 'DELETE' })
+    //   .then(() => {
+    //     // Optionally, trigger a refetch of the product list
+    //   });
   };
 
   const handleEdit = (id: string) => {
-    alert(`Edit product with ID: ${id}`);
+    alert(`Maps to edit page for product ID: ${id}`);
   };
 
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(search.toLowerCase()) ||
-    product.id.includes(search)
-  );
+  if (isLoading) return <p className="text-center p-5">Loading products...</p>;
+  if (error) return <p className="text-center p-5 text-red-500">Error: {error}</p>;
 
   return (
     <div className="px-4 py-3 @container">
@@ -60,15 +52,15 @@ export const ProductTable = () => {
               type="text"
               placeholder="Search by name or ID"
               className="rounded-xl h-10 pl-10 pr-4 text-sm text-[#141b0e] placeholder-[#6f9550] bg-[#edf3e8] focus:outline-none"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              value={searchTerm}
+              onChange={(e) => onSearchChange(e.target.value)}
             />
             <div className="absolute top-2.5 left-3 text-[#6f9550]">🔍</div>
           </div>
 
           <Link href="/stock/in">
-            <button className="rounded-xl bg-[#edf3e8] h-10 px-4 text-sm font-medium text-[#141b0e] hover:bg-[#dbe9d2]">
-              ➕ Add Product
+            <button className="rounded-xl bg-[#78e61e] text-[#141b0e] h-10 px-4 text-sm font-medium hover:opacity-90">
+              ➕ Add Stock
             </button>
           </Link>
         </div>
@@ -83,27 +75,23 @@ export const ProductTable = () => {
               <th className="px-4 py-3 text-left text-sm font-medium text-[#141b0e]">Product Name</th>
               <th className="px-4 py-3 text-left text-sm font-medium text-[#141b0e]">Category</th>
               <th className="px-4 py-3 text-left text-sm font-medium text-[#141b0e]">Quantity</th>
-              <th className="px-4 py-3 text-left text-sm font-medium text-[#141b0e]">Reorder Level</th>
-              <th className="px-4 py-3 text-left text-sm font-medium text-[#141b0e]">Location</th>
               <th className="px-4 py-3 text-left text-sm font-medium text-[#6f9550]">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {filteredProducts.length === 0 ? (
+            {products.length === 0 ? (
               <tr>
                 <td colSpan={7} className="px-4 py-4 text-center text-[#6f9550]">
-                  No products found.
+                  No products found matching your filters.
                 </td>
               </tr>
             ) : (
-              filteredProducts.map(product => (
+              products.map(product => (
                 <tr key={product.id} className="border-t border-t-[#dae6d1]">
                   <td className="px-4 py-2 text-sm text-[#6f9550]">{product.id}</td>
                   <td className="px-4 py-2 text-sm text-[#141b0e]">{product.name}</td>
                   <td className="px-4 py-2 text-sm text-[#6f9550]">{product.category}</td>
-                  <td className="px-4 py-2 text-sm text-[#6f9550]">{product.quantity}</td>
-                  <td className="px-4 py-2 text-sm text-[#6f9550]">{product.reorderLevel}</td>
-                  <td className="px-4 py-2 text-sm text-[#6f9550]">{product.location}</td>
+                  <td className="px-4 py-2 text-sm font-bold text-[#141b0e]">{product.quantity}</td>
                   <td className="px-4 py-2 text-sm text-[#6f9550] font-bold">
                     <button
                       onClick={() => handleEdit(product.id)}
@@ -125,9 +113,8 @@ export const ProductTable = () => {
         </table>
       </div>
 
-      {/* Footer Summary */}
       <p className="text-[#6f9550] text-sm font-normal pb-3 pt-4 px-4 text-center">
-        Showing {filteredProducts.length} of {products.length} products
+        Showing {products.length} products
       </p>
     </div>
   );

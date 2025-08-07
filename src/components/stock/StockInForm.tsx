@@ -1,17 +1,39 @@
 'use client';
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+
+// Define a type for the product data we fetch
+interface Product {
+  id: string;
+  name: string;
+  quantity: number;
+}
 
 export const StockInForm = () => {
-  const [name, setName] = useState("");
-  const [category, setCategory] = useState("");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [selectedProductId, setSelectedProductId] = useState('');
   const [quantity, setQuantity] = useState("");
   const [notes, setNotes] = useState("");
-  // Add other state if needed (e.g., supplier, handler)
+
+  // Fetch the list of existing products when the component loads
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const res = await fetch('/api/products');
+        if (!res.ok) throw new Error('Failed to fetch product list');
+        const data = await res.json();
+        setProducts(data);
+      } catch (error) {
+        console.error(error);
+        alert("❌ Could not load product list.");
+      }
+    };
+    fetchProducts();
+  }, []);
 
   const handleAddStock = async () => {
-    if (!name || !category || !quantity) {
-      alert("Please fill in product name, category, and quantity.");
+    if (!selectedProductId || !quantity) {
+      alert("Please select a product and enter a quantity.");
       return;
     }
 
@@ -21,25 +43,21 @@ export const StockInForm = () => {
     }
 
     try {
-      // We send productName and category. The API will find or create the product.
       const res = await fetch("/api/stock/request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          productName: name,
-          category: category,
+          productId: selectedProductId, // Send the ID of the selected product
           quantity: Number(quantity),
-          type: "IN", // 👈 This is important!
+          type: "IN", // This is important!
           notes: notes,
-          // You could also send handler, supplier, etc.
         }),
       });
 
       if (res.ok) {
         alert("✅ Stock-in request sent for approval!");
         // Reset form
-        setName("");
-        setCategory("");
+        setSelectedProductId('');
         setQuantity("");
         setNotes("");
       } else {
@@ -53,37 +71,51 @@ export const StockInForm = () => {
   };
 
   return (
-    <div className="space-y-5 px-4">
-      <input
-        placeholder="Product Name"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        className="w-full h-12 px-4 border rounded-xl bg-[#fafbf8] border-[#dae6d1]"
-      />
-      <input
-        placeholder="Category"
-        value={category}
-        onChange={(e) => setCategory(e.target.value)}
-        className="w-full h-12 px-4 border rounded-xl bg-[#fafbf8] border-[#dae6d1]"
-      />
-      <input
-        type="number"
-        placeholder="Quantity"
-        value={quantity}
-        onChange={(e) => setQuantity(e.target.value)}
-        className="w-full h-12 px-4 border rounded-xl bg-[#fafbf8] border-[#dae6d1]"
-        min="1"
-      />
-      <textarea
-        placeholder="Notes (e.g., Supplier, Handled By)"
-        value={notes}
-        onChange={(e) => setNotes(e.target.value)}
-        className="w-full h-24 px-4 py-2 border rounded-xl bg-[#fafbf8] border-[#dae6d1]"
-      />
+    <div className="space-y-5 px-4 max-w-lg mx-auto">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Product</label>
+        <select
+          value={selectedProductId}
+          onChange={(e) => setSelectedProductId(e.target.value)}
+          className="w-full h-12 px-4 border rounded-xl bg-white"
+          required
+        >
+          <option value="" disabled>Select a product to add stock...</option>
+          {products.map((product) => (
+            <option key={product.id} value={product.id}>
+              {product.name} (Current Stock: {product.quantity})
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Quantity to Add</label>
+        <input
+          type="number"
+          placeholder="Quantity"
+          value={quantity}
+          onChange={(e) => setQuantity(e.target.value)}
+          className="w-full h-12 px-4 border rounded-xl"
+          min="1"
+          required
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+        <textarea
+          placeholder="Notes (e.g., Supplier, Condition)"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          className="w-full h-24 px-4 py-2 border rounded-xl"
+        />
+      </div>
+
       <div className="flex justify-end">
         <button
           onClick={handleAddStock}
-          className="bg-green-500 text-white px-4 py-2 rounded-full font-bold"
+          className="bg-green-500 text-white px-6 py-2 rounded-full font-bold hover:bg-green-600"
         >
           ➕ Request Stock In
         </button>
