@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import React, { useState } from "react";
 
@@ -18,18 +18,23 @@ export const StockInForm = () => {
     }
 
     try {
-      const res = await fetch("/api/stock/request", {
+      const res = await fetch("/api/stock/in", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           productId,
           quantity: Number(quantity),
-          type: "IN", // 👈 important!
+          type: "IN", // 👈 this helps the backend distinguish stock type
+          supplier,
+          location,
+          time,
+          handler,
+          notes,
         }),
       });
 
       if (res.ok) {
-        alert("✅ Stock-in request sent for approval!");
+        alert("✅ Stock-in request sent!");
         setProductId("");
         setQuantity("");
         setSupplier("");
@@ -61,7 +66,6 @@ export const StockInForm = () => {
         onChange={(e) => setQuantity(e.target.value)}
         className="w-full h-12 px-4 border rounded-xl bg-[#fafbf8] border-[#dae6d1]"
       />
-      {/* Keep the rest for display purpose only */}
       <input
         placeholder="Supplier"
         value={supplier}
