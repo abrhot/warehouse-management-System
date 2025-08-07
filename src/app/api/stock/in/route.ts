@@ -37,15 +37,14 @@ export async function POST(req: Request) {
     } else {
       // Product does not exist → create it
       product = await prisma.product.create({
-        data: {
-          name: normalizedName,
-          category: normalizedCategory,
-          quantity: Number(quantity),
-          location: location?.trim(),
-          handler: handler?.trim(),
-          notes: notes?.trim(),
-        },
-      });
+  data: {
+    name,
+    category,
+    quantity: Number(quantity),
+    // remove location, handler, notes here
+  },
+});
+
     }
 
     return NextResponse.json(product);

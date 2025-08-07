@@ -6,48 +6,41 @@ export const StockInForm = () => {
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
   const [quantity, setQuantity] = useState("");
-  const [supplier, setSupplier] = useState("");
-  const [location, setLocation] = useState("Warehouse A");
-  const [time, setTime] = useState("");
-  const [handler, setHandler] = useState("");
   const [notes, setNotes] = useState("");
+  // Add other state if needed (e.g., supplier, handler)
 
   const handleAddStock = async () => {
     if (!name || !category || !quantity) {
-      alert("Please fill in product name, category, and quantity");
+      alert("Please fill in product name, category, and quantity.");
       return;
     }
 
     if (isNaN(Number(quantity)) || Number(quantity) <= 0) {
-      alert("Quantity must be a positive number");
+      alert("Quantity must be a positive number.");
       return;
     }
 
     try {
-      const res = await fetch("/api/stock/in", {
+      // We send productName and category. The API will find or create the product.
+      const res = await fetch("/api/stock/request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name,
-          category,
+          productName: name,
+          category: category,
           quantity: Number(quantity),
-          location,
-          handler,
-          notes,
-          time,
-          supplier,
+          type: "IN", // 👈 This is important!
+          notes: notes,
+          // You could also send handler, supplier, etc.
         }),
       });
 
       if (res.ok) {
-        alert("✅ Stock-in request sent!");
+        alert("✅ Stock-in request sent for approval!");
+        // Reset form
         setName("");
         setCategory("");
         setQuantity("");
-        setSupplier("");
-        setLocation("Warehouse A");
-        setTime("");
-        setHandler("");
         setNotes("");
       } else {
         const { error } = await res.json();
@@ -55,7 +48,7 @@ export const StockInForm = () => {
       }
     } catch (err) {
       console.error("Failed to submit stock-in", err);
-      alert("❌ Error occurred");
+      alert("❌ An error occurred.");
     }
   };
 
@@ -81,55 +74,13 @@ export const StockInForm = () => {
         className="w-full h-12 px-4 border rounded-xl bg-[#fafbf8] border-[#dae6d1]"
         min="1"
       />
-      <input
-        placeholder="Supplier"
-        value={supplier}
-        onChange={(e) => setSupplier(e.target.value)}
-        className="w-full h-12 px-4 border rounded-xl bg-[#fafbf8] border-[#dae6d1]"
-      />
-      <select
-        value={location}
-        onChange={(e) => setLocation(e.target.value)}
-        className="w-full h-12 px-4 border rounded-xl bg-[#fafbf8] border-[#dae6d1]"
-      >
-        <option>Warehouse A</option>
-        <option>Warehouse B</option>
-      </select>
-      <input
-        placeholder="Date and Time"
-        value={time}
-        onChange={(e) => setTime(e.target.value)}
-        className="w-full h-12 px-4 border rounded-xl bg-[#fafbf8] border-[#dae6d1]"
-      />
-      <input
-        placeholder="Handled By"
-        value={handler}
-        onChange={(e) => setHandler(e.target.value)}
-        className="w-full h-12 px-4 border rounded-xl bg-[#fafbf8] border-[#dae6d1]"
-      />
       <textarea
-        placeholder="Notes"
+        placeholder="Notes (e.g., Supplier, Handled By)"
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
         className="w-full h-24 px-4 py-2 border rounded-xl bg-[#fafbf8] border-[#dae6d1]"
       />
-
-      <div className="flex justify-end gap-3">
-        <button
-          onClick={() => {
-            setName("");
-            setCategory("");
-            setQuantity("");
-            setSupplier("");
-            setLocation("Warehouse A");
-            setTime("");
-            setHandler("");
-            setNotes("");
-          }}
-          className="bg-gray-200 px-4 py-2 rounded-full font-bold"
-        >
-          Reset Form
-        </button>
+      <div className="flex justify-end">
         <button
           onClick={handleAddStock}
           className="bg-green-500 text-white px-4 py-2 rounded-full font-bold"

@@ -1,17 +1,37 @@
-import { NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
+import { NextResponse } from 'next/server';
+import prisma from '@/lib/prisma';
 
 export async function GET() {
   try {
-    const requests = await prisma.stockRequest.findMany({
-      where: { status: 'PENDING' },
-      include: { product: true, requester: true },
-      orderBy: { createdAt: 'desc' },
-    })
-
-    return NextResponse.json(requests)
+    const pendingRequests = await prisma.stockRequest.findMany({
+      where: {
+        status: 'PENDING',
+      },
+      include: {
+        // Include related product and user info to display on the dashboard
+        product: {
+          select: {
+            name: true,
+            quantity: true, // Show current stock
+          },
+        },
+        requester: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'asc', // Show the oldest requests first
+      },
+    });
+    return NextResponse.json(pendingRequests);
   } catch (error: any) {
-    console.error('Error fetching pending stock requests:', error)
-    return new NextResponse('Internal Server Error: ' + error.message, { status: 500 })
+    console.error("Failed to fetch pending requests:", error);
+    return NextResponse.json(
+      { error: 'Failed to fetch pending requests' },
+      { status: 500 }
+    );
   }
 }
