@@ -1,6 +1,12 @@
-import "@/styles/globals.css";
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google'; // Using Inter as an example font
+import Providers from './providers';      // 👈 1. Import the Providers component
+import './globals.css';
 
-export const metadata = {
+const inter = Inter({ subsets: ['latin'] });
+
+// The metadata object handles your <head> content like title and description
+export const metadata: Metadata = {
   title: "WMS",
   description: "Warehouse Management System",
 };
@@ -8,13 +14,11 @@ export const metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <head>
-{/* Custom fonts are now loaded via _document.tsx for best practices */}
-
-        <link rel="icon" href="/favicon.ico" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />  
-      </head>
-      <body>{children}</body>
+      <body className={inter.className}>
+        <Providers> {/* 👈 2. Wrap your {children} with the Providers component */}
+          {children}
+        </Providers>
+      </body>
     </html>
   );
 }
