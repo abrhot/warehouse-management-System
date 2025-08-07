@@ -1,8 +1,12 @@
-// In a real app, you would get this from your user session or auth context
-const userRole = 'ADMIN'; // Try changing this to 'USER' to see the links disappear
+import { Role } from "@/generated/prisma";
 
-// Use 'const' as the array is mutated but not reassigned
-const navRoutes = [
+interface NavRoute {
+  label: string;
+  path: string;
+}
+
+// Routes available to everyone
+const baseRoutes: NavRoute[] = [
   { label: "Dashboard", path: "/dashboard" },
   { label: "Products", path: "/products" },
   { label: "Stock In", path: "/stock/in" },
@@ -12,13 +16,22 @@ const navRoutes = [
   { label: "Profile", path: "/profile" },
 ];
 
-// If the user is an admin, push the admin-only routes into the array
-if (userRole === 'ADMIN') {
-  navRoutes.push(
-    { label: "Admin Users", path: "/admin/users" },
-    { label: "Pending Requests", path: "/admin/requests" }
-  );
-}
+// Routes available only to Admins
+const adminRoutes: NavRoute[] = [
+  { label: "Admin Users", path: "/admin/users" },
+  { label: "Pending Requests", path: "/admin/requests" },
+];
 
-// Export the final array
-export { navRoutes };
+/**
+ * Generates the navigation routes based on the user's role.
+ * @param role The role of the current user.
+ * @returns An array of NavRoute objects.
+ */
+export const getNavRoutes = (role?: Role): NavRoute[] => {
+  if (role === "ADMIN") {
+    // Admins see all base routes plus the admin routes
+    return [...baseRoutes, ...adminRoutes];
+  }
+  // Regular users only see the base routes
+  return baseRoutes;
+};
