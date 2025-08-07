@@ -1,3 +1,4 @@
+// src/app/api/stock/request/route.ts
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { StockType } from '@/generated/prisma';
@@ -5,7 +6,8 @@ import { StockType } from '@/generated/prisma';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { productId, productName, category, quantity, type, notes } = body;
+    // Assuming 'sku' is passed in the request body, but we'll generate one if not
+    const { productId, productName, category, quantity, type, notes, sku } = body;
 
     if (!type || !quantity || (!productId && !productName)) {
       return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 });
@@ -14,28 +16,51 @@ export async function POST(req: Request) {
     const requestingUserId = 1; // Placeholder for session user ID
     let finalProductId = productId;
 
-    // Logic to find or create a product if a name is provided instead of an ID
+    // Logic to find or create a product if a name is provided
     if (!productId && productName) {
-        const normalizedName = productName.trim().toLowerCase();
-        const normalizedCategory = category.trim().toLowerCase();
+      const normalizedName = productName.trim().toLowerCase();
+      const normalizedCategoryName = category.trim().toLowerCase();
 
-        let product = await prisma.product.findFirst({
-            where: { name: normalizedName, category: normalizedCategory },
+      // Find or create the Category
+      let productCategory = await prisma.category.findFirst({
+        where: { name: normalizedCategoryName },
+      });
+
+      if (!productCategory) {
+        productCategory = await prisma.category.create({
+          data: {
+            name: normalizedCategoryName,
+          },
         });
-
-        if (!product) {
-            product = await prisma.product.create({
-                data: {
-                    name: normalizedName,
-                    category: normalizedCategory,
-                    quantity: 0, 
-                },
-            });
-        }
-        finalProductId = product.id;
+      }
+      
+      // Find the product
+      let product = await prisma.product.findFirst({
+        where: { 
+          name: normalizedName, 
+          categoryId: productCategory.id 
+        },
+      });
+      
+      // If product doesn't exist, create it.
+      if (!product) {
+        // Here's the fix: generate a unique SKU if one isn't provided
+        const generatedSku = sku || `${normalizedName.substring(0, 3)}-${productCategory.id}-${Date.now()}`;
+        
+        product = await prisma.product.create({
+          data: {
+            name: normalizedName,
+            categoryId: productCategory.id,
+            quantity: 0,
+            sku: generatedSku, // Use the generated SKU
+          },
+        });
+      }
+      
+      finalProductId = product.id;
     }
 
-    // Create the Stock Request record, now including the 'notes' field
+    // Create the Stock Request record
     const stockRequest = await prisma.stockRequest.create({
       data: {
         productId: finalProductId,
@@ -43,7 +68,7 @@ export async function POST(req: Request) {
         type: type as StockType,
         status: 'PENDING',
         requestedBy: requestingUserId,
-        notes: notes, // Save the notes from the request body
+        notes: notes,
       },
     });
 

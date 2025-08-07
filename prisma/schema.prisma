@@ -3,7 +3,7 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma" // Your specified output path
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -11,49 +11,106 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// User model for authentication and roles
-model User {
-  id        Int      @id @default(autoincrement())
-  name      String?
-  email     String   @unique
-  password  String
-  role      Role     @default(USER)
-  createdAt DateTime @default(now())
+// AUTHENTICATION MODELS (For NextAuth.js) //////////////////////////////////////
+model Account {
+  id                String  @id @default(cuid())
+  userId            Int
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
 
-  // Relations to StockRequest
-  requests  StockRequest[] @relation("RequestedBy")
-  approvals StockRequest[] @relation("ApprovedBy")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
 }
 
-// Product model for inventory items
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       Int
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            Int       @id @default(autoincrement())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String? // Optional for OAuth users
+  role          Role      @default(USER)
+  createdAt     DateTime  @default(now())
+
+  // Relations
+  accounts  Account[]
+  sessions  Session[]
+  requests  StockRequest[] @relation("RequestedBy")
+  approvals StockRequest[] @relation("ApprovedBy")
+  auditLogs AuditLog[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// WAREHOUSE CORE MODELS /////////////////////////////////////////////////////////
 model Product {
   id           String   @id @default(uuid())
-  sku          String?  @unique // 👈 Change this to optional with a '?'
+  sku          String   @unique // Stock Keeping Unit - Required
   name         String
-  category     String
   quantity     Int      @default(0)
-  location     String? // Optional field for warehouse location
-  reorderLevel Int      @default(10) // Threshold to trigger reorder alerts
-  supplier     String? // Optional: name of the product supplier
-  costPrice    Decimal  @default(0) // Price to acquire one unit
-  sellingPrice Decimal? // Optional: price to sell one unit
+  location     String?
+  reorderLevel Int      @default(10)
+  weight       Float? // e.g., in kg
+  dimensions   String? // e.g., "10x20x30 cm"
+  costPrice    Decimal  @default(0)
+  sellingPrice Decimal?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  // Relations
   stockRequests StockRequest[]
+  categoryId    Int
+  category      Category       @relation(fields: [categoryId], references: [id])
+  supplierId    Int?
+  supplier      Supplier?      @relation(fields: [supplierId], references: [id])
 
-  // Ensures that the combination of name and category is unique
-  @@unique([name, category])
+  @@unique([name, categoryId]) // A product name must be unique within its category
 }
 
-// StockRequest model for tracking all stock movements
+model Category {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  description String?
+  products    Product[]
+}
+
+model Supplier {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  contactInfo String?
+  products    Product[]
+}
+
 model StockRequest {
   id        String        @id @default(uuid())
   type      StockType
   quantity  Int
   status    RequestStatus @default(PENDING)
   notes     String?
-  reason    String? // Optional reason, e.g., "Customer Sale", "Internal Use"
+  reason    String?
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
 
@@ -66,7 +123,19 @@ model StockRequest {
   approver    User?   @relation("ApprovedBy", fields: [approvedBy], references: [id])
 }
 
-// Enums for defining roles, stock types, and request statuses
+// LOGGING //////////////////////////////////////////////////////////////////////
+model AuditLog {
+  id        Int        @id @default(autoincrement())
+  action    ActionType
+  details   String
+  createdAt DateTime   @default(now())
+
+  // Relations
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+}
+
+// ENUMS ////////////////////////////////////////////////////////////////////////
 enum Role {
   ADMIN
   USER
@@ -81,4 +150,13 @@ enum RequestStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+enum ActionType {
+  USER_LOGIN
+  USER_CREATED
+  PRODUCT_CREATED
+  STOCK_REQUEST_CREATED
+  STOCK_REQUEST_APPROVED
+  STOCK_REQUEST_REJECTED
 }

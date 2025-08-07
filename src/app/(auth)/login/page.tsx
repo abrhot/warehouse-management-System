@@ -9,64 +9,74 @@ export default function LoginPage() {
   const router = useRouter();
   const [error, setError] = useState("");
 
-  const handleLogin = async () => {
-  try {
-    const res = await fetch("/api/auth/login", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ email, password }),
-});
+  // Change the function signature to accept a form event
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    // Prevent the default form submission behavior (page reload)
+    e.preventDefault(); 
+    setError("");
 
-    if (res.ok) {
-      const { user } = await res.json();
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-      // Redirect based on role
-      if (user.role === "ADMIN") {
-        router.push("/dashboard");
+      if (res.ok) {
+        const { user } = await res.json();
+        
+        // Redirect based on role
+        if (user.role === "ADMIN") {
+          router.push("/dashboard");
+        } else {
+          router.push("/dashboard");
+        }
       } else {
-        router.push("/dashboard");
+        const data = await res.json();
+        setError(data.error || "Invalid credentials");
       }
-    } else {
-      const data = await res.json();
-      setError(data.error || "Invalid credentials");
+    } catch (err) {
+      setError("Something went wrong. Try again.");
     }
-  } catch (err) {
-    setError("Something went wrong. Try again.");
-  }
-};
+  };
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-[#fafbf8]">
       <h3 className="text-2xl font-bold mb-4">Login to Warehouse System</h3>
 
-      {/* Email Field */}
-      <input
-        type="text"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        placeholder="Email or Username"
-        className="border p-3 mb-3 w-[300px] rounded-lg"
-      />
+      {/* Wrap the inputs and button in a form with an onSubmit handler */}
+      <form onSubmit={handleLogin} className="flex flex-col items-center">
+        {/* Email Field */}
+        <input
+          type="text"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Email or Username"
+          className="border p-3 mb-3 w-[300px] rounded-lg"
+          required
+        />
 
-      {/* Password Field */}
-      <input
-        type="password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        placeholder="Password"
-        className="border p-3 mb-3 w-[300px] rounded-lg"
-      />
+        {/* Password Field */}
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Password"
+          className="border p-3 mb-3 w-[300px] rounded-lg"
+          required
+        />
 
-      {/* Error */}
-      {error && <p className="text-red-600 mb-3">{error}</p>}
+        {/* Error */}
+        {error && <p className="text-red-600 mb-3">{error}</p>}
 
-      {/* Login Button */}
-      <button
-        onClick={handleLogin}
-        className="bg-[#78df24] hover:bg-[#6ccd1d] text-black font-bold py-2 px-6 rounded-xl"
-      >
-        Login
-      </button>
+        {/* Login Button with type="submit" */}
+        <button
+          type="submit" 
+          className="bg-[#78df24] hover:bg-[#6ccd1d] text-black font-bold py-2 px-6 rounded-xl"
+        >
+          Login
+        </button>
+      </form>
     </div>
   );
 }
