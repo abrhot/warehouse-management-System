@@ -1,10 +1,9 @@
 // src/app/api/reports/history/route.ts
 import { NextResponse } from 'next/server';
-import { RequestStatus } from '@prisma/client';
-import prisma from '@/lib/prisma'; // 👈 Import the shared client
+import { RequestStatus } from '@/generated/prisma'; // 👈 FINAL CORRECTED IMPORT
+import prisma from '@/lib/prisma';
 
-// ❌ Remove this line: const prisma = new PrismaClient();
-
+// ... rest of the file remains the same
 export async function GET() {
   try {
     const requestHistory = await prisma.stockRequest.findMany({
@@ -24,7 +23,6 @@ export async function GET() {
 
     return NextResponse.json(requestHistory);
   } catch (error) {
-    // This log will now appear in your terminal where the dev server is running
     console.error('Failed to fetch request history:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }

@@ -2,9 +2,9 @@
 'use client';
 
 import useSWR from 'swr';
-import { StockRequest, Product, User, StockType, RequestStatus } from '@prisma/client';
+import { StockRequest, Product, User, StockType, RequestStatus } from '@/generated/prisma'; // 👈 FINAL CORRECTED IMPORT
 
-// Define a type for our fetched data, which includes relations
+// ... rest of the file remains the same
 type RequestHistoryItem = StockRequest & {
   product: Pick<Product, 'name'>;
   requester: Pick<User, 'name'>;
@@ -15,7 +15,7 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 export default function RequestHistoryTable() {
   const { data: history, error, isLoading } = useSWR<RequestHistoryItem[]>('/api/reports/history', fetcher);
 
-  if (error) return <div>Failed to load request history.</div>;
+  if (error) return <div>Failed to load request history. Check the server terminal for errors.</div>;
   if (isLoading) return <div>Loading history...</div>;
 
   return (
