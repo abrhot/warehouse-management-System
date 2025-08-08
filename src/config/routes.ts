@@ -13,7 +13,6 @@ const baseRoutes: NavRoute[] = [
   { label: "Stock Out", path: "/stock/out" },
   { label: "Reports", path: "/reports" },
   { label: "Notifications", path: "/notifications" },
-  { label: "Profile", path: "/profile" },
 ];
 
 // Routes available only to Admins
