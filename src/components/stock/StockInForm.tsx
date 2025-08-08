@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 
-// Define a type for the product data we fetch
+// The interface and all logic remain UNCHANGED.
 interface Product {
   id: string;
   name: string;
@@ -10,22 +10,15 @@ interface Product {
 }
 
 export const StockInForm = () => {
-  // State to manage which mode we're in
   const [isCreatingNew, setIsCreatingNew] = useState(false);
-
-  // State for adding stock to an EXISTING product
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProductId, setSelectedProductId] = useState('');
-
-  // State for creating a NEW product
   const [newProductName, setNewProductName] = useState('');
   const [newProductCategory, setNewProductCategory] = useState('');
-
-  // Shared state
   const [quantity, setQuantity] = useState("");
   const [notes, setNotes] = useState("");
 
-  // Fetch the list of existing products when the component loads
+  // All of the logic functions (useEffect, handleAddStock) are unchanged.
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -43,8 +36,6 @@ export const StockInForm = () => {
 
   const handleAddStock = async () => {
     let body;
-
-    // --- Logic for Creating a NEW Product ---
     if (isCreatingNew) {
       if (!newProductName || !newProductCategory || !quantity) {
         alert("Please fill in new product name, category, and quantity.");
@@ -57,9 +48,7 @@ export const StockInForm = () => {
         type: "IN",
         notes: notes,
       };
-    } 
-    // --- Logic for Adding to an EXISTING Product ---
-    else {
+    } else {
       if (!selectedProductId || !quantity) {
         alert("Please select a product and enter a quantity.");
         return;
@@ -72,7 +61,6 @@ export const StockInForm = () => {
       };
     }
 
-    // --- Submit to API ---
     try {
       const res = await fetch("/api/stock/request", {
         method: "POST",
@@ -82,7 +70,6 @@ export const StockInForm = () => {
 
       if (res.ok) {
         alert("✅ Stock-in request sent for approval!");
-        // Reset form
         setSelectedProductId('');
         setNewProductName('');
         setNewProductCategory('');
@@ -99,97 +86,80 @@ export const StockInForm = () => {
   };
 
   return (
-    <div className="space-y-5 px-4 max-w-lg mx-auto">
-      {/* --- The TOGGLE to switch between modes --- */}
-      <div className="flex items-center">
-        <input
-          id="createNew"
-          type="checkbox"
-          checked={isCreatingNew}
-          onChange={(e) => setIsCreatingNew(e.target.checked)}
-          className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
-        />
-        <label htmlFor="createNew" className="ml-2 block text-sm font-medium text-gray-900">
-          Create a new product
-        </label>
+    <div className="mx-auto w-full max-w-2xl rounded-xl bg-white p-8 shadow-lg">
+      {/* Form Header */}
+      <div className="mb-6 border-b border-gray-200 pb-4">
+        <h2 className="text-2xl font-bold text-gray-800">Record Stock In</h2>
+        <p className="mt-1 text-sm text-gray-500">
+          Add stock to an existing product or create a new one.
+        </p>
       </div>
 
-      {/* --- Conditional UI based on the toggle --- */}
-      {isCreatingNew ? (
-        // UI for CREATING a new product
-        <div className="space-y-4 animate-fade-in">
-           <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">New Product Name</label>
-              <input
-                type="text"
-                placeholder="e.g., Industrial Safety Helmet"
-                value={newProductName}
-                onChange={(e) => setNewProductName(e.target.value)}
-                className="w-full h-12 px-4 border rounded-xl"
-              />
-          </div>
-          <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-              <input
-                type="text"
-                placeholder="e.g., Safety Equipment"
-                value={newProductCategory}
-                onChange={(e) => setNewProductCategory(e.target.value)}
-                className="w-full h-12 px-4 border rounded-xl"
-              />
-          </div>
-        </div>
-      ) : (
-        // UI for selecting an EXISTING product
-        <div className="animate-fade-in">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Select Existing Product</label>
-          <select
-            value={selectedProductId}
-            onChange={(e) => setSelectedProductId(e.target.value)}
-            className="w-full h-12 px-4 border rounded-xl bg-white"
-            required={!isCreatingNew}
-          >
-            <option value="" disabled>Select a product...</option>
-            {products.map((product) => (
-              <option key={product.id} value={product.id}>
-                {product.name} (In Stock: {product.quantity})
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-
-      {/* --- Shared Fields --- */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Quantity to Add</label>
-        <input
-          type="number"
-          placeholder="Quantity"
-          value={quantity}
-          onChange={(e) => setQuantity(e.target.value)}
-          className="w-full h-12 px-4 border rounded-xl"
-          min="1"
-          required
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
-        <textarea
-          placeholder="e.g., From supplier 'Global Parts Inc.'"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          className="w-full h-24 px-4 py-2 border rounded-xl"
-        />
-      </div>
-
-      {/* --- Submit Button --- */}
-      <div className="flex justify-end">
+      {/* Segmented Control Toggle */}
+      <div className="mb-6 grid grid-cols-2 gap-2 rounded-lg bg-gray-100 p-1">
         <button
-          onClick={handleAddStock}
-          className="bg-green-600 text-white px-6 py-2 rounded-full font-bold hover:bg-green-700"
+          onClick={() => setIsCreatingNew(false)}
+          className={`rounded-md px-4 py-2 text-sm font-semibold transition-colors duration-200 ${
+            !isCreatingNew ? 'bg-white shadow text-gray-800' : 'bg-transparent text-gray-500 hover:bg-gray-200'
+          }`}
         >
-          ➕ Request Stock In
+          Existing Product
         </button>
+        <button
+          onClick={() => setIsCreatingNew(true)}
+          className={`rounded-md px-4 py-2 text-sm font-semibold transition-colors duration-200 ${
+            isCreatingNew ? 'bg-white shadow text-gray-800' : 'bg-transparent text-gray-500 hover:bg-gray-200'
+          }`}
+        >
+          New Product
+        </button>
+      </div>
+
+      <div className="space-y-6">
+        {isCreatingNew ? (
+          <div className="space-y-6">
+            <div>
+              <label htmlFor="newProductName" className="mb-2 block text-sm font-medium text-gray-700">New Product Name</label>
+              <input id="newProductName" type="text" placeholder="e.g., Industrial Safety Helmet" value={newProductName} onChange={(e) => setNewProductName(e.target.value)} className="w-full rounded-lg border-gray-300 bg-gray-50 p-3 text-gray-800 shadow-sm focus:border-green-500 focus:ring-2 focus:ring-green-200"/>
+            </div>
+            <div>
+              <label htmlFor="newProductCategory" className="mb-2 block text-sm font-medium text-gray-700">Category</label>
+              <input id="newProductCategory" type="text" placeholder="e.g., Safety Equipment" value={newProductCategory} onChange={(e) => setNewProductCategory(e.target.value)} className="w-full rounded-lg border-gray-300 bg-gray-50 p-3 text-gray-800 shadow-sm focus:border-green-500 focus:ring-2 focus:ring-green-200"/>
+            </div>
+          </div>
+        ) : (
+          <div>
+            <label htmlFor="selectProduct" className="mb-2 block text-sm font-medium text-gray-700">Select Existing Product</label>
+            <select id="selectProduct" value={selectedProductId} onChange={(e) => setSelectedProductId(e.target.value)} className="w-full rounded-lg border-gray-300 bg-gray-50 p-3 text-gray-800 shadow-sm focus:border-green-500 focus:ring-2 focus:ring-green-200" required={!isCreatingNew}>
+              <option value="" disabled>Select a product...</option>
+              {products.map((product) => (
+                <option key={product.id} value={product.id}>
+                  {product.name} (In Stock: {product.quantity})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* --- Shared Fields --- */}
+        <div>
+          <label htmlFor="quantity" className="mb-2 block text-sm font-medium text-gray-700">Quantity to Add</label>
+          <input id="quantity" type="number" placeholder="e.g., 50" value={quantity} onChange={(e) => setQuantity(e.target.value)} className="w-full rounded-lg border-gray-300 bg-gray-50 p-3 text-gray-800 shadow-sm focus:border-green-500 focus:ring-2 focus:ring-green-200" min="1" required />
+        </div>
+        <div>
+          <label htmlFor="notes" className="mb-2 block text-sm font-medium text-gray-700">Notes (Optional)</label>
+          <textarea id="notes" placeholder="e.g., From supplier 'Global Parts Inc.'" value={notes} onChange={(e) => setNotes(e.target.value)} className="w-full rounded-lg border-gray-300 bg-gray-50 p-3 text-gray-800 shadow-sm focus:border-green-500 focus:ring-2 focus:ring-green-200" rows={4} />
+        </div>
+
+        {/* --- Submit Button (Updated Size & Color) --- */}
+        <div className="flex justify-end pt-4">
+          <button
+            onClick={handleAddStock}
+            className="flex items-center justify-center rounded-lg bg-green-400 px-5 py-2 text-sm font-bold text-white shadow-md transition-colors hover:bg-green-500 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2"
+          >
+            ➕ Request Stock In
+          </button>
+        </div>
       </div>
     </div>
   );
