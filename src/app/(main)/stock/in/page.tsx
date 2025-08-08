@@ -1,19 +1,21 @@
+// C:\Users\USER\Desktop\warehouse-management\src\app\(main)\stock\in\page.tsx
+
 import { StockInForm } from "@/components/stock/StockInForm";
-import { StockInHistoryTable } from "@/components/stock/StockInHistoryTable";
 import { PageHeader } from "@/components/ui/PageHeader";
-import Link from "next/link";
 
 export default function StockInPage() {
   return (
-    <main className="bg-[#fafbf8] min-h-screen px-40 py-5">
-      <div className="max-w-[960px] mx-auto">
+    <main className="min-h-screen bg-gray-50 p-4 md:p-8">
+      <div className="mx-auto max-w-4xl">
         <PageHeader
           title="📥 Stock In"
           subtitle="Manage incoming stock efficiently"
         />
+        
+        {/* The form is now the only component on this page */}
         <StockInForm />
-        <h3 className="text-[#141b0e] text-lg font-bold px-4 pb-2 pt-4">Recent Stock-In History</h3>
-        <StockInHistoryTable />
+        
+        {/* The StockInHistoryTable and its title have been removed */}
       </div>
     </main>
   );
