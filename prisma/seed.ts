@@ -1,33 +1,45 @@
-import { PrismaClient, Role } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
+
+// Define roles here since you can't import enum Role directly from Prisma client
+const Role = {
+  ADMIN: 'ADMIN',
+  USER: 'USER',
+} as const;
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log(`Start seeding ...`);
 
-  // --- 1. Seed Users ---
+  // 1. Seed Users
   const usersToCreate = [
     { name: 'Admin User', email: 'admin@example.com', password: 'admin123', role: Role.ADMIN },
     { name: 'Standard User', email: 'user@example.com', password: 'user123', role: Role.USER },
   ];
+
   for (const u of usersToCreate) {
     const hashedPassword = await bcrypt.hash(u.password, 10);
     await prisma.user.upsert({
-      where: { email: u.email },
-      update: {},
+      where: { email: u.email! },
+      update: {
+        name: u.name,
+        role: u.role,
+        password: hashedPassword,
+      },
       create: { name: u.name, email: u.email, password: hashedPassword, role: u.role },
     });
   }
   console.log(`Upserted ${usersToCreate.length} users.`);
 
-  // --- 2. Seed Suppliers ---
+  // 2. Seed Suppliers
   const suppliersData = [
     { name: 'Global Packaging Inc.' },
     { name: 'Safety First Supplies' },
     { name: 'Warehouse Tools Co.' },
     { name: 'Office Best' },
   ];
+
   const suppliers = await Promise.all(
     suppliersData.map((s) =>
       prisma.supplier.upsert({ where: { name: s.name }, update: {}, create: { name: s.name } })
@@ -35,7 +47,7 @@ async function main() {
   );
   console.log(`Upserted ${suppliers.length} suppliers.`);
 
-  // --- 3. Seed Categories ---
+  // 3. Seed Categories
   const categoriesData = [
     { name: 'Packaging' },
     { name: 'Safety Equipment' },
@@ -45,6 +57,7 @@ async function main() {
     { name: 'Office Supplies' },
     { name: 'Raw Materials' },
   ];
+
   const categories = await Promise.all(
     categoriesData.map((c) =>
       prisma.category.upsert({ where: { name: c.name }, update: {}, create: { name: c.name } })
@@ -52,11 +65,11 @@ async function main() {
   );
   console.log(`Upserted ${categories.length} categories.`);
 
-  // Create maps for easy lookup
+  // Create lookup maps for categoryId and supplierId
   const supplierMap = new Map(suppliers.map((s) => [s.name, s.id]));
   const categoryMap = new Map(categories.map((c) => [c.name, c.id]));
 
-  // --- 4. Seed Products ---
+  // 4. Seed Products
   const productsData = [
     // Packaging (6 products)
     {
@@ -170,7 +183,7 @@ async function main() {
       costPrice: 14.4,
     },
 
-    // Tools (6 products)
+    // Tools (2 example products here, add more as needed)
     {
       sku: 'BCK-SFT-50',
       name: 'Safety Box Cutter (50pk)',
@@ -186,3 +199,50 @@ async function main() {
       categoryName: 'Tools',
       supplierName: 'Warehouse Tools Co.',
       quantity: 35,
+      reorderLevel: 5,
+      costPrice: 49.99,
+    },
+  ];
+
+  for (const p of productsData) {
+    const categoryId = categoryMap.get(p.categoryName);
+    const supplierId = supplierMap.get(p.supplierName);
+    if (!categoryId || !supplierId) {
+      console.warn(`Skipping product "${p.name}" due to missing category or supplier.`);
+      continue;
+    }
+
+    await prisma.product.upsert({
+      where: { sku: p.sku },
+      update: {
+        name: p.name,
+        quantity: p.quantity,
+        reorderLevel: p.reorderLevel,
+        costPrice: p.costPrice,
+        categoryId,
+        supplierId,
+      },
+      create: {
+        sku: p.sku,
+        name: p.name,
+        quantity: p.quantity,
+        reorderLevel: p.reorderLevel,
+        costPrice: p.costPrice,
+        categoryId,
+        supplierId,
+      },
+    });
+  }
+  console.log(`Upserted ${productsData.length} products.`);
+
+  console.log('Seeding finished.');
+}
+
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
