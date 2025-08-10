@@ -1,64 +1,53 @@
 // src/app/api/stock/request/route.ts
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route"; // Correct import path
-import { StockType } from '@/generated/prisma';
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 export async function POST(req: Request) {
-  // Get the current user's session using the correct method
-  const session = await getServerSession(authOptions);
-  
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-  }
-  
-  const requestingUserId = session.user.id;
+  const session = await getServerSession(authOptions);
+  
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+  }
+  
+  try {
+    const body = await req.json();
+    // We ONLY accept productId. No more creating products on the fly.
+    const { productId, quantity, type, notes, reason } = body;
 
-  try {
-    const body = await req.json();
-    const { productId, productName, category, quantity, type, notes, sku } = body;
+    if (!productId || !quantity || !type) {
+      return NextResponse.json({ error: 'Missing required fields: productId, quantity, and type are required.' }, { status: 400 });
+    }
 
-    if (!type || !quantity || (!productId && !productName)) {
-      return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 });
-    }
+    // Create the request with the real user ID
+    const stockRequest = await prisma.stockRequest.create({
+      data: {
+        productId: productId,
+        quantity: Number(quantity),
+        type: type, // Assumes type is 'IN' or 'OUT'
+        status: 'PENDING',
+        notes: notes,
+        reason: reason,
+        requestedById: session.user.id, // Correctly links to the user
+      },
+    });
 
-    let finalProductId = productId;
+    // TODO: Create an audit log entry for the request creation
+    await prisma.auditLog.create({
+      data: {
+        action: 'STOCK_REQUEST_CREATED',
+        details: `User ${session.user.email} created a ${type} request for ${quantity} of product ID ${productId}.`,
+        userId: session.user.id,
+      }
+    });
 
-    // Logic to find or create a product (unchanged)
-    if (!productId && productName) {
-      const normalizedName = productName.trim().toLowerCase();
-      const normalizedCategoryName = category.trim().toLowerCase();
-      let productCategory = await prisma.category.findFirst({ where: { name: normalizedCategoryName } });
-      if (!productCategory) {
-        productCategory = await prisma.category.create({ data: { name: normalizedCategoryName } });
-      }
-      let product = await prisma.product.findFirst({ where: { name: normalizedName, categoryId: productCategory.id } });
-      if (!product) {
-        const generatedSku = sku || `${normalizedName.substring(0, 3)}-${productCategory.id}-${Date.now()}`;
-        product = await prisma.product.create({
-          data: { name: normalizedName, categoryId: productCategory.id, quantity: 0, sku: generatedSku },
-        });
-      }
-      finalProductId = product.id;
-    }
+    return NextResponse.json(stockRequest, { status: 201 });
 
-    // Create the request with the real user ID
-    const stockRequest = await prisma.stockRequest.create({
-      data: {
-        productId: finalProductId,
-        quantity: Number(quantity),
-        type: type as StockType,
-        status: 'PENDING',
-        requestedBy: requestingUserId,
-        notes: notes,
-      },
-    });
-
-    return NextResponse.json(stockRequest, { status: 201 });
-
-  } catch (error: any) {
-    console.error("Error creating stock request:", error);
-    return NextResponse.json({ error: 'Failed to create stock request' }, { status: 500 });
-  }
+  } catch (error: any) {
+    console.error("Error creating stock request:", error);
+    return NextResponse.json({ error: 'Failed to create stock request' }, { status: 500 });
+  }
 }

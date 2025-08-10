@@ -1,75 +1,97 @@
+// src/app/api/stock/process/route.ts
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
-import { RequestStatus } from '@/generated/prisma';
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { PrismaClient, RequestStatus, Role } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 export async function POST(req: Request) {
+  const session = await getServerSession(authOptions);
+  
+  // 1. Authenticate and Authorize: MUST be an ADMIN
+  if (session?.user?.role !== Role.ADMIN) {
+    return NextResponse.json({ error: 'Forbidden: Admin access required.' }, { status: 403 });
+  }
+  const approverId = session.user.id;
+
   const { requestId, newStatus } = await req.json();
 
   if (!requestId || !newStatus || !['APPROVED', 'REJECTED'].includes(newStatus)) {
     return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
   }
 
-  // NOTE: In a real app, you'd get the admin's ID from their session.
-  // Make sure you have a user (e.g., an admin) with id=2 in your database.
-  const approverId = 2; 
+  const request = await prisma.stockRequest.findUnique({
+    where: { id: requestId },
+    include: { product: true },
+  });
+
+  if (!request) {
+    return NextResponse.json({ error: 'Request not found' }, { status: 404 });
+  }
+  if (request.status !== RequestStatus.PENDING) {
+    return NextResponse.json({ error: 'Request has already been processed' }, { status: 400 });
+  }
 
   try {
-    const request = await prisma.stockRequest.findUnique({
-      where: { id: requestId },
-      include: { product: true },
-    });
-
-    if (!request) {
-      return NextResponse.json({ error: 'Request not found' }, { status: 404 });
-    }
-    if (request.status !== 'PENDING') {
-      return NextResponse.json({ error: 'Request has already been processed' }, { status: 400 });
-    }
-
-    // --- If REJECTED, just update the status ---
+    // --- Handle REJECTION ---
     if (newStatus === RequestStatus.REJECTED) {
       const updatedRequest = await prisma.stockRequest.update({
         where: { id: requestId },
-        data: {
-          status: RequestStatus.REJECTED,
-          approvedBy: approverId,
-        },
+        data: { status: RequestStatus.REJECTED, approvedById: approverId },
       });
+      // TODO: Audit Log for Rejection
       return NextResponse.json(updatedRequest);
     }
     
-    // --- If APPROVED, run a transaction ---
+    // --- Handle APPROVAL within a transaction ---
     if (newStatus === RequestStatus.APPROVED) {
-      // For stock OUT, check if there's enough quantity
+      const changeAmount = request.type === 'IN' ? request.quantity : -request.quantity;
+
+      // Check for sufficient stock before starting the transaction
       if (request.type === 'OUT' && request.product.quantity < request.quantity) {
         return NextResponse.json(
-          { error: `Not enough stock for ${request.product.name}. Available: ${request.product.quantity}, Requested: ${request.quantity}` },
+          { error: `Insufficient stock for ${request.product.name}. Available: ${request.product.quantity}, Requested: ${request.quantity}` },
           { status: 400 }
         );
       }
 
-      // Use a transaction to ensure both updates succeed or fail together
-      const [updatedRequest, updatedProduct] = await prisma.$transaction([
-        // 1. Update the request status
-        prisma.stockRequest.update({
-          where: { id: requestId },
-          data: {
-            status: RequestStatus.APPROVED,
-            approvedBy: approverId,
-          },
-        }),
-        // 2. Update the product quantity
-        prisma.product.update({
+      const result = await prisma.$transaction(async (tx) => {
+        // 1. Update the Product quantity
+        const updatedProduct = await tx.product.update({
           where: { id: request.productId },
-          data: {
-            quantity: {
-              [request.type === 'IN' ? 'increment' : 'decrement']: request.quantity,
-            },
-          },
-        }),
-      ]);
+          data: { quantity: { increment: changeAmount } },
+        });
 
-      return NextResponse.json(updatedRequest);
+        // 2. Update the Stock Request
+        const updatedRequest = await tx.stockRequest.update({
+          where: { id: requestId },
+          data: { status: RequestStatus.APPROVED, approvedById: approverId },
+        });
+
+        // 3. CREATE THE IMMUTABLE LEDGER ENTRY - The most important new step!
+        await tx.ledgerEntry.create({
+          data: {
+            stockRequestId: requestId,
+            productId: request.productId,
+            change: changeAmount,
+            newQuantity: updatedProduct.quantity, // The quantity AFTER the transaction
+          },
+        });
+
+        // 4. (Optional) Create an Audit Log
+        await tx.auditLog.create({
+          data: {
+            action: 'STOCK_REQUEST_APPROVED',
+            details: `Admin ${session.user.email} approved request ${requestId}.`,
+            userId: approverId,
+          }
+        });
+
+        return updatedRequest;
+      });
+
+      return NextResponse.json(result);
     }
   } catch (error: any) {
     console.error('Error processing request:', error);

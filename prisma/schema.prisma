@@ -1,5 +1,4 @@
-// This is your Prisma schema file.
-// Remember to run `npx prisma migrate dev` and `npx prisma generate` after changes.
+// C:\Users\USER\Desktop\warehouse-management\prisma\schema.prisma
 
 generator client {
   provider = "prisma-client-js"
@@ -11,10 +10,10 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// AUTHENTICATION MODELS (For NextAuth.js) //////////////////////////////////////
+// --- AUTHENTICATION MODELS ---
 model Account {
   id                String  @id @default(cuid())
-  userId            Int
+  userId            String
   type              String
   provider          String
   providerAccountId String
@@ -34,27 +33,26 @@ model Account {
 model Session {
   id           String   @id @default(cuid())
   sessionToken String   @unique
-  userId       Int
+  userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model User {
-  id            Int       @id @default(autoincrement())
+  id            String    @id @default(cuid())
   name          String?
   email         String?   @unique
   emailVerified DateTime?
   image         String?
-  password      String? // Optional for OAuth users
+  password      String?
   role          Role      @default(USER)
   createdAt     DateTime  @default(now())
+  accounts      Account[]
+  sessions      Session[]
 
-  // Relations
-  accounts  Account[]
-  sessions  Session[]
-  requests  StockRequest[] @relation("RequestedBy")
-  approvals StockRequest[] @relation("ApprovedBy")
-  auditLogs AuditLog[]
+  requestsMade      StockRequest[] @relation("RequestedBy")
+  requestsProcessed StockRequest[] @relation("ApprovedBy")
+  auditLogs         AuditLog[]
 }
 
 model VerificationToken {
@@ -65,47 +63,46 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-// WAREHOUSE CORE MODELS /////////////////////////////////////////////////////////
+// --- WAREHOUSE CORE MODELS ---
 model Product {
-  id           String   @id @default(uuid())
-  sku          String   @unique // Stock Keeping Unit - Required
+  id           String   @id @default(cuid())
+  sku          String   @unique
   name         String
-  quantity     Int      @default(0)
-  location     String?
+  description  String?
+  quantity     Int      @default(0) // Single source of truth for stock level
   reorderLevel Int      @default(10)
-  weight       Float? // e.g., in kg
-  dimensions   String? // e.g., "10x20x30 cm"
   costPrice    Decimal  @default(0)
   sellingPrice Decimal?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  // Relations
-  stockRequests StockRequest[]
-  categoryId    Int
-  category      Category       @relation(fields: [categoryId], references: [id])
-  supplierId    Int?
-  supplier      Supplier?      @relation(fields: [supplierId], references: [id])
+  stockRequests   StockRequest[]
+  inventoryLedger LedgerEntry[]
 
-  @@unique([name, categoryId]) // A product name must be unique within its category
+  categoryId String
+  category   Category  @relation(fields: [categoryId], references: [id])
+  supplierId String?
+  supplier   Supplier? @relation(fields: [supplierId], references: [id])
+
+  @@unique([name, categoryId])
 }
 
 model Category {
-  id          Int       @id @default(autoincrement())
+  id          String    @id @default(cuid())
   name        String    @unique
   description String?
   products    Product[]
 }
 
 model Supplier {
-  id          Int       @id @default(autoincrement())
+  id          String    @id @default(cuid())
   name        String    @unique
   contactInfo String?
   products    Product[]
 }
 
 model StockRequest {
-  id        String        @id @default(uuid())
+  id        String        @id @default(cuid())
   type      StockType
   quantity  Int
   status    RequestStatus @default(PENDING)
@@ -114,28 +111,45 @@ model StockRequest {
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
 
-  // Relations
-  productId   String
-  product     Product @relation(fields: [productId], references: [id])
-  requestedBy Int
-  requester   User    @relation("RequestedBy", fields: [requestedBy], references: [id])
-  approvedBy  Int?
-  approver    User?   @relation("ApprovedBy", fields: [approvedBy], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  requestedById String
+  requester     User   @relation("RequestedBy", fields: [requestedById], references: [id])
+
+  approvedById String?
+  approver     User?   @relation("ApprovedBy", fields: [approvedById], references: [id])
+
+  ledgerEntry LedgerEntry? // A request can have one ledger entry if approved
 }
 
-// LOGGING //////////////////////////////////////////////////////////////////////
+// --- LOGGING ---
 model AuditLog {
-  id        Int        @id @default(autoincrement())
+  id        String     @id @default(cuid())
   action    ActionType
   details   String
   createdAt DateTime   @default(now())
 
-  // Relations
-  userId Int
-  user   User @relation(fields: [userId], references: [id])
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
 }
 
-// ENUMS ////////////////////////////////////////////////////////////////////////
+// THIS IS THE NEW IMMUTABLE LEDGER
+model LedgerEntry {
+  id          String   @id @default(cuid())
+  change      Int // The actual change (+ for IN, - for OUT)
+  newQuantity Int // The quantity of the product *after* the change
+  createdAt   DateTime @default(now())
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  // A ledger entry is created by exactly one stock request
+  stockRequestId String       @unique
+  stockRequest   StockRequest @relation(fields: [stockRequestId], references: [id])
+}
+
+// --- ENUMS ---
 enum Role {
   ADMIN
   USER
