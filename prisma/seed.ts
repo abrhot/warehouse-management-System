@@ -18,7 +18,7 @@ async function main() {
     const hashedPassword = await bcrypt.hash(u.password, 10);
     await prisma.user.upsert({
       where: { email: u.email },
-      update: { name: u.name, password: hashedPassword, role: u.role }, // Update all fields
+      update: { name: u.name, password: hashedPassword, role: u.role },
       create: { name: u.name, email: u.email, password: hashedPassword, role: u.role },
     });
   }
@@ -44,15 +44,15 @@ async function main() {
 
   // 3. Seed Categories
   const categoriesData = [
-    { name: 'Packaging' },
-    { name: 'Safety Equipment' },
-    { name: 'Tools' },
-    { name: 'Electronics' },
-    { name: 'Janitorial' },
-    { name: 'Office Supplies' },
-    { name: 'Raw Materials' },
-    { name: 'Hardware' },
-    { name: 'Consumables' },
+    { name: 'Packaging', description: 'Materials for packing and shipping.' },
+    { name: 'Safety Equipment', description: 'Protective gear and safety tools.' },
+    { name: 'Tools', description: 'Hand and power tools for various tasks.' },
+    { name: 'Electronics', description: 'Scanners, printers, and other devices.' },
+    { name: 'Janitorial', description: 'Cleaning supplies and equipment.' },
+    { name: 'Office Supplies', description: 'Everyday supplies for office use.' },
+    { name: 'Raw Materials', description: 'Basic goods used in production.' },
+    { name: 'Hardware', description: 'Fasteners, hinges, and other hardware.' },
+    { name: 'Consumables', description: 'Items that are used up or consumed.' },
   ];
 
   const categories = await Promise.all(
