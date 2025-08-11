@@ -1,40 +1,137 @@
-model Category {
-  id       Int       @id @default(autoincrement())
-  name     String    @unique
-  products Product[]
+// This is your Prisma schema file.
+// Remember to run `npx prisma migrate dev` and `npx prisma generate` after changes.
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
 }
 
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// USERS & LOGS /////////////////////////////////////////////////////////////////
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String?
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+
+  // Relations
+  requests  StockRequest[] @relation("RequestedBy")
+  approvals StockRequest[] @relation("ApprovedBy")
+  auditLogs AuditLog[]
+}
+
+model AuditLog {
+  id        Int        @id @default(autoincrement())
+  action    ActionType
+  details   String
+  createdAt DateTime   @default(now())
+
+  // Relations
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+}
+
+// WAREHOUSE CORE MODELS /////////////////////////////////////////////////////////
 model Product {
-  id           Int            @id @default(autoincrement())
+  id           String   @id @default(uuid())
+  sku          String   @unique
   name         String
-  categoryId   Int
-  category     Category       @relation(fields: [categoryId], references: [id])
-  quantity     Int            @default(0)
+  quantity     Int      @default(0)
   location     String?
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  StockRequest StockRequest[]
+  reorderLevel Int      @default(10)
+  weight       Float?
+  dimensions   String?
+  costPrice    Decimal  @default(0) @db.Decimal(10, 2)
+  sellingPrice Decimal? @db.Decimal(10, 2)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  stockRequests StockRequest[]
+  categoryId    Int
+  category      Category       @relation(fields: [categoryId], references: [id])
+  supplierId    Int?
+  supplier      Supplier?      @relation(fields: [supplierId], references: [id])
+  ledgerEntries LedgerEntry[]
+
+  @@unique([name, categoryId])
 }
 
-enum StockRequestType {
-  STOCK_IN
-  STOCK_OUT
+model Category {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  description String?
+  products    Product[]
 }
 
-enum StockRequestStatus {
+model Supplier {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  contactInfo String?
+  products    Product[]
+}
+
+// STOCK RECORDS & REQUESTS //////////////////////////////////////////////////////
+model StockRequest {
+  id        String        @id @default(uuid())
+  type      StockType
+  quantity  Int
+  status    RequestStatus @default(PENDING)
+  notes     String?
+  reason    String?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  // Relations
+  productId   String
+  product     Product @relation(fields: [productId], references: [id])
+  requestedBy Int
+  requester   User    @relation("RequestedBy", fields: [requestedBy], references: [id])
+  approvedBy  Int?
+  approver    User?   @relation("ApprovedBy", fields: [approvedBy], references: [id])
+
+  ledgerEntry LedgerEntry?
+}
+
+model LedgerEntry {
+  id             String       @id @default(uuid())
+  productId      String
+  product        Product      @relation(fields: [productId], references: [id])
+  change         Int
+  newQuantity    Int
+  stockRequestId String       @unique
+  stockRequest   StockRequest @relation(fields: [stockRequestId], references: [id])
+  createdAt      DateTime     @default(now())
+}
+
+// ENUMS ////////////////////////////////////////////////////////////////////////
+enum Role {
+  ADMIN
+  USER
+}
+
+enum StockType {
+  IN
+  OUT
+}
+
+enum RequestStatus {
   PENDING
   APPROVED
   REJECTED
 }
 
-model StockRequest {
-  id          Int                @id @default(autoincrement())
-  productId   Int
-  product     Product            @relation(fields: [productId], references: [id])
-  type        StockRequestType
-  quantity    Int
-  reason      String?
-  requestedBy Int
-  status      StockRequestStatus @default(PENDING)
-  createdAt   DateTime           @default(now())
+enum ActionType {
+  USER_LOGIN
+  USER_CREATED
+  PRODUCT_CREATED
+  STOCK_REQUEST_CREATED
+  STOCK_REQUEST_APPROVED
+  STOCK_REQUEST_REJECTED
 }
