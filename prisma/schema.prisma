@@ -13,7 +13,7 @@ datasource db {
 
 // USERS & LOGS /////////////////////////////////////////////////////////////////
 model User {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(cuid()) // <-- Changed to String for NextAuth.js compatibility
   name      String?
   email     String   @unique
   password  String
@@ -27,14 +27,14 @@ model User {
 }
 
 model AuditLog {
-  id        Int        @id @default(autoincrement())
+  id        String     @id @default(uuid())
   action    ActionType
   details   String
   createdAt DateTime   @default(now())
 
   // Relations
-  userId Int
-  user   User @relation(fields: [userId], references: [id])
+  userId String @map("user_id") // <-- Changed to String
+  user   User   @relation(fields: [userId], references: [id])
 }
 
 // WAREHOUSE CORE MODELS /////////////////////////////////////////////////////////
@@ -91,9 +91,9 @@ model StockRequest {
   // Relations
   productId   String
   product     Product @relation(fields: [productId], references: [id])
-  requestedBy Int
+  requestedBy String  @map("requested_by") // <-- Changed to String
   requester   User    @relation("RequestedBy", fields: [requestedBy], references: [id])
-  approvedBy  Int?
+  approvedBy  String? @map("approved_by") // <-- Changed to String
   approver    User?   @relation("ApprovedBy", fields: [approvedBy], references: [id])
 
   ledgerEntry LedgerEntry?
