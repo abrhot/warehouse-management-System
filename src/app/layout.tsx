@@ -1,23 +1,25 @@
-import type { Metadata } from 'next';
-import { Inter } from 'next/font/google'; // Using Inter as an example font
-import Providers from './providers';      // 👈 1. Import the Providers component
+// src/app/layout.tsx
+import { Inter } from 'next/font/google';
+import Providers from './providers';
 import './globals.css';
+import { Toaster } from 'sonner';
 
 const inter = Inter({ subsets: ['latin'] });
 
-// The metadata object handles your <head> content like title and description
-export const metadata: Metadata = {
+export const metadata = {
   title: "WMS",
   description: "Warehouse Management System",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
+    // Update the body class to set the new background color
     <html lang="en">
-      <body className={inter.className}>
-        <Providers> {/* 👈 2. Wrap your {children} with the Providers component */}
+      <body className={`${inter.className} bg-slate-50 text-gray-800`}>
+        <Providers>
           {children}
         </Providers>
+        <Toaster position="bottom-right" />
       </body>
     </html>
   );
