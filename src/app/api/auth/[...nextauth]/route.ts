@@ -1,12 +1,11 @@
 // src/app/api/auth/[...nextauth]/route.ts
-
 import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
-import { login } from "@/lib/auth" // <-- Using your existing login function
+import { login } from "@/lib/auth" 
 
 export const authOptions = {
   pages: {
-    signIn: '/login', // Redirect users to your custom login page
+    signIn: '/login',
   },
   providers: [
     CredentialsProvider({
@@ -20,29 +19,26 @@ export const authOptions = {
           return null
         }
 
-        // Use your custom login logic to verify the user
         const user = await login(credentials.email, credentials.password)
 
         if (user) {
-          // Return the user object if login is successful
+          // The returned user object must have an id
           return user
         }
-        // Return null if login fails
         return null
       },
     }),
   ],
+  secret: process.env.NEXTAUTH_SECRET, // <-- THIS IS REQUIRED
   callbacks: {
-    // This callback includes the user's ID and role in the session token
-    async jwt({ token, user }) {
+    async jwt({ token, user }: any) {
       if (user) {
         token.id = user.id
         token.role = user.role
       }
       return token
     },
-    // This callback makes the user's ID and role available in the session object
-    async session({ session, token }) {
+    async session({ session, token }: any) {
       if (session.user) {
         session.user.id = token.id as string
         session.user.role = token.role as string
