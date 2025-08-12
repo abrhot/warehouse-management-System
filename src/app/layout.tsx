@@ -1,25 +1,37 @@
-// src/app/layout.tsx
-import { Inter } from 'next/font/google';
-import Providers from './providers';
-import './globals.css';
-import { Toaster } from 'sonner';
+import type { Metadata } from "next";
+import { Poppins, Outfit } from "next/font/google"; // 1. Import your new fonts
+import "./globals.css";
+import { Toaster } from "sonner";
 
-const inter = Inter({ subsets: ['latin'] });
+// 2. Configure the fonts with their weights and CSS variables
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-poppins",
+});
 
-export const metadata = {
+const outfit = Outfit({
+  subsets: ["latin"],
+  weight: ["700", "800", "900"],
+  variable: "--font-outfit",
+});
+
+export const metadata: Metadata = {
   title: "WMS",
   description: "Warehouse Management System",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
-    // Update the body class to set the new background color
     <html lang="en">
-      <body className={`${inter.className} bg-slate-50 text-gray-800`}>
-        <Providers>
-          {children}
-        </Providers>
-        <Toaster position="bottom-right" />
+      {/* 3. Apply the font variables and new theme classes to the body */}
+      <body className={`${poppins.variable} ${outfit.variable} font-sans bg-background text-foreground`}>
+        {children}
+        <Toaster position="top-right" />
       </body>
     </html>
   );

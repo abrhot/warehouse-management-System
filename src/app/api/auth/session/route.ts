@@ -1,24 +1,15 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import jwt from 'jsonwebtoken';
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 export async function GET() {
-  const cookieStore = cookies();
-  const authToken = cookieStore.get('authToken')?.value;
+  // Get the session using the NextAuth helper
+  const session = await getServerSession(authOptions);
 
-  if (!authToken) {
+  if (!session) {
     return NextResponse.json({ user: null }, { status: 200 });
   }
 
-  try {
-    const decodedToken: any = jwt.verify(authToken, process.env.JWT_SECRET!);
-    const user = {
-      id: decodedToken.id,
-      email: decodedToken.email,
-      role: decodedToken.role,
-    };
-    return NextResponse.json({ user }, { status: 200 });
-  } catch (error) {
-    return NextResponse.json({ user: null, error: 'Invalid token' }, { status: 401 });
-  }
+  // Return the user object from the session
+  return NextResponse.json({ user: session.user }, { status: 200 });
 }

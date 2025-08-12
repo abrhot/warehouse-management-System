@@ -1,46 +1,33 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient, StockType } from '@/generated/prisma';
-import { cookies } from 'next/headers';
-import jwt from 'jsonwebtoken';
-
-const prisma = new PrismaClient();
+import { StockType } from '@/generated/prisma'; // Keep this import for the enum
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import prisma from '@/lib/prisma'; // Import the single Prisma instance
 
 export async function POST(req: Request) {
+  // 1. Get the current user session securely
+  const session = await getServerSession(authOptions);
+
+  // 2. Check for authentication
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const body = await req.json();
     const { productId, quantity, type, notes, reason } = body;
 
     // Validate StockType safely
-    if (!StockType || !Object.values(StockType).includes(type)) {
+    if (!Object.values(StockType).includes(type)) {
       return NextResponse.json(
         { error: 'Invalid stock request type.' },
         { status: 400 }
       );
     }
 
-    // Read the auth token cookie
-    const cookieStore = await cookies();
-    const authToken = cookieStore.get('authToken')?.value;
+    // 3. Use the authenticated user's ID from the session
+    const userId = session.user.id;
 
-    if (!authToken) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Verify and decode JWT token
-    let userId: string;
-    try {
-      const decoded = jwt.verify(authToken, process.env.JWT_SECRET!);
-      // `decoded` is typically an object with id, role, etc.
-      if (typeof decoded === 'object' && 'id' in decoded) {
-        userId = (decoded as any).id;
-      } else {
-        throw new Error('Invalid token payload');
-      }
-    } catch (err) {
-      return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 });
-    }
-
-    // Create stock request with the authenticated userId
     const newRequest = await prisma.stockRequest.create({
       data: {
         productId,
@@ -48,11 +35,17 @@ export async function POST(req: Request) {
         type,
         notes: notes || null,
         reason: reason || null,
-        requestedBy: userId,
+        // The relation name in your schema is 'requester', not 'requestedBy'
+        // Let's use that for clarity, connecting via the 'requestedBy' field
+        requester: {
+            connect: {
+                id: userId,
+            }
+        }
       },
     });
 
-    return NextResponse.json(newRequest);
+    return NextResponse.json(newRequest, { status: 201 });
   } catch (error) {
     console.error('Error creating stock request:', error);
     return NextResponse.json(

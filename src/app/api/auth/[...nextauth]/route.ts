@@ -1,41 +1,80 @@
-import { NextResponse } from 'next/server';
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import prisma from "@/lib/prisma";
+import NextAuth from "next-auth";
+import type { NextAuthOptions } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+import { PrismaClient } from '@/generated/prisma';
+import bcrypt from 'bcrypt';
 
-export async function POST(req: Request) {
-  const session = await getServerSession(authOptions);
+const prisma = new PrismaClient();
 
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const userId = session.user.id;
-
-  try {
-    const { productId, quantity, type, notes } = await req.json();
-
-    if (!productId || !quantity || !type) {
-      return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
-    }
-
-    // Validate stock type (optional, but recommended)
-    if (!["IN", "OUT"].includes(type)) {
-      return NextResponse.json({ error: "Invalid stock type." }, { status: 400 });
-    }
-
-    const stockRequest = await prisma.stockRequest.create({
-      data: {
-        productId,
-        quantity: Number(quantity),
-        type,
-        notes: notes || null,
-        requestedBy: userId,
+export const authOptions: NextAuthOptions = {
+  // Use JWT for session strategy
+  session: {
+    strategy: "jwt",
+  },
+  // Configure one or more authentication providers
+  providers: [
+    CredentialsProvider({
+      name: 'Credentials',
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" }
       },
-    });
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          return null;
+        }
 
-    return NextResponse.json(stockRequest, { status: 201 });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-}
+        const user = await prisma.user.findUnique({
+          where: { email: credentials.email }
+        });
+
+        if (!user || !user.password) {
+          return null;
+        }
+
+        // Validate password
+        const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
+
+        if (!isPasswordValid) {
+          return null;
+        }
+
+        // Return user object without the password
+        return {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+        };
+      }
+    })
+  ],
+  // Callbacks are used to control what happens when an action is performed
+  callbacks: {
+    // This callback is called whenever a JWT is created or updated.
+    async jwt({ token, user }) {
+      // On initial sign-in, add user properties to the token
+      if (user) {
+        token.id = user.id;
+        token.role = user.role;
+      }
+      return token;
+    },
+    // This callback is called whenever a session is checked.
+    async session({ session, token }) {
+      // Pass token properties to the session object
+      if (session.user) {
+        session.user.id = token.id as string;
+        session.user.role = token.role as string;
+      }
+      return session;
+    }
+  },
+  pages: {
+    signIn: '/login', // Redirect users to /login if they are not signed in
+  },
+  secret: process.env.NEXTAUTH_SECRET,
+};
+
+const handler = NextAuth(authOptions);
+
+export { handler as GET, handler as POST };

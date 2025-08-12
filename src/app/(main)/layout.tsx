@@ -1,14 +1,13 @@
-// src/app/(main)/layout.tsx
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { Sidebar } from '@/components/layout/Sidebar'; // <-- Import your Sidebar component
+import { Sidebar } from '@/components/layout/Sidebar';
 import { redirect } from 'next/navigation';
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 export default async function MainLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions);
 
   if (!session) {
-    // If there is no session, redirect to the login page
     redirect('/login');
   }
 
@@ -16,17 +15,24 @@ export default async function MainLayout({ children }: { children: React.ReactNo
     role: session.user?.role || 'USER',
     name: session.user?.name || '',
     email: session.user?.email || '',
-    // Add other user properties you need
   };
 
   return (
-    <div className="flex min-h-screen">
-      <div className="w-64 bg-slate-900 text-slate-50 border-r border-slate-700">
+    <div className="flex min-h-screen bg-muted/40">
+      {/* This is the ONLY place your sidebar should be */}
+      <div className="hidden md:block w-64 bg-background border-r">
         <Sidebar user={user} />
       </div>
-      <main className="flex-1 overflow-auto">
-        {children}
-      </main>
+
+      <div className="flex flex-col flex-1">
+        {/* This is the ONLY place your header and bell icon should be */}
+        <header className="flex h-14 items-center justify-end gap-4 border-b bg-background px-6">
+          <NotificationBell />
+        </header>
+        <main className="flex-1 overflow-auto p-6">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

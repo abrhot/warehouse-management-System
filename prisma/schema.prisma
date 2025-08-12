@@ -82,6 +82,7 @@ model StockRequest {
   id        String        @id @default(uuid())
   type      StockType
   quantity  Int
+  // This status field is crucial for the notification system. Correctly implemented.
   status    RequestStatus @default(PENDING)
   notes     String?
   reason    String?
@@ -92,9 +93,11 @@ model StockRequest {
   productId String
   product   Product @relation(fields: [productId], references: [id])
 
+  // This relation correctly links the request to the user who made it.
   requestedBy String @map("requested_by")
   requester   User   @relation("RequestedBy", fields: [requestedBy], references: [id])
 
+  // This optional relation is ready for when an admin approves a request.
   approvedBy String? @map("approved_by")
   approver   User?   @relation("ApprovedBy", fields: [approvedBy], references: [id])
 
@@ -123,6 +126,7 @@ enum StockType {
   OUT
 }
 
+// This enum correctly defines the possible states for a request.
 enum RequestStatus {
   PENDING
   APPROVED
