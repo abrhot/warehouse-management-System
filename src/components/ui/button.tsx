@@ -19,6 +19,11 @@ const buttonVariants = cva(
           "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
+        
+        // --- ADD THIS NEW VARIANT FOR YOUR DASHBOARD BUTTONS ---
+        toggle:
+          "bg-transparent text-muted-foreground hover:bg-primary/10 hover:text-primary data-[state=active]:bg-primary/10 data-[state=active]:text-primary",
+        // --------------------------------------------------------
       },
       size: {
         default: "h-9 px-4 py-2",
