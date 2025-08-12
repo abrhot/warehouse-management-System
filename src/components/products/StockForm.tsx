@@ -1,4 +1,3 @@
-// src/components/products/StockForm.tsx
 'use client';
 
 import { useState } from 'react';
@@ -41,6 +40,7 @@ export function StockForm({
       const res = await fetch('/api/stock/request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // <---- Add this line
         body: JSON.stringify({
           productId: product.id,
           quantity: parsedQuantity,

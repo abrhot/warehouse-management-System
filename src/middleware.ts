@@ -1,37 +1,43 @@
-// src/middleware.ts
 import { NextRequest, NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 
-const PUBLIC_PAGES = ["/", "/login"];
-const ADMIN_ONLY_ROUTES = ["/admin/users", "/admin/requests"]; // Updated to match the file paths
+const PUBLIC_PATHS = ["/", "/login"];
+const ADMIN_PATHS = ["/admin/users", "/admin/requests"];
 
-export function middleware(request: NextRequest) {
-  const token = request.cookies.get("authToken")?.value;
-  const { pathname } = request.nextUrl;
+export async function middleware(req: NextRequest) {
+  const token = req.cookies.get("authToken")?.value;
+  const { pathname } = req.nextUrl;
 
-  const isPublic = PUBLIC_PAGES.some((path) => pathname.startsWith(path));
-  if (isPublic) {
+  if (PUBLIC_PATHS.some(path => pathname.startsWith(path))) {
     return NextResponse.next();
   }
 
   if (!token) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    return NextResponse.redirect(new URL("/login", req.url));
   }
 
   try {
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
-    const userRole = decoded.role;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!);
+    const userId = (decoded as any).id;
+    const userRole = (decoded as any).role;
 
-    const isAdminRoute = ADMIN_ONLY_ROUTES.some((route) => pathname.startsWith(route));
-
-    if (isAdminRoute && userRole !== "ADMIN") {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
+    if (ADMIN_PATHS.some(path => pathname.startsWith(path)) && userRole !== "ADMIN") {
+      return NextResponse.redirect(new URL("/dashboard", req.url));
     }
 
-    return NextResponse.next();
+    // Clone request headers and add user info headers
+    const requestHeaders = new Headers(req.headers);
+    requestHeaders.set("x-user-id", userId);
+    requestHeaders.set("x-user-role", userRole);
+
+    // IMPORTANT: Create a new NextResponse and pass the modified request with new headers
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
   } catch (error) {
-    console.error("JWT verification failed:", error);
-    return NextResponse.redirect(new URL("/login", request.url));
+    return NextResponse.redirect(new URL("/login", req.url));
   }
 }
 
@@ -41,7 +47,7 @@ export const config = {
     "/products/:path*",
     "/reports",
     "/settings",
-    "/admin/users/:path*", // Updated to match the file path
-    "/admin/requests/:path*", // Updated to match the file path
+    "/admin/:path*",
+    "/api/:path*",  // protect API routes
   ],
 };

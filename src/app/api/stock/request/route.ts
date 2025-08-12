@@ -1,50 +1,63 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, StockType } from '@/generated/prisma';
+import { cookies } from 'next/headers';
+import jwt from 'jsonwebtoken';
 
 const prisma = new PrismaClient();
 
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions);
-  
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-  }
-  
   try {
     const body = await req.json();
-    const { productId, quantity, type, notes } = body;
+    const { productId, quantity, type, notes, reason } = body;
 
-    if (!productId || !quantity || !type) {
-      return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 });
+    // Validate StockType safely
+    if (!StockType || !Object.values(StockType).includes(type)) {
+      return NextResponse.json(
+        { error: 'Invalid stock request type.' },
+        { status: 400 }
+      );
     }
 
-    const stockRequest = await prisma.stockRequest.create({
+    // Read the auth token cookie
+    const cookieStore = await cookies();
+    const authToken = cookieStore.get('authToken')?.value;
+
+    if (!authToken) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Verify and decode JWT token
+    let userId: string;
+    try {
+      const decoded = jwt.verify(authToken, process.env.JWT_SECRET!);
+      // `decoded` is typically an object with id, role, etc.
+      if (typeof decoded === 'object' && 'id' in decoded) {
+        userId = (decoded as any).id;
+      } else {
+        throw new Error('Invalid token payload');
+      }
+    } catch (err) {
+      return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 });
+    }
+
+    // Create stock request with the authenticated userId
+    const newRequest = await prisma.stockRequest.create({
       data: {
-        productId: productId,
-        quantity: Number(quantity),
-        type: type,
-        status: 'PENDING',
-        notes: notes,
-        requestedBy: session.user.id,
+        productId,
+        quantity,
+        type,
+        notes: notes || null,
+        reason: reason || null,
+        requestedBy: userId,
       },
     });
 
-    // TODO: Create an audit log entry for the request creation
-    await prisma.auditLog.create({
-      data: {
-        action: 'STOCK_REQUEST_CREATED',
-        details: `User ${session.user.email} created a ${type} request for ${quantity} of product ID ${productId}.`,
-        userId: session.user.id,
-      }
-    });
-
-    return NextResponse.json(stockRequest, { status: 201 });
-
-  } catch (error: any) {
-    console.error("Error creating stock request:", error);
-    // Return the specific error message to the client
-    return NextResponse.json({ error: `Failed to create stock request: ${error.message}` }, { status: 500 });
+    return NextResponse.json(newRequest);
+  } catch (error) {
+    console.error('Error creating stock request:', error);
+    return NextResponse.json(
+      { error: 'Failed to create stock request.' },
+      { status: 500 }
+    );
   }
 }

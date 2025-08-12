@@ -1,53 +1,41 @@
-// src/app/api/auth/[...nextauth]/route.ts
-import NextAuth from "next-auth"
-import CredentialsProvider from "next-auth/providers/credentials"
-import { login } from "@/lib/auth" 
+import { NextResponse } from 'next/server';
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import prisma from "@/lib/prisma";
 
-export const authOptions = {
-  pages: {
-    signIn: '/login',
-  },
-  providers: [
-    CredentialsProvider({
-      name: "Credentials",
-      credentials: {
-        email: { label: "Email", type: "text" },
-        password: { label: "Password", type: "password" },
+export async function POST(req: Request) {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const userId = session.user.id;
+
+  try {
+    const { productId, quantity, type, notes } = await req.json();
+
+    if (!productId || !quantity || !type) {
+      return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
+    }
+
+    // Validate stock type (optional, but recommended)
+    if (!["IN", "OUT"].includes(type)) {
+      return NextResponse.json({ error: "Invalid stock type." }, { status: 400 });
+    }
+
+    const stockRequest = await prisma.stockRequest.create({
+      data: {
+        productId,
+        quantity: Number(quantity),
+        type,
+        notes: notes || null,
+        requestedBy: userId,
       },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null
-        }
+    });
 
-        const user = await login(credentials.email, credentials.password)
-
-        if (user) {
-          // The returned user object must have an id
-          return user
-        }
-        return null
-      },
-    }),
-  ],
-  secret: process.env.NEXTAUTH_SECRET, // <-- THIS IS REQUIRED
-  callbacks: {
-    async jwt({ token, user }: any) {
-      if (user) {
-        token.id = user.id
-        token.role = user.role
-      }
-      return token
-    },
-    async session({ session, token }: any) {
-      if (session.user) {
-        session.user.id = token.id as string
-        session.user.role = token.role as string
-      }
-      return session
-    },
-  },
+    return NextResponse.json(stockRequest, { status: 201 });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }
-
-const handler = NextAuth(authOptions)
-
-export { handler as GET, handler as POST }
