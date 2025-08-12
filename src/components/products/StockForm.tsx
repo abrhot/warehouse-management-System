@@ -52,7 +52,7 @@ export function StockForm({
       if (res.ok) {
         toast.success(`Request submitted for ${product.name}!`);
         onClose();
-        router.push('/requests/pending');
+        router.push('/admin/requests'); 
       } else {
         const errorData = await res.json();
         toast.error(errorData.error || 'Failed to submit request.');

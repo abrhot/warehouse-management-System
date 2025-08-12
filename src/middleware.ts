@@ -1,19 +1,19 @@
+// src/middleware.ts
 import { NextRequest, NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 
 const PUBLIC_PAGES = ["/", "/login"];
+const ADMIN_ONLY_ROUTES = ["/admin/users", "/admin/requests"]; // Updated to match the file paths
 
 export function middleware(request: NextRequest) {
   const token = request.cookies.get("authToken")?.value;
   const { pathname } = request.nextUrl;
 
-  // ✅ Make sure we allow access to public pages (more flexible match)
   const isPublic = PUBLIC_PAGES.some((path) => pathname.startsWith(path));
   if (isPublic) {
     return NextResponse.next();
   }
 
-  // 🔐 Require token for all protected routes
   if (!token) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
@@ -21,23 +21,10 @@ export function middleware(request: NextRequest) {
   try {
     const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
     const userRole = decoded.role;
-    try {
-  const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
-  const userRole = decoded.role;
-  // proceed with userRole
-} catch (err) {
-  console.error("JWT verification failed:", err);
-  // Handle the error (e.g., redirect to login, return 401, etc.)
-}
-  
 
-    // 🔒 Restrict admin-only routes
-    const adminOnlyRoutes = ["/users", "/notifications"];
-    const isAdminRoute = adminOnlyRoutes.some((route) =>
-      pathname.startsWith(route)
-    );
+    const isAdminRoute = ADMIN_ONLY_ROUTES.some((route) => pathname.startsWith(route));
 
-    if (isAdminRoute && userRole !== "admin") {
+    if (isAdminRoute && userRole !== "ADMIN") {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
 
@@ -48,16 +35,13 @@ export function middleware(request: NextRequest) {
   }
 }
 
-// ✅ This must be at root level: /middleware.ts
 export const config = {
   matcher: [
     "/dashboard/:path*",
     "/products/:path*",
-    "/stock-in/:path*",
-    "/stock-out/:path*",
-    "/users/:path*",
-    "/profile",
     "/reports",
-    "/notifications",
+    "/settings",
+    "/admin/users/:path*", // Updated to match the file path
+    "/admin/requests/:path*", // Updated to match the file path
   ],
 };

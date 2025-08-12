@@ -5,14 +5,12 @@ interface NavRoute {
   path: string;
 }
 
-// Routes available to everyone
+// Routes available to regular users and admins
 const baseRoutes: NavRoute[] = [
   { label: "Dashboard", path: "/dashboard" },
   { label: "Products", path: "/products" },
-  { label: "Stock In", path: "/stock/in" },
-  { label: "Stock Out", path: "/stock/out" },
   { label: "Reports", path: "/reports" },
-  { label: "Notifications", path: "/notifications" },
+  { label: "Settings", path: "/settings" },
 ];
 
 // Routes available only to Admins

@@ -1,4 +1,3 @@
-// src/app/api/stock/request/route.ts
 import { NextResponse } from 'next/server';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
@@ -9,14 +8,13 @@ const prisma = new PrismaClient();
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   
-  // Now session.user.id is a string, which matches the new schema
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   }
   
   try {
     const body = await req.json();
-    const { productId, quantity, type, notes, reason } = body;
+    const { productId, quantity, type, notes } = body;
 
     if (!productId || !quantity || !type) {
       return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 });
@@ -29,16 +27,16 @@ export async function POST(req: Request) {
         type: type,
         status: 'PENDING',
         notes: notes,
-        reason: reason,
-        requestedById: session.user.id, // Correctly links to the user's string ID
+        requestedBy: session.user.id,
       },
     });
 
+    // TODO: Create an audit log entry for the request creation
     await prisma.auditLog.create({
       data: {
         action: 'STOCK_REQUEST_CREATED',
         details: `User ${session.user.email} created a ${type} request for ${quantity} of product ID ${productId}.`,
-        userId: parseInt(session.user.id as string), // Use a function to convert the user ID from string to int
+        userId: session.user.id,
       }
     });
 
@@ -46,6 +44,7 @@ export async function POST(req: Request) {
 
   } catch (error: any) {
     console.error("Error creating stock request:", error);
-    return NextResponse.json({ error: 'Failed to create stock request' }, { status: 500 });
+    // Return the specific error message to the client
+    return NextResponse.json({ error: `Failed to create stock request: ${error.message}` }, { status: 500 });
   }
 }
