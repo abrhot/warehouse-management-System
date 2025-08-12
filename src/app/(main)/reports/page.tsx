@@ -1,216 +1,203 @@
 'use client';
 
-import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect, useMemo } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Download, ArrowUp, ArrowDown } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Search, ChevronDown, Download, Printer, Calendar as CalendarIcon } from 'lucide-react';
 import Papa from 'papaparse';
+import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { DateRange } from 'react-day-picker';
 
-// --- MOCK DATA (Replace with API call) ---
-const dailyTransactionsData = [
-  { day: 'Mon', value: 50 }, { day: 'Tue', value: 65 }, { day: 'Wed', value: 60 },
-  { day: 'Thu', value: 80 }, { day: 'Fri', value: 75 }, { day: 'Sat', value: 90 },
-  { day: 'Sun', value: 85 },
-];
-const stockOutData = [
-  { day: 'Mon', value: 80 }, { day: 'Tue', value: 90 }, { day: 'Wed', value: 110 },
-  { day: 'Thu', value: 100 }, { day: 'Fri', value: 120 }, { day: 'Sat', value: 115 },
-  { day: 'Sun', value: 130 },
-];
-const newProductsData = [
-  { day: 'Mon', value: 5 }, { day: 'Tue', value: 3 }, { day: 'Wed', value: 7 },
-  { day: 'Thu', value: 4 }, { day: 'Fri', value: 6 }, { day: 'Sat', value: 2 },
-  { day: 'Sun', value: 8 },
-];
-const userActivityData = [
-  { day: 'Mon', value: 25 }, { day: 'Tue', value: 30 }, { day: 'Wed', value: 28 },
-  { day: 'Thu', value: 35 }, { day: 'Fri', value: 40 }, { day: 'Sat', value: 38 },
-  { day: 'Sun', value: 42 },
-];
-const comparisonBarData = [
-  { day: 'Mon', stockIn: 120, stockOut: 80 }, { day: 'Tue', stockIn: 150, stockOut: 90 },
-  { day: 'Wed', stockIn: 100, stockOut: 110 }, { day: 'Thu', stockIn: 200, stockOut: 150 },
-  { day: 'Fri', stockIn: 180, stockOut: 160 },
-];
-const recentRecordsData = [
-  { id: '1', product: 'Industrial Widget', type: 'IN', quantity: 50, user: 'Admin', date: '2025-08-12' },
-  { id: '2', product: 'Heavy-Duty Gear', type: 'OUT', quantity: 20, user: 'John Doe', date: '2025-08-12' },
-  { id: '3', product: 'Standard Screw', type: 'IN', quantity: 2000, user: 'Admin', date: '2025-08-11' },
-];
+// --- Type Definitions ---
+interface Record {
+  id: string;
+  product: { name: string };
+  type: 'IN' | 'OUT';
+  quantity: number;
+  requester: { name: string | null; email: string };
+  createdAt: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+}
+interface ApiResponse { data: Record[]; meta: { totalRecords: number; currentPage: number; totalPages: number; }; }
 
 // --- MAIN COMPONENT ---
 export default function ReportsPage() {
+  const [records, setRecords] = useState<Record[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedRows, setSelectedRows] = useState<string[]>([]);
+  const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+
+  // Fetch data from the advanced API
+  useEffect(() => {
+    const fetchRecords = async () => {
+      setIsLoading(true);
+      const params = new URLSearchParams({ page: currentPage.toString(), limit: '10', search: searchQuery });
+      try {
+        const res = await fetch(`/api/reports/records?${params.toString()}`);
+        if (!res.ok) throw new Error('Failed to fetch data');
+        const { data, meta }: ApiResponse = await res.json();
+        setRecords(data);
+        setTotalPages(meta.totalPages);
+      } catch (error) {
+        toast.error('Could not fetch records.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchRecords();
+  }, [currentPage, searchQuery]);
+
+  // Memoize filtered/selected records for performance
+  const recordsToAction = useMemo(() => {
+    let filteredData = records;
+    // Filter by date range if selected
+    if (dateRange?.from && dateRange?.to) {
+      filteredData = records.filter(record => {
+        const recordDate = new Date(record.createdAt);
+        return recordDate >= dateRange.from! && recordDate <= dateRange.to!;
+      });
+    }
+    // Then, filter by selected checkboxes if any are checked
+    if (selectedRows.length > 0) {
+      const selectedSet = new Set(selectedRows);
+      return filteredData.filter(record => selectedSet.has(record.id));
+    }
+    return filteredData;
+  }, [records, selectedRows, dateRange]);
+  
+  const formatDataForExport = (data: Record[]) => {
+    return data.map(r => ({
+      product: r.product.name, type: r.type, quantity: r.quantity, status: r.status,
+      user: r.requester.name || r.requester.email, date: new Date(r.createdAt).toLocaleString(),
+    }));
+  };
+
   const handleExport = () => {
-    const csv = Papa.unparse(recentRecordsData);
+    const dataToExport = formatDataForExport(recordsToAction);
+    if (dataToExport.length === 0) {
+      toast.warning("No records found in the selected range or selection.");
+      return;
+    }
+    const csv = Papa.unparse(dataToExport);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', 'recent_records_report.csv');
-    link.style.visibility = 'hidden';
+    link.href = URL.createObjectURL(blob);
+    link.download = `records_report_${new Date().toISOString()}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    toast.success(`${dataToExport.length} records exported!`);
+  };
+
+  const handlePrint = (dataToPrint: Record[]) => {
+    const formattedData = formatDataForExport(dataToPrint);
+    if (formattedData.length === 0) {
+      toast.warning("No records to print.");
+      return;
+    }
+    const printWindow = window.open('', '', 'height=600,width=800');
+    if (printWindow) {
+      printWindow.document.write('<html><head><title>Print Records</title>');
+      printWindow.document.write('<style>body{font-family:sans-serif;padding:20px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:8px;text-align:left}th{background-color:#f2f2f2}</style>');
+      printWindow.document.write('</head><body>');
+      printWindow.document.write(`<h1>Records Report (${formattedData.length} items)</h1>`);
+      printWindow.document.write('<table><thead><tr><th>Product</th><th>Type</th><th>Qty</th><th>Status</th><th>User</th><th>Date</th></tr></thead><tbody>');
+      formattedData.forEach(r => { printWindow.document.write(`<tr><td>${r.product}</td><td>${r.type}</td><td>${r.quantity}</td><td>${r.status}</td><td>${r.user}</td><td>${r.date}</td></tr>`); });
+      printWindow.document.write('</tbody></table></body></html>');
+      printWindow.document.close();
+      printWindow.print();
+    }
   };
 
   return (
-    <div className="p-6 md:p-8 space-y-8">
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-heading text-4xl font-bold text-gray-900">Reports Dashboard</h1>
-          <p className="mt-2 text-gray-600">A detailed analysis of warehouse operations.</p>
-        </div>
-        <Button onClick={handleExport}>
-          <Download className="mr-2 h-4 w-4" />
-          Export to CSV
-        </Button>
-      </div>
+    <div className="p-6 md:p-8 space-y-6">
+      <h1 className="font-heading text-4xl font-bold">All Records</h1>
+      
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="relative w-full md:w-auto md:flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Search by product name..." className="pl-9" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+            </div>
+            
+            {/* Date Range Picker */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant={"outline"} className="w-full md:w-auto justify-start text-left font-normal">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dateRange?.from ? (dateRange.to ? (<>{format(dateRange.from, "LLL dd, y")} - {format(dateRange.to, "LLL dd, y")}</>) : (format(dateRange.from, "LLL dd, y"))) : (<span>Pick a date range</span>)}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end"><Calendar mode="range" selected={dateRange} onSelect={setDateRange} numberOfMonths={2} /></PopoverContent>
+            </Popover>
 
-      {/* Main two-column layout for charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        {/* Left Column: 2x2 Grid of Line Charts */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Transactions</CardTitle>
-              <div className="flex items-center text-sm" style={{ color: '#1b4cff' }}>
-                <ArrowUp className="h-4 w-4 mr-1" />
-                <span>+15.2%</span>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold font-heading">450</div>
-              <div className="h-24">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={dailyTransactionsData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
-                    <Line type="monotone" dataKey="value" stroke="#1b4cff" strokeWidth={2} dot={false} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Stock Out</CardTitle>
-              <div className="flex items-center text-sm" style={{ color: '#ff4d4f' }}>
-                <ArrowUp className="h-4 w-4 mr-1" />
-                <span>+8.1%</span>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold font-heading">920</div>
-              <div className="h-24">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={stockOutData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
-                    <Line type="monotone" dataKey="value" stroke="#ff4d4f" strokeWidth={2} dot={false} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">New Products</CardTitle>
-              <div className="flex items-center text-sm" style={{ color: '#1b4cff' }}>
-                <ArrowUp className="h-4 w-4 mr-1" />
-                <span>+2 from last week</span>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold font-heading">35</div>
-              <div className="h-24">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={newProductsData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
-                    <Line type="monotone" dataKey="value" stroke="#1b4cff" strokeWidth={2} dot={false} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Active Users</CardTitle>
-              <div className="flex items-center text-sm" style={{ color: '#1b4cff' }}>
-                <ArrowUp className="h-4 w-4 mr-1" />
-                <span>+5.5%</span>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold font-heading">42</div>
-              <div className="h-24">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={userActivityData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
-                    <Line type="monotone" dataKey="value" stroke="#1b4cff" strokeWidth={2} dot={false} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button disabled={recordsToAction.length === 0}><ChevronDown className="mr-2 h-4 w-4" />Actions</Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleExport}><Download className="mr-2 h-4 w-4"/>Export ({recordsToAction.length})</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handlePrint(recordsToAction)}><Printer className="mr-2 h-4 w-4"/>Print ({recordsToAction.length})</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader><TableRow><TableHead>Product</TableHead><TableHead>Type</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Quantity</TableHead><TableHead>User</TableHead><TableHead>Date</TableHead></TableRow></TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow><TableCell colSpan={6} className="text-center h-24">Loading...</TableCell></TableRow>
+              ) : records.length > 0 ? (
+                records.map((record) => (
+                  <>
+                    <TableRow key={record.id} onClick={() => setExpandedRowId(expandedRowId === record.id ? null : record.id)} className="cursor-pointer">
+                      <TableCell className="font-medium">{record.product.name}</TableCell>
+                      <TableCell><span className={`px-2 py-1 text-xs font-semibold rounded-full leading-none ${record.type === 'IN' ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800'}`}>{record.type}</span></TableCell>
+                      <TableCell><span className={`px-2 py-1 text-xs font-semibold rounded-full leading-none ${record.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' : record.status === 'APPROVED' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{record.status}</span></TableCell>
+                      <TableCell className="text-right font-mono">{record.quantity}</TableCell>
+                      <TableCell className="text-muted-foreground">{record.requester.name || record.requester.email}</TableCell>
+                      <TableCell className="text-muted-foreground">{new Date(record.createdAt).toLocaleDateString()}</TableCell>
+                    </TableRow>
+                    {/* Expanded Row */}
+                    {expandedRowId === record.id && (
+                      <TableRow className="bg-muted hover:bg-muted">
+                        <TableCell colSpan={6}>
+                          <div className="p-4 flex items-center justify-end gap-2">
+                            <span className="text-sm font-medium">Actions for this record:</span>
+                            <Button variant="outline" size="sm" onClick={() => handlePrint([record])}><Printer className="mr-2 h-4 w-4"/>Print</Button>
+                            <Button variant="outline" size="sm" onClick={() => { const data = formatDataForExport([record]); /* simplified export logic */ toast.success(`${data[0].product} exported!`); }}><Download className="mr-2 h-4 w-4"/>Export</Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </>
+                ))
+              ) : (
+                <TableRow><TableCell colSpan={6} className="text-center h-24">No records found.</TableCell></TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
-        {/* Right Column: Main Bar Chart */}
-        <Card className="h-full">
-          <CardHeader>
-            <CardTitle>Daily Stock Comparison</CardTitle>
-            <CardDescription>Stock In (Blue) vs. Stock Out (Dark)</CardDescription>
-          </CardHeader>
-          <CardContent className="h-[460px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={comparisonBarData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.3}/>
-                <XAxis dataKey="day" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis fontSize={12} tickLine={false} axisLine={false} />
-                <Tooltip cursor={{ fill: 'hsl(var(--background))' }} />
-                <Legend />
-                <Bar dataKey="stockIn" name="Stock In" fill="#1b4cff" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="stockOut" name="Stock Out" fill="#334155" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Bottom Row: Recent Records */}
-      <div className="pt-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Records</CardTitle>
-            <CardDescription>A list of the most recent stock movements.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Product</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead className="text-right">Quantity</TableHead>
-                  <TableHead>User</TableHead>
-                  <TableHead>Date</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {recentRecordsData.map((record) => (
-                  <TableRow key={record.id}>
-                    <TableCell className="font-medium">{record.product}</TableCell>
-                    <TableCell>
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        record.type === 'IN' ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800'
-                      }`}>
-                        {record.type}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right font-mono">{record.quantity}</TableCell>
-                    <TableCell>{record.user}</TableCell>
-                    <TableCell>{record.date}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+      {/* Pagination Controls */}
+      <div className="flex items-center justify-end space-x-2">
+        <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} disabled={currentPage === 1}>Previous</Button>
+        <span className="text-sm text-muted-foreground">Page {currentPage} of {totalPages}</span>
+        <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))} disabled={currentPage === totalPages}>Next</Button>
       </div>
     </div>
   );
