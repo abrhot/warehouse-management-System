@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import { StockType } from '@/generated/prisma'; // Keep this import for the enum
+import { StockType } from '@/generated/prisma';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import prisma from '@/lib/prisma'; // Import the single Prisma instance
+import prisma from '@/lib/prisma';
 
 export async function POST(req: Request) {
   // 1. Get the current user session securely
@@ -14,24 +14,22 @@ export async function POST(req: Request) {
   }
 
   try {
+    // 3. Parse the request body
     const body = await req.json();
     const { productId, quantity, type, notes, reason } = body;
 
-    // Validate StockType safely
+    // 4. Validate StockType
     if (!Object.values(StockType).includes(type)) {
       return NextResponse.json(
         { error: 'Invalid stock request type.' },
         { status: 400 }
       );
     }
-    console.log('Session:', session);
-console.log('Request body:', body);
-console.log('Allowed StockTypes:', Object.values(StockType));
 
-
-    // 3. Use the authenticated user's ID from the session
+    // 5. Get authenticated user's ID
     const userId = session.user.id;
 
+    // 6. Create the stock request
     const newRequest = await prisma.stockRequest.create({
       data: {
         productId,
@@ -39,16 +37,16 @@ console.log('Allowed StockTypes:', Object.values(StockType));
         type,
         notes: notes || null,
         reason: reason || null,
-        // The relation name in your schema is 'requester', not 'requestedBy'
-        // Let's use that for clarity, connecting via the 'requestedBy' field
-        requester: {
-            connect: {
-                id: userId,
-            }
-        }
+        requestedBy: userId, // link directly to user
+        // approvedBy remains null until admin approves
+      },
+      include: {
+        product: true, // return product details in response
+        requester: true, // include requester info
       },
     });
 
+    // 7. Return the created request
     return NextResponse.json(newRequest, { status: 201 });
   } catch (error) {
     console.error('Error creating stock request:', error);
