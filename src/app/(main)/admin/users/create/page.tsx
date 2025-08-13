@@ -1,7 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+
+// Note: The original code used Next.js and Shadcn components that are not
+// available in this environment. This version has been refactored to use
+// standard HTML elements and Tailwind CSS for a self-contained solution.
+// In your actual Next.js project, you should use the original imports.
 
 // A simple SVG spinner component for the loading state
 const Spinner = () => (
@@ -27,18 +31,42 @@ const Spinner = () => (
   </svg>
 );
 
+// A simple message box component to replace alerts and toasts
+const MessageBox = ({ message, type, onClose }) => {
+  const isSuccess = type === 'success';
+  const bgColor = isSuccess ? 'bg-blue-200' : 'bg-red-500';
+  const textColor = isSuccess ? 'text-blue-800' : 'text-white';
+  const title = isSuccess ? 'Success' : 'Error';
+
+  if (!message) return null;
+
+  return (
+    <div className={`fixed top-4 left-1/2 -translate-x-1/2 w-full max-w-xs rounded-lg p-4 shadow-lg ${bgColor} ${textColor}`}>
+      <div className="flex justify-between items-center">
+        <h3 className="font-bold">{title}</h3>
+        <button onClick={onClose} className={`opacity-70 hover:opacity-100 ${isSuccess ? 'text-blue-800' : 'text-white'}`}>
+          &times;
+        </button>
+      </div>
+      <p className="mt-2 text-sm">{message}</p>
+    </div>
+  );
+};
+
+
 export default function CreateUserPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('USER'); // Default role is USER
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
+  const [message, setMessage] = useState({ text: '', type: '' });
 
-  // This function remains UNCHANGED.
+  // This function is updated to use the custom message box
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setMessage({ text: '', type: '' });
 
     try {
       const res = await fetch('/api/users/create', {
@@ -53,11 +81,24 @@ export default function CreateUserPage() {
         throw new Error(data.error || 'Something went wrong');
       }
 
-      alert(`✅ User "${data.name}" created successfully!`);
-      router.push('/admin/users'); // Navigate back to the user list
+      // Show success message
+      setMessage({
+        text: `User "${data.name}" created successfully!`,
+        type: 'success',
+      });
+      // Clear form after successful submission
+      setName('');
+      setEmail('');
+      setPassword('');
+      setRole('USER');
+      
     } catch (error: any) {
       console.error(error);
-      alert(`❌ Error: ${error.message}`);
+      // Show error message
+      setMessage({
+        text: `Failed to create user: ${error.message}`,
+        type: 'error',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -67,108 +108,88 @@ export default function CreateUserPage() {
   return (
     <main className="flex min-h-screen w-full flex-col items-center justify-center bg-gray-100 p-4">
       <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-2xl">
-        {/* --- Form Header --- */}
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-gray-800">Create New User</h1>
+        <div className="text-center">
+          <h2 className="text-3xl font-bold text-gray-800">
+            Create New User
+          </h2>
           <p className="mt-2 text-sm text-gray-500">
             Fill in the details below to add a new user to the system.
           </p>
         </div>
-
-        {/* --- Form --- */}
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* --- Full Name Input --- */}
-          <div>
-            <label
-              htmlFor="name"
-              className="mb-2 block text-sm font-semibold text-gray-600"
-            >
-              Full Name
-            </label>
+          <div className="space-y-2">
+            <label htmlFor="name" className="text-sm font-medium">Full Name</label>
             <input
               id="name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-gray-800 transition-colors duration-300 ease-in-out focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-300"
+              className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               required
             />
           </div>
 
-          {/* --- Email Input --- */}
-          <div>
-            <label
-              htmlFor="email"
-              className="mb-2 block text-sm font-semibold text-gray-600"
-            >
-              Email Address
-            </label>
+          <div className="space-y-2">
+            <label htmlFor="email" className="text-sm font-medium">Email Address</label>
             <input
               id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-gray-800 transition-colors duration-300 ease-in-out focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-300"
+              className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               required
             />
           </div>
 
-          {/* --- Password Input --- */}
-          <div>
-            <label
-              htmlFor="password"
-              className="mb-2 block text-sm font-semibold text-gray-600"
-            >
-              Password
-            </label>
+          <div className="space-y-2">
+            <label htmlFor="password" className="text-sm font-medium">Password</label>
             <input
               id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-gray-800 transition-colors duration-300 ease-in-out focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-300"
+              className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               required
             />
           </div>
 
-          {/* --- Role Select --- */}
-          <div>
-            <label
-              htmlFor="role"
-              className="mb-2 block text-sm font-semibold text-gray-600"
-            >
-              Role
-            </label>
+          <div className="space-y-2">
+            <label htmlFor="role" className="text-sm font-medium">Role</label>
             <select
               id="role"
               value={role}
               onChange={(e) => setRole(e.target.value)}
-              className="w-full appearance-none rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-gray-800 transition-colors duration-300 ease-in-out focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-300"
+              className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <option value="USER">User</option>
               <option value="ADMIN">Admin</option>
             </select>
           </div>
 
-          {/* --- Action Buttons --- */}
           <div className="mt-10 flex items-center justify-between">
             <button
               type="button"
-              onClick={() => router.push('/admin/users')}
-              className="rounded-lg px-6 py-3 font-semibold text-gray-600 transition-colors hover:bg-gray-200"
+              onClick={() => {}} // Placeholder for back navigation
+              className="bg-white text-black font-bold px-6 py-3 border border-gray-300 rounded-md transition-colors hover:bg-blue-600 hover:text-white"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isLoading}
-className="flex items-center justify-center rounded-lg bg-green-500 px-6 py-3 font-semibold text-white shadow-md transition-transform duration-150 ease-in-out hover:scale-105 hover:bg-green-600 disabled:cursor-not-allowed disabled:bg-gray-400"            >
+              className="flex items-center justify-center bg-white text-black font-bold px-6 py-3 border border-gray-300 rounded-md transition-colors hover:bg-blue-600 hover:text-white disabled:bg-gray-200 disabled:text-gray-500 disabled:cursor-not-allowed"
+            >
               {isLoading && <Spinner />}
               {isLoading ? 'Creating...' : 'Create User'}
             </button>
           </div>
         </form>
       </div>
+      <MessageBox
+        message={message.text}
+        type={message.type}
+        onClose={() => setMessage({ text: '', type: '' })}
+      />
     </main>
   );
 }

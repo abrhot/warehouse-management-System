@@ -24,6 +24,10 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
+    console.log('Session:', session);
+console.log('Request body:', body);
+console.log('Allowed StockTypes:', Object.values(StockType));
+
 
     // 3. Use the authenticated user's ID from the session
     const userId = session.user.id;
