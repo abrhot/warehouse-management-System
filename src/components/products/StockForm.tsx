@@ -30,9 +30,16 @@ export function StockForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const parsedQuantity = parseFloat(quantity);
+    // Validation 1: Check for decimals in the input string
+    if (quantity.includes('.')) {
+      toast.error('Quantity must be a whole number.');
+      return;
+    }
+    
+    // Validation 2: Parse as an integer and check if it's a valid number
+    const parsedQuantity = parseInt(quantity, 10);
     if (isNaN(parsedQuantity) || parsedQuantity <= 0) {
-      toast.error('Quantity must be a valid number greater than 0.');
+      toast.error('Quantity must be a valid whole number greater than 0.');
       return;
     }
 
@@ -68,9 +75,7 @@ export function StockForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-4 bg-[#f0fdf4]">
-      {/* This div containing the title has been removed to prevent duplication. */}
-      {/* The switch is now the only item at the top. */}
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-4 bg-blue-50">
       <div className="flex justify-end items-center">
         <div className="flex items-center space-x-2">
           <Label htmlFor="multiple-mode" className="text-sm">Multiple</Label>
@@ -87,12 +92,12 @@ export function StockForm({
         <Input
           id="quantity"
           type="number"
-          step="0.01"
-          placeholder="e.g., 50.5"
+          step="1"
+          placeholder="e.g., 50"
           value={quantity}
           onChange={(e) => setQuantity(e.target.value)}
           required
-          className="bg-[#edf3e8] text-[#141b0e] border-[#dae6d1] placeholder-[#6f9550] focus:ring-[#98FB98]"
+          className="bg-white border-gray-300"
         />
       </div>
       <div>
@@ -101,28 +106,26 @@ export function StockForm({
           id="notes"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          className="bg-[#edf3e8] text-[#141b0e] border-[#dae6d1] placeholder-[#6f9550] focus:ring-[#98FB98]"
+          className="bg-white border-gray-300"
         />
       </div>
       <div className="flex justify-end gap-2 mt-4">
-       <Button
-  type="reset"
-  variant="outline"
-  onClick={handleReset}
-  // Add these classes for a light blue outline effect
-  className="text-white border-blue-500 hover:bg-blue-100 hover:text-black"
->
-  Reset
-</Button>
+        <Button
+          type="reset"
+          variant="outline"
+          onClick={handleReset}
+          className="bg-white text-black border border-gray-300 hover:bg-blue-500 hover:text-white"
+        >
+          Reset
+        </Button>
 
-<Button
-  type="submit"
-  variant="default"
-  // Add these classes for a light green background
-  className="text-white border-blue-500 hover:bg-blue-100 hover:text-black"
->
-  Submit
-</Button>
+        <Button
+          type="submit"
+          variant="default"
+          className="bg-white text-black border border-gray-300 hover:bg-blue-500 hover:text-white"
+        >
+          Submit
+        </Button>
       </div>
     </form>
   );

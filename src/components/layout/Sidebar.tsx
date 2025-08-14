@@ -30,17 +30,18 @@ interface NavLinkProps {
   isOpen: boolean;
 }
 
+// NavLink component with smaller size and non-bold text
 const NavLink: React.FC<NavLinkProps> = ({ href, label, icon, isCurrent, isOpen }) => (
   <Link
     href={href}
-    className={`flex items-center gap-3 p-2 rounded-md transition-colors text-sm ${
+    className={`flex items-center gap-3 p-1 rounded-md transition-colors text-base ${ // Reduced padding
       isCurrent
         ? 'bg-blue-600 text-white'
         : 'bg-white text-black hover:bg-blue-600 hover:text-white'
     }`}
   >
     {icon}
-    {isOpen && <span className="font-medium">{label}</span>}
+    {isOpen && <span>{label}</span>} {/* Removed font-medium */}
   </Link>
 );
 
@@ -49,10 +50,11 @@ export function Sidebar({ user }: { user: User }) {
   const [isOpen, setIsOpen] = useState(true);
 
   return (
+    // Updated positioning to be fixed
     <div
-      className={`relative h-screen flex-shrink-0 transition-all duration-300 ease-in-out font-poppins ${
+      className={`fixed top-0 left-0 h-screen flex-shrink-0 transition-all duration-300 ease-in-out font-poppins ${
         isOpen ? 'w-64' : 'w-20'
-      } border-r bg-white p-4 shadow-lg flex flex-col`}
+      } border-r bg-white p-4 shadow-lg flex flex-col z-50`} // Added fixed, top-0, left-0 and z-index
     >
       {/* Top Section: WMS Logo & Hamburger Menu */}
       <div className="flex items-center justify-between h-16">
@@ -73,26 +75,34 @@ export function Sidebar({ user }: { user: User }) {
 
       {/* Main Navigation Links */}
       <nav className="flex-1 overflow-y-auto mt-6">
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-4"> {/* Increased gap between buttons */}
           <NavLink
             href="/dashboard"
             label="Dashboard"
-            icon={<LayoutDashboard className='h-4 w-4' />}
+            icon={<LayoutDashboard className='h-5 w-5' />}
             isCurrent={pathname === '/dashboard'}
             isOpen={isOpen}
           />
           <NavLink
             href="/products"
             label="Products"
-            icon={<Package2 className='h-4 w-4' />}
+            icon={<Package2 className='h-5 w-5' />}
             isCurrent={pathname === '/products'}
             isOpen={isOpen}
           />
           <NavLink
             href="/reports"
             label="Reports"
-            icon={<FileText className='h-4 w-4' />}
+            icon={<FileText className='h-5 w-5' />}
             isCurrent={pathname === '/reports'}
+            isOpen={isOpen}
+          />
+          {/* Added Settings Link */}
+          <NavLink
+            href="/settings"
+            label="Settings"
+            icon={<Settings className='h-5 w-5' />}
+            isCurrent={pathname.startsWith('/settings')}
             isOpen={isOpen}
           />
 
@@ -102,28 +112,19 @@ export function Sidebar({ user }: { user: User }) {
               <NavLink
                 href="/admin/users"
                 label="Users"
-                icon={<Users className='h-4 w-4' />}
+                icon={<Users className='h-5 w-5' />}
                 isCurrent={pathname.startsWith('/admin/users')}
                 isOpen={isOpen}
               />
               <NavLink
                 href="/admin/requests"
                 label="Pending Requests"
-                icon={<ScrollText className='h-4 w-4' />}
+                icon={<ScrollText className='h-5 w-5' />}
                 isCurrent={pathname.startsWith('/admin/requests')}
                 isOpen={isOpen}
               />
             </>
           )}
-
-          <NavLink
-            href="/settings"
-            label="Settings"
-            icon={<Settings className='h-4 w-4' />}
-            isCurrent={pathname === '/settings'}
-            isOpen={isOpen}
-          />
-
         </div>
       </nav>
 
@@ -132,7 +133,7 @@ export function Sidebar({ user }: { user: User }) {
         <NavLink
           href="/login"
           label="Log Out"
-          icon={<LogOut className='h-4 w-4' />}
+          icon={<LogOut className='h-5 w-5' />}
           isCurrent={false}
           isOpen={isOpen}
         />

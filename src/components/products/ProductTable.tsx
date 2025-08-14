@@ -40,44 +40,44 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="rounded-md border border-[#dae6d1]">
+    <div className="flex flex-col gap-4 w-full">
+      <div className="rounded-md border border-gray-200">
         <Table>
-          <TableHeader className="bg-[#f0f9ed]">
+          <TableHeader className="bg-white">
             <TableRow>
-              <TableHead className="w-[100px] text-[#141b0e]">SKU</TableHead>
-              <TableHead className="text-[#141b0e]">Name</TableHead>
-              <TableHead className="text-[#141b0e]">Category</TableHead>
-              <TableHead className="text-[#141b0e]">Quantity</TableHead>
-              <TableHead className="text-right text-[#141b0e]">Actions</TableHead>
+              <TableHead className="w-[100px] text-black">SKU</TableHead>
+              <TableHead className="text-black">Name</TableHead>
+              <TableHead className="text-black">Category</TableHead>
+              <TableHead className="text-black">Quantity</TableHead>
+              <TableHead className="text-right text-black">Actions</TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody className="bg-[#fafbf8]">
+          <TableBody className="bg-white">
             {products.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center text-[#6f9550]">
+                <TableCell colSpan={5} className="h-24 text-center text-blue-500">
                   No products found.
                 </TableCell>
               </TableRow>
             ) : (
               products.map((product) => (
-                <TableRow key={product.id}>
-                  <TableCell className="text-[#6f9550]">{product.sku}</TableCell>
-                  <TableCell className="font-medium text-[#141b0e]">{product.name}</TableCell>
-                  <TableCell className="text-[#6f9550]">{product.category.name}</TableCell>
-                  <TableCell className="font-bold text-[#141b0e]">{product.quantity}</TableCell>
+                <TableRow key={product.id} className="border-gray-200">
+                  <TableCell className="text-blue-500">{product.sku}</TableCell>
+                  <TableCell className="font-medium text-black">{product.name}</TableCell>
+                  <TableCell className="text-blue-500">{product.category.name}</TableCell>
+                  <TableCell className="font-bold text-black">{product.quantity}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4 text-[#141b0e]" />
+                          <MoreHorizontal className="h-4 w-4 text-black" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="bg-[#edf3e8]">
-                        <DropdownMenuItem onClick={() => handleOpenSheet(product, 'IN')} className="text-[#141b0e] hover:bg-[#dae6d1] cursor-pointer">
+                      <DropdownMenuContent align="end" className="bg-white">
+                        <DropdownMenuItem onClick={() => handleOpenSheet(product, 'IN')} className="text-black hover:bg-gray-100 cursor-pointer">
                           Stock In
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleOpenSheet(product, 'OUT')} className="text-[#141b0e] hover:bg-[#dae6d1] cursor-pointer">
+                        <DropdownMenuItem onClick={() => handleOpenSheet(product, 'OUT')} className="text-black hover:bg-gray-100 cursor-pointer">
                           Stock Out
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -91,9 +91,9 @@ export const ProductTable: React.FC<ProductTableProps> = ({
       </div>
 
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-        <SheetContent side="right" className="bg-[#f0fdf4] text-[#141b0e] border-[#dae6d1]">
+        <SheetContent side="right" className="bg-white text-black border-gray-200">
           <SheetHeader>
-            <SheetTitle className="text-[#141b0e]">
+            <SheetTitle className="text-black">
               {stockType === 'IN' ? 'Stock In' : 'Stock Out'} for {selectedProduct?.name}
             </SheetTitle>
           </SheetHeader>

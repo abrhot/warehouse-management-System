@@ -1,4 +1,3 @@
-import { PageHeader } from '@/components/ui/PageHeader';
 import { ProductsPageContent } from '@/components/products/ProductsPageContent';
 import prisma from '@/lib/prisma';
 import { Product, Category, Supplier } from '@/generated/prisma';
@@ -20,13 +19,5 @@ export default async function ProductsPage() {
     sellingPrice: product.sellingPrice?.toString() || null,
   }));
 
-  return (
-    <div className="flex flex-col gap-4 p-8">
-      <PageHeader
-        title="Products"
-        description="Manage all products and their stock levels."
-      />
-      <ProductsPageContent initialProducts={serializableProducts} />
-    </div>
-  );
+  return <ProductsPageContent initialProducts={serializableProducts} />;
 }
