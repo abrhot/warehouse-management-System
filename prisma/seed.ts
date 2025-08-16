@@ -5,6 +5,19 @@ import { Decimal } from '@prisma/client/runtime/library';
 
 const prisma = new PrismaClient();
 
+// Helper function to generate a unique serial number for each stock item
+const generateSerialNumber = (
+  categoryName: string,
+  productId: string,
+  index: number
+): string => {
+  const categoryCode = categoryName.substring(0, 3).toUpperCase();
+  const productIdFragment = productId.substring(0, 4).toUpperCase();
+  const uniqueId = (index + 1).toString().padStart(4, '0'); // e.g., 0001, 0002
+  return `${categoryCode}-${productIdFragment}-${uniqueId}`;
+};
+
+
 async function main() {
   console.log(`Start seeding ...`);
 
@@ -79,17 +92,17 @@ async function main() {
     const supplierMap = new Map(suppliers.map((s) => [s.name, s.id]));
     const categoryMap = new Map(categories.map((c) => [c.name, c.id]));
 
-    // 4. Seed Products
+    // 4. Seed Products and their individual StockItems
     const productsData = [
-      { sku: 'PKG-PW-STD-500', name: 'Standard Pallet Wrap 500m', categoryName: 'Packaging', supplierName: 'Global Packaging Inc.', quantity: 150, reorderLevel: 20, costPrice: 12.50 },
-      { sku: 'SFE-GLV-LTH-LG', name: 'Leather Safety Gloves (Large)', categoryName: 'Safety Equipment', supplierName: 'Safety First Supplies', quantity: 120, reorderLevel: 25, costPrice: 8.75 },
-      { sku: 'TOL-BCK-SFT-50', name: 'Safety Box Cutter (50pk)', categoryName: 'Tools', supplierName: 'Warehouse Tools Co.', quantity: 40, reorderLevel: 10, costPrice: 99.99 },
-      { sku: 'ELEC-SCA-HND-ZBR', name: 'Zebra Handheld Barcode Scanner', categoryName: 'Electronics', supplierName: 'Warehouse Tools Co.', quantity: 12, reorderLevel: 3, costPrice: 450.00 },
-      { sku: 'JAN-CLN-SOL-5L', name: 'Industrial Cleaning Solvent (5L)', categoryName: 'Janitorial', supplierName: 'Safety First Supplies', quantity: 30, reorderLevel: 5, costPrice: 22.00 },
-      { sku: 'OFF-LBL-THM-4X6', name: 'Thermal Labels (4x6, Roll)', categoryName: 'Office Supplies', supplierName: 'Office Best', quantity: 200, reorderLevel: 40, costPrice: 9.50 },
-      { sku: 'RAW-PALLET-WOOD', name: 'Wooden Pallets (48x40)', categoryName: 'Raw Materials', supplierName: 'Logistics & Shipping', quantity: 300, reorderLevel: 50, costPrice: 15.00 },
-      { sku: 'HW-SCREW-KIT', name: 'Assorted Screw Kit', categoryName: 'Hardware', supplierName: 'Warehouse Tools Co.', quantity: 60, reorderLevel: 15, costPrice: 25.00 },
-      { sku: 'CON-FORKLIFT-GAS', name: 'Forklift Propane Tank', categoryName: 'Consumables', supplierName: 'Industrial Machine Parts', quantity: 18, reorderLevel: 4, costPrice: 40.00 },
+        { name: 'Standard Pallet Wrap 500m', categoryName: 'Packaging', supplierName: 'Global Packaging Inc.', initialStock: 150, reorderLevel: 20, costPrice: 12.50 },
+        { name: 'Leather Safety Gloves (Large)', categoryName: 'Safety Equipment', supplierName: 'Safety First Supplies', initialStock: 120, reorderLevel: 25, costPrice: 8.75 },
+        { name: 'Safety Box Cutter (50pk)', categoryName: 'Tools', supplierName: 'Warehouse Tools Co.', initialStock: 40, reorderLevel: 10, costPrice: 99.99 },
+        { name: 'Zebra Handheld Barcode Scanner', categoryName: 'Electronics', supplierName: 'Warehouse Tools Co.', initialStock: 12, reorderLevel: 3, costPrice: 450.00 },
+        { name: 'Industrial Cleaning Solvent (5L)', categoryName: 'Janitorial', supplierName: 'Safety First Supplies', initialStock: 30, reorderLevel: 5, costPrice: 22.00 },
+        { name: 'Thermal Labels (4x6, Roll)', categoryName: 'Office Supplies', supplierName: 'Office Best', initialStock: 200, reorderLevel: 40, costPrice: 9.50 },
+        { name: 'Wooden Pallets (48x40)', categoryName: 'Raw Materials', supplierName: 'Logistics & Shipping', initialStock: 300, reorderLevel: 50, costPrice: 15.00 },
+        { name: 'Assorted Screw Kit', categoryName: 'Hardware', supplierName: 'Warehouse Tools Co.', initialStock: 60, reorderLevel: 15, costPrice: 25.00 },
+        { name: 'Forklift Propane Tank', categoryName: 'Consumables', supplierName: 'Industrial Machine Parts', initialStock: 18, reorderLevel: 4, costPrice: 40.00 },
     ];
 
     for (const p of productsData) {
@@ -101,29 +114,41 @@ async function main() {
         continue;
       }
 
-      await prisma.product.upsert({
-        where: { sku: p.sku },
+      // Step 1: Create the main product entry (without quantity or sku)
+      const product = await prisma.product.upsert({
+        where: { 
+            name_categoryId: {
+                name: p.name,
+                categoryId: categoryId,
+            }
+        },
         update: {
-          name: p.name,
-          quantity: p.quantity,
           reorderLevel: p.reorderLevel,
           costPrice: new Decimal(p.costPrice),
-          categoryId,
           supplierId,
         },
         create: {
-          sku: p.sku,
           name: p.name,
-          quantity: p.quantity,
           reorderLevel: p.reorderLevel,
           costPrice: new Decimal(p.costPrice),
           categoryId,
           supplierId,
         },
       });
-      console.log(`Seeded product: ${p.name}`);
+
+      // Step 2: Create individual StockItem entries for the product's initial quantity
+      for (let i = 0; i < p.initialStock; i++) {
+        const serialNumber = generateSerialNumber(p.categoryName, product.id, i);
+        await prisma.stockItem.create({
+            data: {
+                productId: product.id,
+                serialNumber: serialNumber,
+                status: 'IN_STOCK',
+            }
+        });
+      }
+      console.log(`Seeded product "${p.name}" with ${p.initialStock} individual stock items.`);
     }
-    console.log(`Upserted ${productsData.length} products.`);
 
     console.log('Seeding finished.');
   } catch (e) {
