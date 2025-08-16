@@ -33,9 +33,9 @@ export async function POST(req: Request) {
     if (!request) {
       return NextResponse.json({ error: 'Request not found' }, { status: 404 });
     }
-   if (request.status !== RequestStatus.PENDING) {
-  return NextResponse.json({ error: 'Request has already been processed' }, { status: 400 });
-}
+    if (request.status !== RequestStatus.PENDING) {
+      return NextResponse.json({ error: 'Request has already been processed' }, { status: 400 });
+    }
     
     // --- Main Logic: Handle Approval or Rejection ---
 
