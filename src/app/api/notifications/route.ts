@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import prisma from '@/lib/prisma';
+import { RequestStatus } from '@/generated/prisma'; // Import RequestStatus
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -12,12 +13,12 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Fetch all stock requests for the logged-in user
+  // Fetch only PENDING stock requests for the logged-in user
   const notifications = await prisma.stockRequest.findMany({
     where: {
-      requestedBy: session.user.id, // Prisma expects a string for the user ID
+      requestedBy: session.user.id,
+      status: RequestStatus.PENDING, // Filter for only pending requests
     },
-    // Correctly include the nested product data via the stockItem
     include: {
       stockItem: {
         select: {
@@ -30,11 +31,9 @@ export async function GET() {
         },
       },
     },
-    // Order by newest first
     orderBy: {
       createdAt: 'desc',
     },
-    // Limit to the last 20 notifications for performance
     take: 20,
   });
 
