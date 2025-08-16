@@ -5,47 +5,69 @@ import { CategoriesSidebar } from '@/components/dashboard/CategoriesSidebar';
 import { LowStockSection } from '@/components/dashboard/LowStockSection';
 import { Footer } from '@/components/dashboard/Footer';
 import prisma from '@/lib/prisma';
-import { Product, StockRequest, Category } from '@/generated/prisma';
 
 export default async function DashboardPage() {
-  // --- Fetch Data on the Server ---
-  const totalProducts = await prisma.product.count();
+  // --- Fetch Data on the Server with Updated Logic ---
+
+  // Total items now counts every single physical item in stock
+  const totalItemsInStock = await prisma.stockItem.count({ where: { status: 'IN_STOCK' } });
   const pendingRequests = await prisma.stockRequest.count({ where: { status: 'PENDING' } });
-  
-  const lowStockItems = await prisma.product.findMany({
-    where: { quantity: { lte: 10 } },
-    select: { id: true, name: true, quantity: true },
-  });
-  
-  const categoriesWithProducts = await prisma.category.findMany({
+
+  // New logic for finding low stock items
+  // 1. Get all products and count their associated "IN_STOCK" items
+  const productsWithStockCount = await prisma.product.findMany({
     include: {
-      products: {
+      _count: {
         select: {
-          id: true,
-          name: true,
-          quantity: true,
-          costPrice: true,
-          sellingPrice: true,
+          stockItems: {
+            where: { status: 'IN_STOCK' },
+          },
         },
       },
     },
   });
 
-  // --- Convert Decimal types to strings before passing to Client Components ---
+  // 2. Filter these products in code to see which are below their reorder level
+  const lowStockItems = productsWithStockCount
+    .filter(p => p._count.stockItems <= p.reorderLevel)
+    .map(p => ({
+      id: p.id,
+      name: p.name,
+      quantity: p._count.stockItems, // Pass the count as 'quantity' to the component
+    }));
+
+  // New logic for fetching categories with their product stock counts
+  const categoriesWithProducts = await prisma.category.findMany({
+    include: {
+      products: {
+        include: {
+          _count: {
+            select: {
+              stockItems: { where: { status: 'IN_STOCK' } },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  // --- Convert Decimal types and map stock counts before passing to Client Components ---
   const convertedCategories = categoriesWithProducts.map(category => ({
     ...category,
     products: category.products.map(product => ({
-      ...product,
+      id: product.id,
+      name: product.name,
+      quantity: product._count.stockItems, // Use the new stock count
       costPrice: product.costPrice.toString(),
       sellingPrice: product.sellingPrice?.toString() || null,
     })),
   }));
 
   const kpiData = {
-    totalRevenue: 45231.89,
-    stockOut: 1234,
+    totalRevenue: 45231.89, // Placeholder data
+    stockOut: 1234, // Placeholder data
     pendingRequests: pendingRequests,
-    newProducts: 57,
+    newProducts: totalItemsInStock, // This KPI now reflects total items
   };
 
   const mainChartData = [
@@ -60,7 +82,7 @@ export default async function DashboardPage() {
       <KpiSection data={kpiData} />
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 mt-6">
-        {/* Left Section: Main Chart */}
+        {/* Left Section: Main Chart & Low Stock */}
         <div className="lg:col-span-2 space-y-6">
           <MainChart data={mainChartData} />
           <LowStockSection lowStockItems={lowStockItems} />
