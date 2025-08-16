@@ -40,9 +40,7 @@ model AuditLog {
 // WAREHOUSE CORE MODELS /////////////////////////////////////////////////////////
 model Product {
   id           String   @id @default(uuid())
-  sku          String   @unique
   name         String
-  quantity     Int      @default(0)
   location     String?
   reorderLevel Int      @default(10)
   weight       Float?
@@ -53,14 +51,28 @@ model Product {
   updatedAt    DateTime @updatedAt
 
   // Relations
-  stockRequests StockRequest[]
-  categoryId    Int
-  category      Category       @relation(fields: [categoryId], references: [id])
-  supplierId    Int?
-  supplier      Supplier?      @relation(fields: [supplierId], references: [id])
-  ledgerEntries LedgerEntry[]
+  categoryId Int
+  category   Category    @relation(fields: [categoryId], references: [id])
+  supplierId Int?
+  supplier   Supplier?   @relation(fields: [supplierId], references: [id])
+  stockItems StockItem[] // One product has many stock items
 
   @@unique([name, categoryId])
+}
+
+// NEW MODEL: This is the core of the new system
+model StockItem {
+  id           String     @id @default(uuid())
+  serialNumber String     @unique // The new unique identifier
+  status       ItemStatus @default(IN_STOCK)
+  location     String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  // Relations
+  productId    String
+  product      Product        @relation(fields: [productId], references: [id])
+  stockRequest StockRequest[]
 }
 
 model Category {
@@ -81,8 +93,6 @@ model Supplier {
 model StockRequest {
   id        String        @id @default(uuid())
   type      StockType
-  quantity  Int
-  // This status field is crucial for the notification system. Correctly implemented.
   status    RequestStatus @default(PENDING)
   notes     String?
   reason    String?
@@ -90,29 +100,14 @@ model StockRequest {
   updatedAt DateTime      @updatedAt
 
   // Relations
-  productId String
-  product   Product @relation(fields: [productId], references: [id])
+  stockItemId String
+  stockItem   StockItem @relation(fields: [stockItemId], references: [id])
 
-  // This relation correctly links the request to the user who made it.
   requestedBy String @map("requested_by")
   requester   User   @relation("RequestedBy", fields: [requestedBy], references: [id])
 
-  // This optional relation is ready for when an admin approves a request.
   approvedBy String? @map("approved_by")
   approver   User?   @relation("ApprovedBy", fields: [approvedBy], references: [id])
-
-  ledgerEntry LedgerEntry?
-}
-
-model LedgerEntry {
-  id             String       @id @default(uuid())
-  productId      String
-  product        Product      @relation(fields: [productId], references: [id])
-  change         Int
-  newQuantity    Int
-  stockRequestId String       @unique
-  stockRequest   StockRequest @relation(fields: [stockRequestId], references: [id])
-  createdAt      DateTime     @default(now())
 }
 
 // ENUMS ////////////////////////////////////////////////////////////////////////
@@ -126,11 +121,18 @@ enum StockType {
   OUT
 }
 
-// This enum correctly defines the possible states for a request.
 enum RequestStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+// NEW ENUM: To track the status of each individual item
+enum ItemStatus {
+  IN_STOCK
+  RESERVED
+  SHIPPED
+  DAMAGED
 }
 
 enum ActionType {

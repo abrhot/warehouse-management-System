@@ -1,23 +1,39 @@
+// src/app/(main)/products/page.tsx
 import { ProductsPageContent } from '@/components/products/ProductsPageContent';
 import prisma from '@/lib/prisma';
-import { Product, Category, Supplier } from '@/generated/prisma';
+import { StockItem, Product, Category, Supplier } from '@/generated/prisma';
 
-export type ProductWithRelations = Product & { category: Category; supplier: Supplier | null };
+export type StockItemWithRelations = StockItem & {
+  product: Product & {
+    category: Category;
+    supplier: Supplier | null;
+  };
+};
 
 export default async function ProductsPage() {
-  const products: ProductWithRelations[] = await prisma.product.findMany({
+  const stockItems: StockItemWithRelations[] = await prisma.stockItem.findMany({
     include: {
-      category: true,
-      supplier: true,
+      product: {
+        include: {
+          category: true,
+          supplier: true,
+        },
+      },
     },
+    orderBy: {
+        createdAt: 'desc',
+    }
   });
 
-  // Map over the products and convert the Decimal types to strings
-  const serializableProducts = products.map(product => ({
-    ...product,
-    costPrice: product.costPrice.toString(),
-    sellingPrice: product.sellingPrice?.toString() || null,
+  // Serialize the data for the client component
+  const serializableItems = stockItems.map(item => ({
+    ...item,
+    product: {
+      ...item.product,
+      costPrice: item.product.costPrice.toString(),
+      sellingPrice: item.product.sellingPrice?.toString() || null,
+    }
   }));
 
-  return <ProductsPageContent initialProducts={serializableProducts} />;
+  return <ProductsPageContent initialItems={serializableItems} />;
 }

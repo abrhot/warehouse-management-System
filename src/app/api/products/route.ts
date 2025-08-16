@@ -1,19 +1,27 @@
+// src/app/api/products/route.ts
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
 export async function GET() {
   try {
-    const products = await prisma.product.findMany({
+    const stockItems = await prisma.stockItem.findMany({
       orderBy: {
-        name: 'asc',
+        createdAt: 'desc',
+      },
+      include: {
+        product: {
+          include: {
+            category: true,
+            supplier: true,
+          },
+        },
       },
     });
-    return NextResponse.json(products);
+    return NextResponse.json(stockItems);
   } catch (error: any) {
-    // The real error will be logged to your terminal from this line
-    console.error("Failed to fetch products:", error);
+    console.error("Failed to fetch stock items:", error);
     return NextResponse.json(
-      { error: "Server failed to fetch products" },
+      { error: "Server failed to fetch stock items" },
       { status: 500 }
     );
   }

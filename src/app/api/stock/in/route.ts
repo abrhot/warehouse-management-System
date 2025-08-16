@@ -1,58 +1,53 @@
+// src/app/api/stock/in/route.ts
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
-export async function POST(req: Request) {
-  try {
-    const body = await req.json();
-    const { name, category, quantity, location, handler, notes } = body;
-
-    if (!name || !category || !quantity) {
-      return NextResponse.json(
-        { error: 'Missing required fields: name, category, or quantity' },
-        { status: 400 }
-      );
-    }
-
-    // Normalize product name and category for consistency (optional)
-    const normalizedName = name.trim().toLowerCase();
-    const normalizedCategory = category.trim().toLowerCase();
-
-    let product = await prisma.product.findFirst({
-      where: {
-        name: normalizedName,
-        category: normalizedCategory,
-      },
+// Function to generate a unique serial number
+const generateSerialNumber = async (productId: string, categoryName: string): Promise<string> => {
+    const categoryCode = categoryName.substring(0, 2).toUpperCase();
+    
+    // Find the count of existing items for this product to generate a unique number
+    const itemCount = await prisma.stockItem.count({
+        where: { productId: productId }
     });
+    
+    const uniqueId = (itemCount + 1).toString().padStart(5, '0'); // e.g., 00001, 00002
+    
+    return `${categoryCode}-${productId.substring(0, 4)}-${uniqueId}`;
+};
 
-    if (product) {
-      // Product exists → increment quantity
-      product = await prisma.product.update({
-        where: { id: product.id },
-        data: {
-          quantity: {
-            increment: Number(quantity),
-          },
-        },
-      });
-    } else {
-      // Product does not exist → create it
-      product = await prisma.product.create({
-  data: {
-    name,
-    category,
-    quantity: Number(quantity),
-    // remove location, handler, notes here
-  },
-});
+export async function POST(req: Request) {
+    try {
+        const body = await req.json();
+        const { productId, location } = body;
 
+        const product = await prisma.product.findUnique({
+            where: { id: productId },
+            include: { category: true }
+        });
+
+        if (!product) {
+            return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+        }
+
+        const serialNumber = await generateSerialNumber(productId, product.category.name);
+
+        const newStockItem = await prisma.stockItem.create({
+            data: {
+                productId: productId,
+                serialNumber: serialNumber,
+                location: location || null,
+                status: 'IN_STOCK',
+            },
+        });
+
+        return NextResponse.json(newStockItem, { status: 201 });
+
+    } catch (error) {
+        console.error('Error creating stock item:', error);
+        return NextResponse.json(
+            { error: 'Failed to create stock item.' },
+            { status: 500 }
+        );
     }
-
-    return NextResponse.json(product);
-  } catch (error: any) {
-    console.error('Error in stock in:', error);
-    return NextResponse.json(
-      { error: 'Stock in failed: ' + error.message },
-      { status: 500 }
-    );
-  }
 }
