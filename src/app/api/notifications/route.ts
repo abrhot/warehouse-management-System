@@ -3,7 +3,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import prisma from '@/lib/prisma'; // Make sure you have a prisma instance configured
+import prisma from '@/lib/prisma';
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -13,15 +13,20 @@ export async function GET() {
   }
 
   // Fetch all stock requests for the logged-in user
-  // Also include the related product to get its name
   const notifications = await prisma.stockRequest.findMany({
     where: {
-      requestedBy: session.user.id,
+      requestedBy: session.user.id, // Prisma expects a string for the user ID
     },
+    // Correctly include the nested product data via the stockItem
     include: {
-      product: {
+      stockItem: {
         select: {
-          name: true, // Select only the product name
+          serialNumber: true,
+          product: {
+            select: {
+              name: true,
+            },
+          },
         },
       },
     },

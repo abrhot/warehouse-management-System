@@ -11,10 +11,15 @@ export async function GET() {
       where: {
         status: RequestStatus.PENDING,
       },
-      // Include the related product and user (requester) data
+      // Correctly include the nested product and serial number data
       include: {
-        product: {
-          select: { name: true, quantity: true }, // Include current stock quantity
+        stockItem: {
+          select: {
+            serialNumber: true,
+            product: {
+              select: { name: true },
+            },
+          },
         },
         requester: {
           select: { name: true, email: true },
