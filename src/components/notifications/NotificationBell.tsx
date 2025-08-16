@@ -27,14 +27,16 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-// Notification interface remains the same
+// UPDATED: The Notification interface now matches the new API response structure
 interface Notification {
   id: string;
-  quantity: number;
   type: 'IN' | 'OUT';
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
-  product: {
-    name: string;
+  stockItem: {
+    serialNumber: string;
+    product: {
+      name: string;
+    };
   };
   createdAt: string;
 }
@@ -42,18 +44,14 @@ interface Notification {
 export function NotificationBell() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  // New state to track if there are unread (pending) notifications
   const [hasUnread, setHasUnread] = useState(false);
 
   const fetchNotifications = async () => {
-    // Keep isLoading true only for the very first fetch
-    // subsequent background fetches won't show the "Loading..." text
     try {
       const res = await fetch('/api/notifications');
       if (res.ok) {
         const data = await res.json();
         setNotifications(data);
-        // Check if any fetched notifications are pending to show the dot
         if (data.some((req: Notification) => req.status === 'PENDING')) {
           setHasUnread(true);
         } else {
@@ -67,17 +65,12 @@ export function NotificationBell() {
     }
   };
   
-  // FIX 1 & 2: Load data on mount and then poll for updates every 30 seconds
   useEffect(() => {
-    fetchNotifications(); // Fetch immediately when component loads
-
-    const intervalId = setInterval(fetchNotifications, 30000); // And every 30 seconds after
-
-    // Cleanup function to stop polling when the component is removed
+    fetchNotifications();
+    const intervalId = setInterval(fetchNotifications, 30000);
     return () => clearInterval(intervalId);
   }, []);
 
-  // When the user opens the popover, we can consider the notifications "seen"
   const handleBellClick = () => {
     setHasUnread(false);
   };
@@ -86,7 +79,6 @@ export function NotificationBell() {
     <Popover>
       <PopoverTrigger asChild>
         <Button variant="outline" size="icon" className="relative" onClick={handleBellClick}>
-          {/* FIX 3: Show a red dot if there are unread notifications */}
           {hasUnread && (
             <span className="absolute top-0 right-0 flex h-3 w-3">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
@@ -110,11 +102,13 @@ export function NotificationBell() {
                 {notifications.map((req) => (
                   <li key={req.id} className="p-2 bg-secondary rounded-md">
                     <div className="flex justify-between items-center mb-1">
-                      <span className="font-semibold text-sm">{req.product.name}</span>
+                      {/* UPDATED: Access the product name through the nested structure */}
+                      <span className="font-semibold text-sm">{req.stockItem.product.name}</span>
                       <StatusBadge status={req.status} />
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Type: {req.type} | Qty: {req.quantity}
+                      {/* UPDATED: Display the serial number instead of quantity */}
+                      Serial: {req.stockItem.serialNumber}
                     </p>
                   </li>
                 ))}

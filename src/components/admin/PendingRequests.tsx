@@ -23,15 +23,17 @@ const NoteIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-4 w-4 text-gray-400"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" /></svg>
 );
 
+// UPDATED: The interface now matches the new API response structure
 interface PendingRequest {
   id: string;
   type: 'IN' | 'OUT';
-  quantity: number;
   createdAt: string;
   notes: string | null;
-  product: {
-    name: string;
-    quantity: number;
+  stockItem: {
+    serialNumber: string;
+    product: {
+      name: string;
+    };
   };
   requester: {
     name: string | null;
@@ -115,12 +117,8 @@ export default function PendingRequests() {
   }
 
   return (
-    // UPDATED: Reduced padding from p-6 to p-4 to move content up
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4">
       <div className="mx-auto max-w-5xl">
-        {/* DELETED: Removed the header section to simplify UI and move content up */}
-
-        {/* Content */}
         {requests.length === 0 ? (
           <div className="rounded-xl bg-white p-12 text-center shadow-sm mt-8">
             <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gray-100">
@@ -132,17 +130,12 @@ export default function PendingRequests() {
             <p className="text-gray-500">All requests have been processed or there are no new requests at this time.</p>
           </div>
         ) : (
-          // UPDATED: Reduced vertical spacing between cards from space-y-6 to space-y-4
           <div className="space-y-4">
             {requests.map((req) => (
               <div key={req.id} className="group overflow-hidden rounded-xl bg-white shadow-sm transition-all duration-200 hover:shadow-md">
-                {/* Main Request Card */}
-                {/* UPDATED: Reduced padding from p-6 to p-4 for a more compact card */}
                 <div className="p-4">
                   <div className="flex items-start justify-between">
-                    {/* Left Section - Icon and Product Info */}
                     <div className="flex items-start space-x-4">
-                      {/* UPDATED: Reduced icon container padding from p-3 to p-2 */}
                       <div className={`flex-shrink-0 rounded-lg p-2 ${
                         req.type === 'IN' 
                           ? 'bg-green-50 text-green-600' 
@@ -153,8 +146,8 @@ export default function PendingRequests() {
                       
                       <div className="flex-1">
                         <div className="mb-1.5 flex items-center space-x-3">
-                          {/* UPDATED: Reduced font size from text-lg to text-md */}
-                          <h3 className="text-md font-semibold text-gray-900">{req.product.name}</h3>
+                          {/* UPDATED: Access product name via nested structure */}
+                          <h3 className="text-md font-semibold text-gray-900">{req.stockItem.product.name}</h3>
                           <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
                             req.type === 'IN' 
                               ? 'bg-green-100 text-green-800' 
@@ -166,8 +159,8 @@ export default function PendingRequests() {
                         
                         <div className="flex items-center space-x-4 text-sm text-gray-600">
                           <div className="flex items-center space-x-1.5">
-                            <span className="font-medium text-gray-900">{req.quantity}</span>
-                            <span>units</span>
+                            {/* UPDATED: Display the serial number */}
+                            <span className="font-mono text-xs text-gray-500">{req.stockItem.serialNumber}</span>
                           </div>
                           
                           <div className="flex items-center space-x-1.5">
@@ -187,11 +180,9 @@ export default function PendingRequests() {
                       </div>
                     </div>
 
-                    {/* Right Section - Actions */}
                     <div className="flex flex-shrink-0 items-center space-x-2">
                       <button
                         onClick={() => handleProcessRequest(req.id, 'REJECTED')}
-                        // UPDATED: Reduced padding for a smaller button
                         className="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
                       >
                         <svg className="mr-1.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -202,7 +193,6 @@ export default function PendingRequests() {
                       
                       <button
                         onClick={() => handleProcessRequest(req.id, 'APPROVED')}
-                        // UPDATED: Changed from green to blue, reduced padding for a smaller button
                         className="inline-flex items-center rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                       >
                         <svg className="mr-1.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -221,7 +211,6 @@ export default function PendingRequests() {
                   </div>
                 </div>
 
-                {/* Expanded Details */}
                 {expandedRequestId === req.id && (
                   <div className="border-t border-gray-100 bg-gray-50/50 px-4 py-3">
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -250,8 +239,9 @@ export default function PendingRequests() {
                             </span>
                           </div>
                           <div className="flex justify-between text-sm">
-                            <span className="text-gray-500">Current Stock:</span>
-                            <span className="font-medium text-gray-900">{req.product.quantity} units</span>
+                            {/* UPDATED: Changed from "Current Stock" to "Serial Number" */}
+                            <span className="text-gray-500">Serial Number:</span>
+                            <span className="font-mono text-xs text-gray-500">{req.stockItem.serialNumber}</span>
                           </div>
                           <div className="flex justify-between text-sm">
                             <span className="text-gray-500">Request ID:</span>
