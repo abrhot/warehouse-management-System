@@ -29,5 +29,18 @@ export default async function MyRequestsPage() {
     },
   }) : [];
 
-  return <MyRequestsPageContent initialRequests={requests} />;
+  // Convert Decimal types to strings for client-side component compatibility
+  const serializableRequests = requests.map(request => ({
+    ...request,
+    stockItem: {
+        ...request.stockItem,
+        product: {
+            ...request.stockItem.product,
+            costPrice: request.stockItem.product.costPrice.toString(),
+            sellingPrice: request.stockItem.product.sellingPrice?.toString() || null,
+        }
+    }
+  }));
+
+  return <MyRequestsPageContent initialRequests={serializableRequests} />;
 }
