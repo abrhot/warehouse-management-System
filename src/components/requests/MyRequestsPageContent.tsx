@@ -4,11 +4,13 @@
 import React, { useState, useMemo } from 'react';
 import { RequestsHeader } from './RequestsHeader';
 import { RequestsTable } from './RequestsTable';
+import { RequestsBoardView } from './RequestsBoardView'; // New board view component
 import { UserRequestWithRelations } from '@/app/(main)/my-requests/page';
 
 export function MyRequestsPageContent({ initialRequests }: { initialRequests: UserRequestWithRelations[] }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [view, setView] = useState<'table' | 'board'>('table'); // State to manage the view
 
   const filteredRequests = useMemo(() => {
     return initialRequests.filter(req => {
@@ -27,11 +29,18 @@ export function MyRequestsPageContent({ initialRequests }: { initialRequests: Us
         <RequestsHeader
           onStatusChange={setStatusFilter}
           currentFilter={statusFilter}
+          view={view}
+          onViewChange={setView} // Pass handler to change view
         />
-        <RequestsTable
-          requests={filteredRequests}
-          onSearchChange={setSearchTerm}
-        />
+        {/* Conditionally render the table or board view */}
+        {view === 'table' ? (
+          <RequestsTable
+            requests={filteredRequests}
+            onSearchChange={setSearchTerm}
+          />
+        ) : (
+          <RequestsBoardView requests={filteredRequests} />
+        )}
       </div>
     </div>
   );
