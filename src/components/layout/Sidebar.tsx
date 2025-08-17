@@ -1,68 +1,59 @@
+// src/components/layout/Sidebar.tsx
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
 import { usePathname } from 'next/navigation';
+import { useSession, signOut } from 'next-auth/react';
+import { getNavRoutes } from '@/config/routes'; // Make sure this path is correct
 import {
-  Bell,
-  Package2,
-  Users,
-  FileText,
-  Settings,
   LayoutDashboard,
-  ScrollText,
+  Package,
+  BarChart3,
+  Settings,
+  Users,
   LogOut,
+  LucideIcon,
+  Mail,
+  ClipboardList,
+  UserCircle,
   Menu,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import '@/app/globals.css';
+import clsx from 'clsx';
+import { useState } from 'react';
 
+// --- Icon Mapping ---
+const iconMap: { [key: string]: LucideIcon } = {
+  '/my-requests': Mail,
+  '/dashboard': LayoutDashboard,
+  '/products': Package,
+  '/reports': BarChart3,
+  '/settings': Settings,
+  '/admin/users': Users,
+  '/admin/requests': ClipboardList,
+};
 
-interface User {
-  role: 'ADMIN' | 'USER';
-}
-
-interface NavLinkProps {
-  href: string;
-  label: string;
-  icon: React.ReactNode;
-  isCurrent: boolean;
-  isOpen: boolean;
-}
-
-// NavLink component with smaller size and non-bold text
-const NavLink: React.FC<NavLinkProps> = ({ href, label, icon, isCurrent, isOpen }) => (
-  <Link
-    href={href}
-    className={`flex items-center gap-3 p-1 rounded-md transition-colors text-base ${ // Reduced padding
-      isCurrent
-        ? 'bg-blue-600 text-white'
-        : 'bg-white text-black hover:bg-blue-600 hover:text-white'
-    }`}
-  >
-    {icon}
-    {isOpen && <span>{label}</span>} {/* Removed font-medium */}
-  </Link>
-);
-
-export function Sidebar({ user }: { user: User }) {
+export function Sidebar() {
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const user = session?.user;
   const [isOpen, setIsOpen] = useState(true);
 
+  // Generate navigation routes based on the user's role.
+  const navRoutes = getNavRoutes(user?.role);
+
   return (
-    // Updated positioning to be fixed
-    <div
-      className={`fixed top-0 left-0 h-screen flex-shrink-0 transition-all duration-300 ease-in-out font-poppins ${
+    <aside className={clsx(
+        'fixed top-0 left-0 z-50 flex h-screen flex-col border-r bg-white p-4 shadow-lg transition-all duration-300 ease-in-out',
         isOpen ? 'w-64' : 'w-20'
-      } border-r bg-white p-4 shadow-lg flex flex-col z-50`} // Added fixed, top-0, left-0 and z-index
-    >
+    )}>
       {/* Top Section: WMS Logo & Hamburger Menu */}
-      <div className="flex items-center justify-between h-16">
-        <div className="flex items-center gap-2">
-          {isOpen && (
-            <h1 className="text-lg font-bold text-blue-600">WMS</h1>
-          )}
-        </div>
+      <div className="flex h-16 items-center justify-between">
+        {isOpen && (
+            <Link href="/dashboard" className="text-lg font-bold text-blue-600">
+              WarehouseIMS
+            </Link>
+        )}
         <Button
           variant="ghost"
           size="icon"
@@ -73,71 +64,41 @@ export function Sidebar({ user }: { user: User }) {
         </Button>
       </div>
 
-      {/* Main Navigation Links */}
-      <nav className="flex-1 overflow-y-auto mt-6">
-        <div className="flex flex-col gap-4"> {/* Increased gap between buttons */}
-          <NavLink
-            href="/dashboard"
-            label="Dashboard"
-            icon={<LayoutDashboard className='h-5 w-5' />}
-            isCurrent={pathname === '/dashboard'}
-            isOpen={isOpen}
-          />
-          <NavLink
-            href="/products"
-            label="Products"
-            icon={<Package2 className='h-5 w-5' />}
-            isCurrent={pathname === '/products'}
-            isOpen={isOpen}
-          />
-          <NavLink
-            href="/reports"
-            label="Reports"
-            icon={<FileText className='h-5 w-5' />}
-            isCurrent={pathname === '/reports'}
-            isOpen={isOpen}
-          />
-          {/* Added Settings Link */}
-          <NavLink
-            href="/settings"
-            label="Settings"
-            icon={<Settings className='h-5 w-5' />}
-            isCurrent={pathname.startsWith('/settings')}
-            isOpen={isOpen}
-          />
+      {/* Main Navigation Links & User Profile */}
+      <div className="flex flex-1 flex-col justify-between overflow-y-auto">
+        <nav className="mt-6 flex flex-col gap-4">
+          {navRoutes.map((route) => {
+            const Icon = iconMap[route.path] || Package;
+            const isActive = pathname === route.path || (route.path !== '/dashboard' && pathname.startsWith(route.path));
+            
+            return (
+              <Link
+                key={route.path}
+                href={route.path}
+                className={clsx(
+                  'flex items-center gap-3 rounded-md p-2 text-base transition-colors',
+                  isActive
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white text-black hover:bg-blue-600 hover:text-white'
+                )}
+              >
+                <Icon className="h-5 w-5 flex-shrink-0" />
+                {isOpen && <span>{route.label}</span>}
+              </Link>
+            );
+          })}
+        </nav>
 
-          {/* Admin-only links */}
-          {user.role === 'ADMIN' && (
-            <>
-              <NavLink
-                href="/admin/users"
-                label="Users"
-                icon={<Users className='h-5 w-5' />}
-                isCurrent={pathname.startsWith('/admin/users')}
-                isOpen={isOpen}
-              />
-              <NavLink
-                href="/admin/requests"
-                label="Pending Requests"
-                icon={<ScrollText className='h-5 w-5' />}
-                isCurrent={pathname.startsWith('/admin/requests')}
-                isOpen={isOpen}
-              />
-            </>
-          )}
+        {/* User profile and logout section */}
+        <div className="pt-4">
+            <div className={clsx("flex items-center gap-3 rounded-md p-2 text-base transition-colors cursor-pointer text-black hover:bg-red-500 hover:text-white")}
+                onClick={() => signOut()}
+            >
+                <LogOut className="h-5 w-5 flex-shrink-0" />
+                {isOpen && <span>Log Out</span>}
+            </div>
         </div>
-      </nav>
-
-      {/* Logout Button */}
-      <div className="flex-0 pt-4">
-        <NavLink
-          href="/login"
-          label="Log Out"
-          icon={<LogOut className='h-5 w-5' />}
-          isCurrent={false}
-          isOpen={isOpen}
-        />
       </div>
-    </div>
+    </aside>
   );
 }

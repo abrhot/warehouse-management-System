@@ -1,7 +1,9 @@
+// src/app/layout.tsx
 import type { Metadata } from "next";
 import { Poppins, Outfit } from "next/font/google"; // 1. Import your new fonts
 import "./globals.css";
 import { Toaster } from "sonner";
+import Providers from './providers'; // Import the Session provider
 
 // 2. Configure the fonts with their weights and CSS variables
 const poppins = Poppins({
@@ -30,7 +32,9 @@ export default function RootLayout({
     <html lang="en">
       {/* 3. Apply the font variables and new theme classes to the body */}
       <body className={`${poppins.variable} ${outfit.variable} font-sans bg-background text-foreground`}>
-        {children}
+        <Providers>
+          {children}
+        </Providers>
         <Toaster position="top-right" />
       </body>
     </html>
