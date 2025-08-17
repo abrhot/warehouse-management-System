@@ -4,17 +4,22 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, LayoutDashboard } from 'lucide-react';
+import { Table, LayoutDashboard, Plus } from 'lucide-react';
 import clsx from 'clsx';
 
-// ... interface
+interface RequestsHeaderProps {
+  onStatusChange: (status: string) => void;
+  currentFilter: string;
+  view: 'table' | 'board';
+  onViewChange: (view: 'table' | 'board') => void;
+}
 
 export function RequestsHeader({ onStatusChange, currentFilter, view, onViewChange }: RequestsHeaderProps) {
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
       <h1 className="text-3xl font-bold text-gray-800">My Requests</h1>
       <div className="flex items-center gap-4">
-        {/* === THIS IS THE VIEW TOGGLE BUTTONS === */}
+        {/* View Toggle */}
         <div className="flex items-center gap-1 rounded-lg bg-gray-200 p-1">
           <Button
             size="sm"
@@ -39,9 +44,27 @@ export function RequestsHeader({ onStatusChange, currentFilter, view, onViewChan
             Board
           </Button>
         </div>
-        {/* ======================================= */}
         
-        {/* ... other filters and buttons */}
+        {/* Status Filter */}
+        <Select value={currentFilter} onValueChange={onStatusChange}>
+          <SelectTrigger className="w-[180px] bg-white hover:bg-blue-50 border-gray-300">
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="All">All Statuses</SelectItem>
+            <SelectItem value="PENDING">Pending</SelectItem>
+            <SelectItem value="APPROVED">Approved</SelectItem>
+            <SelectItem value="REJECTED">Rejected</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {/* Create Request Button */}
+        <Link href="/products" passHref>
+          <Button className="bg-white text-black border border-gray-300 hover:bg-blue-500 hover:text-white flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            New Request
+          </Button>
+        </Link>
       </div>
     </div>
   );
