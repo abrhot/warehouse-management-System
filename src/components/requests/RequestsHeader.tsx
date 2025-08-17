@@ -16,8 +16,10 @@ interface RequestsHeaderProps {
 
 export function RequestsHeader({ onStatusChange, currentFilter, view, onViewChange }: RequestsHeaderProps) {
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-      <h1 className="text-3xl font-bold text-gray-800">My Requests</h1>
+    <div className="flex items-center justify-between gap-4">
+      {/* This empty div can be used for branding or breadcrumbs later */}
+      <div></div>
+      
       <div className="flex items-center gap-4">
         {/* View Toggle */}
         <div className="flex items-center gap-1 rounded-lg bg-gray-200 p-1">
@@ -45,7 +47,7 @@ export function RequestsHeader({ onStatusChange, currentFilter, view, onViewChan
           </Button>
         </div>
         
-        {/* Status Filter */}
+        {/* Status Filter - This is the expandable menu for status */}
         <Select value={currentFilter} onValueChange={onStatusChange}>
           <SelectTrigger className="w-[180px] bg-white hover:bg-blue-50 border-gray-300">
             <SelectValue placeholder="Filter by status" />
