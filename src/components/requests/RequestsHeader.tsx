@@ -4,33 +4,44 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, LayoutDashboard } from 'lucide-react';
+import clsx from 'clsx';
 
-interface RequestsHeaderProps {
-  onStatusChange: (status: string) => void;
-  currentFilter: string;
-}
+// ... interface
 
-export function RequestsHeader({ onStatusChange, currentFilter }: RequestsHeaderProps) {
+export function RequestsHeader({ onStatusChange, currentFilter, view, onViewChange }: RequestsHeaderProps) {
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
       <h1 className="text-3xl font-bold text-gray-800">My Requests</h1>
-      <div className="flex items-center gap-2">
-        <Select value={currentFilter} onValueChange={onStatusChange}>
-          <SelectTrigger className="w-[180px] bg-white hover:bg-blue-50 border-gray-300">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="All">All Statuses</SelectItem>
-            <SelectItem value="PENDING">Pending</SelectItem>
-            <SelectItem value="APPROVED">Approved</SelectItem>
-            <SelectItem value="REJECTED">Rejected</SelectItem>
-          </SelectContent>
-        </Select>
-        <Link href="/products" passHref>
-          <Button className="bg-white text-black border border-gray-300 hover:bg-blue-500 hover:text-white">
-            + Create Request
+      <div className="flex items-center gap-4">
+        {/* === THIS IS THE VIEW TOGGLE BUTTONS === */}
+        <div className="flex items-center gap-1 rounded-lg bg-gray-200 p-1">
+          <Button
+            size="sm"
+            onClick={() => onViewChange('table')}
+            className={clsx(
+              'flex items-center gap-2 px-3 py-1',
+              view === 'table' ? 'bg-white text-black shadow-sm' : 'bg-transparent text-gray-600 hover:bg-white/50'
+            )}
+          >
+            <Table className="h-4 w-4" />
+            Table
           </Button>
-        </Link>
+          <Button
+            size="sm"
+            onClick={() => onViewChange('board')}
+            className={clsx(
+              'flex items-center gap-2 px-3 py-1',
+              view === 'board' ? 'bg-white text-black shadow-sm' : 'bg-transparent text-gray-600 hover:bg-white/50'
+            )}
+          >
+            <LayoutDashboard className="h-4 w-4" />
+            Board
+          </Button>
+        </div>
+        {/* ======================================= */}
+        
+        {/* ... other filters and buttons */}
       </div>
     </div>
   );
