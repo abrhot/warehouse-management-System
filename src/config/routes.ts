@@ -10,6 +10,7 @@ const baseRoutes: NavRoute[] = [
   { label: "My Requests", path: "/my-requests" }, // Moved to the top
   { label: "Dashboard", path: "/dashboard" },
   { label: "Products", path: "/products" },
+  { label: "Categories", path: "/categories" },
   { label: "Reports", path: "/reports" },
   { label: "Settings", path: "/settings" },
 ];
