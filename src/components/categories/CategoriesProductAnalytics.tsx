@@ -1,16 +1,34 @@
-// src/components/categories/CategoriesProductAnalytics.tsx
+// src/components/reports/CategoriesProductAnalytics.tsx
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line } from 'recharts';
 import { CategoryWithProducts } from '@/app/(main)/categories/page';
-import { PieChart as PieChartIcon, BarChart2 } from 'lucide-react';
+import { PieChart as PieChartIcon, BarChart2, TrendingUp } from 'lucide-react';
+import React from 'react';
 
 interface CategoriesProductAnalyticsProps {
   categories: CategoryWithProducts[];
 }
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF1906', '#8884d8'];
+
+// Mock data for stock trends, replace with real data
+const stockTrendsData = [
+  { name: 'Jan', 'Stock In': 400, 'Stock Out': 240 },
+  { name: 'Feb', 'Stock In': 300, 'Stock Out': 139 },
+  { name: 'Mar', 'Stock In': 200, 'Stock Out': 980 },
+  { name: 'Apr', 'Stock In': 278, 'Stock Out': 390 },
+  { name: 'May', 'Stock In': 189, 'Stock Out': 480 },
+];
+
+const salesTrendsData = [
+    { name: 'Jan', 'Sales': 400 },
+    { name: 'Feb', 'Sales': 300 },
+    { name: 'Mar', 'Sales': 200 },
+    { name: 'Apr', 'Sales': 278 },
+    { name: 'May', 'Sales': 189 },
+];
 
 export function CategoriesProductAnalytics({ categories }: CategoriesProductAnalyticsProps) {
   const pieChartData = categories.map(cat => ({
@@ -20,18 +38,9 @@ export function CategoriesProductAnalytics({ categories }: CategoriesProductAnal
 
   const totalProducts = categories.reduce((sum, cat) => sum + cat.products.length, 0);
 
-  // Mock data for stock trends, replace with real data
-  const stockTrendsData = [
-    { name: 'Jan', 'Stock In': 400, 'Stock Out': 240 },
-    { name: 'Feb', 'Stock In': 300, 'Stock Out': 139 },
-    { name: 'Mar', 'Stock In': 200, 'Stock Out': 980 },
-    { name: 'Apr', 'Stock In': 278, 'Stock Out': 390 },
-    { name: 'May', 'Stock In': 189, 'Stock Out': 480 },
-  ];
-
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
-      {/* Products by Category Chart */}
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {/* Products by Category Chart (Top Left) */}
       <Card className="p-4 border border-gray-200 shadow-sm">
         <CardHeader className="p-0 mb-4">
           <CardTitle className="flex items-center gap-2 text-xl font-bold">
@@ -63,7 +72,28 @@ export function CategoriesProductAnalytics({ categories }: CategoriesProductAnal
         </CardContent>
       </Card>
       
-      {/* Stock Trends Chart */}
+      {/* Sales Trends Chart (Middle) */}
+      <Card className="p-4 border border-gray-200 shadow-sm">
+        <CardHeader className="p-0 mb-4">
+          <CardTitle className="flex items-center gap-2 text-xl font-bold">
+            <TrendingUp className="h-5 w-5 text-gray-500" />
+            Sales Trends
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0 h-64">
+            <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={salesTrendsData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Line type="monotone" dataKey="Sales" stroke="#8884d8" activeDot={{ r: 8 }} />
+                </LineChart>
+            </ResponsiveContainer>
+        </CardContent>
+      </Card>
+
+      {/* Stock In/Out Bar Chart (Top Right) */}
       <Card className="p-4 border border-gray-200 shadow-sm">
         <CardHeader className="p-0 mb-4">
           <CardTitle className="flex items-center gap-2 text-xl font-bold">

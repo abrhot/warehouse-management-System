@@ -1,4 +1,4 @@
-// src/components/categories/CategoryProductsExpander.tsx
+// src/components/reports/CategoryProductsExpander.tsx
 'use client';
 
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
