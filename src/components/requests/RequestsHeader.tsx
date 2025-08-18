@@ -17,10 +17,21 @@ interface RequestsHeaderProps {
 export function RequestsHeader({ onStatusChange, currentFilter, view, onViewChange }: RequestsHeaderProps) {
   return (
     <div className="flex items-center justify-between gap-4">
-      {/* This empty div can be used for branding or breadcrumbs later */}
-      <div></div>
-      
+      {/* Left-aligned content */}
       <div className="flex items-center gap-4">
+        {/* Status Filter */}
+        <Select value={currentFilter} onValueChange={onStatusChange}>
+          <SelectTrigger className="w-[180px] bg-white hover:bg-blue-50 border-gray-300">
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="All">All Statuses</SelectItem>
+            <SelectItem value="PENDING">Pending</SelectItem>
+            <SelectItem value="APPROVED">Approved</SelectItem>
+            <SelectItem value="REJECTED">Rejected</SelectItem>
+          </SelectContent>
+        </Select>
+
         {/* View Toggle */}
         <div className="flex items-center gap-1 rounded-lg bg-gray-200 p-1">
           <Button
@@ -46,20 +57,10 @@ export function RequestsHeader({ onStatusChange, currentFilter, view, onViewChan
             Board
           </Button>
         </div>
-        
-        {/* Status Filter - This is the expandable menu for status */}
-        <Select value={currentFilter} onValueChange={onStatusChange}>
-          <SelectTrigger className="w-[180px] bg-white hover:bg-blue-50 border-gray-300">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="All">All Statuses</SelectItem>
-            <SelectItem value="PENDING">Pending</SelectItem>
-            <SelectItem value="APPROVED">Approved</SelectItem>
-            <SelectItem value="REJECTED">Rejected</SelectItem>
-          </SelectContent>
-        </Select>
+      </div>
 
+      {/* Right-aligned content */}
+      <div>
         {/* Create Request Button */}
         <Link href="/products" passHref>
           <Button className="bg-white text-black border border-gray-300 hover:bg-blue-500 hover:text-white flex items-center gap-2">

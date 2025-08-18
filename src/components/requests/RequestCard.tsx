@@ -13,12 +13,9 @@ export function RequestCard({ request }: { request: UserRequestWithRelations }) 
       <div className="flex justify-between items-start mb-3">
         <div className="flex items-center gap-2">
           <Hash className="h-4 w-4 text-gray-400" />
-          <p className="font-mono text-sm font-semibold text-gray-800">{request.stockItem.serialNumber.split('-')[2]}</p>
+          <p className="font-mono text-sm font-semibold text-blue-500">{request.stockItem.serialNumber.split('-')[2]}</p>
         </div>
-        <div className="flex items-center gap-1 text-sm font-medium text-gray-600">
-            <DollarSign className="h-4 w-4 text-gray-400" />
-            <span>{costPrice.toFixed(2)}</span>
-        </div>
+        
       </div>
 
       {/* Main Content: Product Name */}
