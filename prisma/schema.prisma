@@ -34,45 +34,51 @@ model AuditLog {
 
   // Relations
   userId String @map("user_id")
-  user   User   @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // WAREHOUSE CORE MODELS /////////////////////////////////////////////////////////
 model Product {
   id           String   @id @default(uuid())
+  sku          String   @unique
   name         String
   location     String?
   reorderLevel Int      @default(10)
   weight       Float?
   dimensions   String?
-  costPrice    Decimal  @default(0) @db.Decimal(10, 2)
+  costPrice    Decimal  @db.Decimal(10, 2)
   sellingPrice Decimal? @db.Decimal(10, 2)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  quantity     Int      @default(0)
 
   // Relations
   categoryId Int
-  category   Category    @relation(fields: [categoryId], references: [id])
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
   supplierId Int?
-  supplier   Supplier?   @relation(fields: [supplierId], references: [id])
-  stockItems StockItem[] // One product has many stock items
+  supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+
+  stockItems StockItem[]
 
   @@unique([name, categoryId])
 }
 
-// NEW MODEL: This is the core of the new system
 model StockItem {
   id           String     @id @default(uuid())
-  serialNumber String     @unique // The new unique identifier
+  serialNumber String     @unique
   status       ItemStatus @default(IN_STOCK)
   location     String?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
   // Relations
-  productId    String
-  product      Product        @relation(fields: [productId], references: [id])
-  stockRequest StockRequest[]
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  // This is the relation field that points back to StockRequest.
+  // We do not define the foreign key or references here.
+  stockRequest StockRequest?
 }
 
 model Category {
@@ -99,15 +105,16 @@ model StockRequest {
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
 
-  // Relations
-  stockItemId String
-  stockItem   StockItem @relation(fields: [stockItemId], references: [id])
+  // Relations: One StockRequest links to one StockItem.
+  // The foreign key (stockItemId) and the relation definition are correctly placed here.
+  stockItemId String?    @unique
+  stockItem   StockItem? @relation(fields: [stockItemId], references: [id], onDelete: SetNull)
 
   requestedBy String @map("requested_by")
-  requester   User   @relation("RequestedBy", fields: [requestedBy], references: [id])
+  requester   User   @relation("RequestedBy", fields: [requestedBy], references: [id], onDelete: Cascade)
 
   approvedBy String? @map("approved_by")
-  approver   User?   @relation("ApprovedBy", fields: [approvedBy], references: [id])
+  approver   User?   @relation("ApprovedBy", fields: [approvedBy], references: [id], onDelete: SetNull)
 }
 
 // ENUMS ////////////////////////////////////////////////////////////////////////
@@ -127,7 +134,6 @@ enum RequestStatus {
   REJECTED
 }
 
-// NEW ENUM: To track the status of each individual item
 enum ItemStatus {
   IN_STOCK
   RESERVED
