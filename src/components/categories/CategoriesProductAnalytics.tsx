@@ -11,7 +11,7 @@ interface CategoriesProductAnalyticsProps {
   categories: CategoryWithProducts[];
 }
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF1906', '#8884d8'];
+const COLORS = ['#1d4ed8', '#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe', '#0ea5e9'];
 
 // Mock data for stock trends, replace with real data
 const stockTrendsData = [
@@ -22,12 +22,12 @@ const stockTrendsData = [
   { name: 'May', 'Stock In': 189, 'Stock Out': 480 },
 ];
 
-const salesTrendsData = [
-    { name: 'Jan', 'Sales': 400 },
-    { name: 'Feb', 'Sales': 300 },
-    { name: 'Mar', 'Sales': 200 },
-    { name: 'Apr', 'Sales': 278 },
-    { name: 'May', 'Sales': 189 },
+const requestsTrendsData = [
+    { name: 'Jan', Requests: 120 },
+    { name: 'Feb', Requests: 180 },
+    { name: 'Mar', Requests: 90 },
+    { name: 'Apr', Requests: 210 },
+    { name: 'May', Requests: 160 },
 ];
 
 export function CategoriesProductAnalytics({ categories }: CategoriesProductAnalyticsProps) {
@@ -41,10 +41,10 @@ export function CategoriesProductAnalytics({ categories }: CategoriesProductAnal
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
       {/* Products by Category Chart (Top Left) */}
-      <Card className="p-4 border border-gray-200 shadow-sm">
+      <Card className="p-4 border border-gray-200 shadow-sm bg-white">
         <CardHeader className="p-0 mb-4">
           <CardTitle className="flex items-center gap-2 text-xl font-bold">
-            <PieChartIcon className="h-5 w-5 text-gray-500" />
+            <PieChartIcon className="h-5 w-5 text-blue-600" />
             Products by Category
           </CardTitle>
           <CardDescription className="text-gray-500">Total Products: {totalProducts}</CardDescription>
@@ -58,8 +58,8 @@ export function CategoriesProductAnalytics({ categories }: CategoriesProductAnal
                 nameKey="name"
                 cx="50%"
                 cy="50%"
-                outerRadius={80}
-                fill="#8884d8"
+                outerRadius={90}
+                fill="#3b82f6"
                 label
               >
                 {pieChartData.map((entry, index) => (
@@ -72,32 +72,32 @@ export function CategoriesProductAnalytics({ categories }: CategoriesProductAnal
         </CardContent>
       </Card>
       
-      {/* Sales Trends Chart (Middle) */}
-      <Card className="p-4 border border-gray-200 shadow-sm">
+      {/* Requests Trend Chart (Middle) */}
+      <Card className="p-4 border border-gray-200 shadow-sm bg-white">
         <CardHeader className="p-0 mb-4">
           <CardTitle className="flex items-center gap-2 text-xl font-bold">
-            <TrendingUp className="h-5 w-5 text-gray-500" />
-            Sales Trends
+            <TrendingUp className="h-5 w-5 text-blue-600" />
+            Requests Trend
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0 h-64">
             <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={salesTrendsData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
+                <LineChart data={requestsTrendsData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                     <XAxis dataKey="name" />
                     <YAxis />
                     <Tooltip />
-                    <Line type="monotone" dataKey="Sales" stroke="#8884d8" activeDot={{ r: 8 }} />
+                    <Line type="monotone" dataKey="Requests" stroke="#2563eb" activeDot={{ r: 8 }} />
                 </LineChart>
             </ResponsiveContainer>
         </CardContent>
       </Card>
 
       {/* Stock In/Out Bar Chart (Top Right) */}
-      <Card className="p-4 border border-gray-200 shadow-sm">
+      <Card className="p-4 border border-gray-200 shadow-sm bg-white">
         <CardHeader className="p-0 mb-4">
           <CardTitle className="flex items-center gap-2 text-xl font-bold">
-            <BarChart2 className="h-5 w-5 text-gray-500" />
+            <BarChart2 className="h-5 w-5 text-blue-600" />
             Monthly Stock Trends
           </CardTitle>
           <CardDescription className="text-gray-500">A look at monthly stock in and out trends.</CardDescription>
@@ -105,12 +105,12 @@ export function CategoriesProductAnalytics({ categories }: CategoriesProductAnal
         <CardContent className="p-0 h-64">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={stockTrendsData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
               <XAxis dataKey="name" />
               <YAxis />
               <Tooltip />
-              <Bar dataKey="Stock In" fill="#8884d8" />
-              <Bar dataKey="Stock Out" fill="#82ca9d" />
+              <Bar dataKey="Stock In" fill="#3b82f6" />
+              <Bar dataKey="Stock Out" fill="#93c5fd" />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
