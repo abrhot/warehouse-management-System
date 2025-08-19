@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ArrowUp, ArrowDown, History, User, FileText, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { FileText, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -18,6 +18,7 @@ interface PendingRequest {
   quantity: number;
   createdAt: string;
   notes: string | null;
+  serialNumber?: string; // ✅ added so we can show serial number
   product: {
     name: string;
     quantity: number;
@@ -68,8 +69,8 @@ export function PendingRequests() {
       }
       toast.success(`Request successfully ${newStatus.toLowerCase()}!`);
       setRequests((prevRequests) => prevRequests.filter((req) => req.id !== requestId));
-      setIsRejectDialogOpen(false); // Close dialog on success
-      setRejectionRemark(''); // Reset remark
+      setIsRejectDialogOpen(false);
+      setRejectionRemark('');
     } catch (err: any) {
       console.error(err);
       toast.error(`Error: ${err.message}`);
@@ -148,7 +149,7 @@ export function PendingRequests() {
                       <TableRow className="hover:bg-gray-50">
                         <TableCell className="font-medium text-gray-900">
                           <AccordionTrigger className="p-0 hover:no-underline">
-                            <span className="truncate">{req.stockItem.product.name}</span>
+                            <span className="truncate">{req.product.name}</span>
                           </AccordionTrigger>
                         </TableCell>
                         <TableCell>
@@ -156,7 +157,7 @@ export function PendingRequests() {
                             {req.type === 'IN' ? 'Stock In' : 'Stock Out'}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-gray-500">{req.stockItem.serialNumber}</TableCell>
+                        <TableCell className="text-gray-500">{req.serialNumber || 'N/A'}</TableCell>
                         <TableCell className="text-gray-500">{req.requester.name || req.requester.email}</TableCell>
                         <TableCell className="text-gray-500">{new Date(req.createdAt).toLocaleDateString()}</TableCell>
                         <TableCell className="text-right p-2">
