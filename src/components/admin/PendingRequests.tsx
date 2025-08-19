@@ -8,19 +8,19 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ArrowUp, ArrowDown, History, User, FileText, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 
-// UPDATED: The interface now matches the new API response structure
 interface PendingRequest {
   id: string;
   type: 'IN' | 'OUT';
   quantity: number;
   createdAt: string;
   notes: string | null;
-  stockItem: {
-    serialNumber: string;
-    product: {
-      name: string;
-    };
+  product: {
+    name: string;
+    quantity: number;
   };
   requester: {
     name: string | null;
@@ -32,6 +32,9 @@ export function PendingRequests() {
   const [requests, setRequests] = useState<PendingRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
+  const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
+  const [rejectionRemark, setRejectionRemark] = useState('');
 
   const fetchRequests = async () => {
     setLoading(true);
@@ -52,12 +55,12 @@ export function PendingRequests() {
     fetchRequests();
   }, []);
 
-  const handleProcessRequest = async (requestId: string, newStatus: 'APPROVED' | 'REJECTED') => {
+  const handleProcessRequest = async (requestId: string, newStatus: 'APPROVED' | 'REJECTED', remark?: string) => {
     try {
       const res = await fetch('/api/stock/process', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ requestId, newStatus }),
+        body: JSON.stringify({ requestId, newStatus, remark }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -65,9 +68,24 @@ export function PendingRequests() {
       }
       toast.success(`Request successfully ${newStatus.toLowerCase()}!`);
       setRequests((prevRequests) => prevRequests.filter((req) => req.id !== requestId));
+      setIsRejectDialogOpen(false); // Close dialog on success
+      setRejectionRemark(''); // Reset remark
     } catch (err: any) {
       console.error(err);
       toast.error(`Error: ${err.message}`);
+    }
+  };
+
+  const openRejectDialog = (requestId: string) => {
+    setSelectedRequestId(requestId);
+    setIsRejectDialogOpen(true);
+  };
+
+  const handleRejectSubmit = () => {
+    if (selectedRequestId && rejectionRemark) {
+      handleProcessRequest(selectedRequestId, 'REJECTED', rejectionRemark);
+    } else {
+      toast.error('A rejection remark is required.');
     }
   };
 
@@ -143,7 +161,7 @@ export function PendingRequests() {
                         <TableCell className="text-gray-500">{new Date(req.createdAt).toLocaleDateString()}</TableCell>
                         <TableCell className="text-right p-2">
                           <Button
-                            onClick={() => handleProcessRequest(req.id, 'REJECTED')}
+                            onClick={() => openRejectDialog(req.id)} // Open dialog on click
                             variant="destructive"
                             size="sm"
                             className="mr-2"
@@ -175,6 +193,33 @@ export function PendingRequests() {
           </div>
         )}
       </CardContent>
+
+      {/* Reject Remark Dialog */}
+      <AlertDialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reject Request</AlertDialogTitle>
+            <AlertDialogDescription>
+              Please provide a reason for rejecting this request.
+            </AlertDialogDescription>
+            <div className="mt-4 space-y-2">
+              <Label htmlFor="rejection-remark">Rejection Remark</Label>
+              <Textarea
+                id="rejection-remark"
+                value={rejectionRemark}
+                onChange={(e) => setRejectionRemark(e.target.value)}
+                placeholder="e.g., Not enough stock, incorrect quantity"
+              />
+            </div>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setRejectionRemark('')}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleRejectSubmit} className="bg-red-600 text-white hover:bg-red-700">
+              Submit Rejection
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
