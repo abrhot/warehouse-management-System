@@ -161,7 +161,7 @@ export function PendingRequests() {
                         <TableCell className="text-gray-500">{new Date(req.createdAt).toLocaleDateString()}</TableCell>
                         <TableCell className="text-right p-2">
                           <Button
-                            onClick={() => openRejectDialog(req.id)} // Open dialog on click
+                            onClick={() => openRejectDialog(req.id)}
                             variant="destructive"
                             size="sm"
                             className="mr-2"

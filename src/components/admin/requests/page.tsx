@@ -1,13 +1,17 @@
-import PendingRequests from '@/components/admin/PendingRequests';
+// src/app/(main)/admin/requests/page.tsx
+import { PageHeader } from '@/components/ui/PageHeader';
+import { PendingRequests } from '@/components/admin/PendingRequests';
 
 export default function AdminRequestsPage() {
   return (
-    <main className="container mx-auto py-8">
-      <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
-      
-      {/* This is the component that fetches and displays pending requests */}
-      <PendingRequests />
-      
-    </main>
+    <div className="p-8">
+      <PageHeader
+        title="Pending Stock Requests"
+        description="Review and manage all incoming stock requests."
+      />
+      <div className="mt-8">
+        <PendingRequests />
+      </div>
+    </div>
   );
 }
