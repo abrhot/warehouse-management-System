@@ -1,7 +1,7 @@
 // src/app/(main)/dashboard/page.tsx
 import { KpiSection } from '@/components/dashboard/KpiSection';
 import { MainChart } from '@/components/dashboard/MainChart';
-import { CategoriesSidebar } from '@/components/dashboard/CategoriesSidebar';
+import CategoriesChart from '@/components/dashboard/CategoriesChart';
 import { LowStockSection } from '@/components/dashboard/LowStockSection';
 import { Footer } from '@/components/dashboard/Footer';
 import prisma from '@/lib/prisma';
@@ -11,6 +11,7 @@ export default async function DashboardPage() {
 
   // Total items now counts every single physical item in stock
   const totalItemsInStock = await prisma.stockItem.count({ where: { status: 'IN_STOCK' } });
+  const totalProducts = await prisma.product.count();
   const pendingRequests = await prisma.stockRequest.count({ where: { status: 'PENDING' } });
 
   // New logic for finding low stock items
@@ -34,6 +35,7 @@ export default async function DashboardPage() {
       id: p.id,
       name: p.name,
       quantity: p._count.stockItems, // Pass the count as 'quantity' to the component
+      reorderLevel: p.reorderLevel,
     }));
 
   // New logic for fetching categories with their product stock counts
@@ -51,23 +53,17 @@ export default async function DashboardPage() {
     },
   });
 
-  // --- Convert Decimal types and map stock counts before passing to Client Components ---
-  const convertedCategories = categoriesWithProducts.map(category => ({
-    ...category,
-    products: category.products.map(product => ({
-      id: product.id,
-      name: product.name,
-      quantity: product._count.stockItems, // Use the new stock count
-      costPrice: product.costPrice.toString(),
-      sellingPrice: product.sellingPrice?.toString() || null,
-    })),
+  // --- Build chart data: category name -> total items in stock across its products ---
+  const categoriesChartData = categoriesWithProducts.map(category => ({
+    name: category.name,
+    value: category.products.reduce((sum, product) => sum + (product._count?.stockItems ?? 0), 0),
   }));
 
   const kpiData = {
-    totalRevenue: 45231.89, // Placeholder data
+    totalProducts: totalProducts,
     stockOut: 1234, // Placeholder data
     pendingRequests: pendingRequests,
-    newProducts: totalItemsInStock, // This KPI now reflects total items
+    newProducts: totalItemsInStock, // Placeholder: using items in stock for demo
   };
 
   const mainChartData = [
@@ -88,8 +84,8 @@ export default async function DashboardPage() {
           <LowStockSection lowStockItems={lowStockItems} />
         </div>
         
-        {/* Right Section: Categories Sidebar */}
-        <CategoriesSidebar categories={convertedCategories} />
+        {/* Right Section: Categories Chart */}
+        <CategoriesChart data={categoriesChartData} />
       </div>
       
       <Footer />

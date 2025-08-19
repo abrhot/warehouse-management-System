@@ -1,7 +1,8 @@
 // src/components/dashboard/KpiCard.tsx
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React from 'react';
 
-export function KpiCard({ title, value, percentage, trend, Icon }: any) {
+export function KpiCard({ title, value, percentage, trend, Icon, children }: any) {
   return (
     <Card className="shadow-sm bg-[#edf3e8] text-[#141b0e]">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -13,6 +14,11 @@ export function KpiCard({ title, value, percentage, trend, Icon }: any) {
         <p className={`text-xs ${trend === 'up' ? 'text-green-500' : 'text-red-500'}`}>
           {percentage} from last month
         </p>
+        {children ? (
+          <div className="mt-3">
+            {children}
+          </div>
+        ) : null}
       </CardContent>
     </Card>
   );
