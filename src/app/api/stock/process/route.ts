@@ -1,21 +1,18 @@
-// src/app/api/stock/process/route.ts
-
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
-import { RequestStatus, ItemStatus } from '@/generated/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-
+import prisma from '@/lib/prisma';
+import { RequestStatus, ItemStatus } from '@/generated/prisma';
 
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id || session.user.role !== 'ADMIN') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await req.json();
-    const { requestId, newStatus } = body;
+    const { requestId, newStatus, remark } = body;
 
     if (!requestId || !newStatus) {
       return NextResponse.json({ error: 'Missing requestId or newStatus' }, { status: 400 });
@@ -25,9 +22,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid status provided' }, { status: 400 });
     }
 
-    // Find the original request to get its details
     const request = await prisma.stockRequest.findUnique({
       where: { id: requestId },
+      include: { stockItem: true },
     });
 
     if (!request) {
@@ -36,52 +33,46 @@ export async function POST(req: Request) {
     if (request.status !== RequestStatus.PENDING) {
       return NextResponse.json({ error: 'Request has already been processed' }, { status: 400 });
     }
-    
-    // --- Main Logic: Handle Approval or Rejection ---
 
     if (newStatus === RequestStatus.APPROVED) {
-      // Use a transaction to update both the request and the stock item's status
-      const [updatedRequest] = await prisma.$transaction([
-        // 1. Update the request status
+      const [updatedRequest, updatedStockItem] = await prisma.$transaction([
         prisma.stockRequest.update({
           where: { id: requestId },
-          data: { 
+          data: {
             status: RequestStatus.APPROVED,
             approvedBy: session.user.id,
           },
         }),
-        // 2. Update the stock item's status to SHIPPED
         prisma.stockItem.update({
-          where: { id: request.stockItemId },
+          where: { id: request.stockItemId! },
           data: {
             status: ItemStatus.SHIPPED,
           },
         }),
       ]);
-      return NextResponse.json(updatedRequest);
+      return NextResponse.json({ updatedRequest, updatedStockItem });
     } else { // If the status is REJECTED
-      // Use a transaction to update the request and revert the stock item's status
-      const [updatedRequest] = await prisma.$transaction([
+      const [updatedRequest, updatedStockItem] = await prisma.$transaction([
         prisma.stockRequest.update({
-            where: { id: requestId },
-            data: { 
-                status: RequestStatus.REJECTED,
-                approvedBy: session.user.id,
-            },
+          where: { id: requestId },
+          data: {
+            status: RequestStatus.REJECTED,
+            approvedBy: session.user.id,
+            reason: remark, // Save the rejection remark
+          },
         }),
-        // Revert the item's status from RESERVED back to IN_STOCK
         prisma.stockItem.update({
-            where: { id: request.stockItemId },
-            data: {
-                status: ItemStatus.IN_STOCK,
-            }
+          where: { id: request.stockItemId! },
+          data: {
+            status: ItemStatus.IN_STOCK, // Revert status
+          },
         })
       ]);
-      return NextResponse.json(updatedRequest);
+      return NextResponse.json({ updatedRequest, updatedStockItem });
     }
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error processing request:', error);
-    return NextResponse.json({ error: 'Failed to process request' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to process request: ${error.message}` }, { status: 500 });
   }
 }
