@@ -3,7 +3,6 @@
 
 import { UserRequestWithRelations } from '@/app/(main)/my-requests/page';
 import { RequestCard } from './RequestCard';
-import { Badge } from '@/components/ui/badge';
 import { RequestStatus } from '@/generated/prisma';
 
 interface RequestsBoardViewProps {
@@ -32,7 +31,7 @@ export function RequestsBoardView({ requests }: RequestsBoardViewProps) {
           <div className="flex items-center gap-2 p-2 mb-4 border-b-2">
             <span className={`h-2 w-2 rounded-full ${statusConfig[status].color}`}></span>
             <h2 className="font-semibold text-gray-700">{statusConfig[status].title}</h2>
-            <Badge variant="secondary">{reqs.length}</Badge>
+            {/* The Badge component showing the count has been removed */}
           </div>
           <div className="flex flex-col gap-4 overflow-y-auto">
             {reqs.length > 0 ? (

@@ -7,8 +7,23 @@ import { RequestsHeader } from './RequestsHeader';
 import { RequestsTable } from './RequestsTable';
 import { RequestsBoardView } from './RequestsBoardView';
 import { UserRequestWithRelations } from '@/app/(main)/my-requests/page';
+import { RequestsSummary } from './RequestsSummary'; // Import the summary component
 
-export function MyRequestsPageContent({ initialRequests }: { initialRequests: UserRequestWithRelations[] }) {
+// Define the type for the summary data
+interface SummaryData {
+  total: number;
+  rejected: number;
+  pending: number;
+}
+
+// Update the component's props to accept initialRequests and summary
+export function MyRequestsPageContent({ 
+  initialRequests,
+  summary 
+}: { 
+  initialRequests: UserRequestWithRelations[];
+  summary: SummaryData; 
+}) {
   const [requests, setRequests] = useState(initialRequests);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
@@ -35,8 +50,12 @@ export function MyRequestsPageContent({ initialRequests }: { initialRequests: Us
 
   const filteredRequests = useMemo(() => {
     return requests.filter(req => {
-      const matchesSearch = req.stockItem.serialNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            req.stockItem.product.name.toLowerCase().includes(searchTerm.toLowerCase());
+      // Safety check to prevent crash if stockItem or product is null
+      const productName = req.stockItem?.product?.name || '';
+      const serialNumber = req.stockItem?.serialNumber || '';
+
+      const matchesSearch = serialNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            productName.toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesStatus = statusFilter === 'All' || req.status === statusFilter;
 
@@ -53,6 +72,10 @@ export function MyRequestsPageContent({ initialRequests }: { initialRequests: Us
           view={view}
           onViewChange={setView}
         />
+        
+        {/* The summary component is now below the header */}
+        <RequestsSummary summary={summary} />
+
         {view === 'table' ? (
           <RequestsTable
             requests={filteredRequests}
