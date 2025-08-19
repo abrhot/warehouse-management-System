@@ -27,10 +27,11 @@ import { useState } from 'react';
 
 // --- Icon Mapping ---
 const iconMap: { [key: string]: LucideIcon } = {
+  '/my-requests': ClipboardList,
+
   '/dashboard': LayoutDashboard,
   '/products': Boxes,
   '/categories': Layers3,
-  '/my-requests': ClipboardList,
   '/reports': BarChart3,
   '/settings': Settings,
   '/admin/users': Users,
