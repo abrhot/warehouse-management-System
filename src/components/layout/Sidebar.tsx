@@ -16,7 +16,10 @@ import {
   Mail,
   ClipboardList,
   Menu,
-  Tag, // 1. Import the Tag icon
+  Tag,
+  Boxes,
+  Layers3,
+  Bell,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import clsx from 'clsx';
@@ -24,14 +27,14 @@ import { useState } from 'react';
 
 // --- Icon Mapping ---
 const iconMap: { [key: string]: LucideIcon } = {
-  '/my-requests': Mail,
   '/dashboard': LayoutDashboard,
-  '/products': Package,
-  '/categories': Tag, // 2. Add the new icon mapping here
+  '/products': Boxes,
+  '/categories': Layers3,
+  '/my-requests': ClipboardList,
   '/reports': BarChart3,
   '/settings': Settings,
   '/admin/users': Users,
-  '/admin/requests': ClipboardList,
+  '/admin/requests': Bell,
 };
 
 export function Sidebar() {
@@ -51,7 +54,7 @@ export function Sidebar() {
       {/* Top Section: WMS Logo & Hamburger Menu */}
       <div className="flex h-16 items-center justify-between">
         {isOpen && (
-            <Link href="/dashboard" className="text-lg font-bold text-blue-600">
+            <Link href="/dashboard" className="text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
               WarehouseIMS
             </Link>
         )}
@@ -67,7 +70,7 @@ export function Sidebar() {
 
       {/* Main Navigation Links & User Profile */}
       <div className="flex flex-1 flex-col justify-between overflow-y-auto">
-        <nav className="mt-6 flex flex-col gap-4">
+        <nav className="mt-6 flex flex-col gap-2">
           {navRoutes.map((route) => {
             const Icon = iconMap[route.path] || Package;
             const isActive = pathname === route.path || (route.path !== '/dashboard' && pathname.startsWith(route.path));
@@ -77,13 +80,13 @@ export function Sidebar() {
                 key={route.path}
                 href={route.path}
                 className={clsx(
-                  'flex items-center gap-3 rounded-md p-2 text-base transition-colors',
+                  'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
                   isActive
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-white text-black hover:bg-blue-600 hover:text-white'
+                    ? 'bg-blue-600 text-white shadow'
+                    : 'bg-white text-slate-700 hover:bg-blue-50 hover:text-blue-700'
                 )}
               >
-                <Icon className="h-5 w-5 flex-shrink-0" />
+                <Icon className={clsx('h-5 w-5 flex-shrink-0', isActive ? 'text-white' : 'text-blue-600')} />
                 {isOpen && <span>{route.label}</span>}
               </Link>
             );
@@ -92,11 +95,11 @@ export function Sidebar() {
 
         {/* User profile and logout section */}
         <div className="pt-4">
-            <div className={clsx("flex items-center gap-3 rounded-md p-2 text-base transition-colors cursor-pointer text-black hover:bg-red-500 hover:text-white")}
+            <div className={clsx('flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors cursor-pointer text-slate-700 hover:bg-red-50 hover:text-red-600')}
                 onClick={() => signOut()}
             >
                 <LogOut className="h-5 w-5 flex-shrink-0" />
-                {isOpen && <span>Log Out</span>}
+                {isOpen && <span>Log out</span>}
             </div>
         </div>
       </div>

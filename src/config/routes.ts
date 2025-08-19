@@ -7,10 +7,10 @@ interface NavRoute {
 
 // Routes available to regular users and admins
 const baseRoutes: NavRoute[] = [
-  { label: "My Requests", path: "/my-requests" }, // Moved to the top
   { label: "Dashboard", path: "/dashboard" },
   { label: "Products", path: "/products" },
   { label: "Categories", path: "/categories" },
+  { label: "My Requests", path: "/my-requests" },
   { label: "Reports", path: "/reports" },
   { label: "Settings", path: "/settings" },
 ];
