@@ -73,19 +73,4 @@ export function MyRequestsPageContent({
           onViewChange={setView}
         />
         
-        {/* The summary component is now below the header */}
-        <RequestsSummary summary={summary} />
-
-        {view === 'table' ? (
-          <RequestsTable
-            requests={filteredRequests}
-            onSearchChange={setSearchTerm}
-            onDeleteRequest={handleDeleteRequest}
-          />
-        ) : (
-          <RequestsBoardView requests={filteredRequests} />
-        )}
-      </div>
-    </div>
-  );
-}
+        
