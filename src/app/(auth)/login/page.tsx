@@ -82,4 +82,18 @@ export default function LoginPage() {
             </div>
             {error && <p className="text-sm text-red-600">{error}</p>}
           </CardContent>
-         
+          <CardFooter>
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-white text-black border border-gray-300 hover:bg-blue-600 hover:text-white text-xs py-1"
+            >
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isLoading ? "Logging in..." : "Login"}
+            </Button>
+          </CardFooter>
+        </form>
+      </Card>
+    </div>
+  );
+}
