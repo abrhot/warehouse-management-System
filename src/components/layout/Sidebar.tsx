@@ -94,16 +94,4 @@ export function Sidebar() {
           })}
         </nav>
 
-        {/* User profile and logout section */}
-        <div className="pt-4">
-            <div className={clsx('flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors cursor-pointer text-slate-700 hover:bg-red-50 hover:text-red-600')}
-                onClick={() => signOut()}
-            >
-                <LogOut className="h-5 w-5 flex-shrink-0" />
-                {isOpen && <span>Log out</span>}
-            </div>
-        </div>
-      </div>
-    </aside>
-  );
-}
+       
