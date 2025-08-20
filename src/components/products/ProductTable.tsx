@@ -1,4 +1,3 @@
-// src/components/products/ProductTable.tsx
 'use client';
 
 import { useState } from 'react';
@@ -25,11 +24,10 @@ import { Badge } from '@/components/ui/badge';
 
 interface ProductTableProps {
   items: StockItemWithRelations[];
+  onSuccess: () => void;
 }
 
-export const ProductTable: React.FC<ProductTableProps> = ({
-  items,
-}) => {
+export const ProductTable: React.FC<ProductTableProps> = ({ items, onSuccess }) => {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<StockItemWithRelations | null>(null);
 
@@ -37,13 +35,23 @@ export const ProductTable: React.FC<ProductTableProps> = ({
     setSelectedItem(item);
     setIsSheetOpen(true);
   };
-  
+
+  const handleCloseSheet = () => {
+    setIsSheetOpen(false);
+    setSelectedItem(null);
+  };
+
+  const handleFormSuccess = () => {
+    onSuccess(); // refresh parent data
+    handleCloseSheet(); // close sheet after success
+  };
+
   const getStatusVariant = (status: string) => {
     switch (status) {
-        case 'IN_STOCK': return 'success';
-        case 'RESERVED': return 'secondary';
-        case 'SHIPPED': return 'destructive';
-        default: return 'outline';
+      case 'IN_STOCK': return 'success';
+      case 'RESERVED': return 'secondary';
+      case 'SHIPPED': return 'destructive';
+      default: return 'outline';
     }
   };
 
@@ -74,17 +82,26 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                   <TableCell className="font-medium text-black">{item.product.name}</TableCell>
                   <TableCell className="text-blue-500">{item.product.category.name}</TableCell>
                   <TableCell>
-                     <Badge variant={getStatusVariant(item.status)}>{item.status.replace('_', ' ')}</Badge>
+                    <Badge variant={getStatusVariant(item.status) as any}>
+                      {item.status.replace('_', ' ')}
+                    </Badge>
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0" disabled={item.status !== 'IN_STOCK'}>
+                        <Button
+                          variant="ghost"
+                          className="h-8 w-8 p-0"
+                          disabled={item.status !== 'IN_STOCK'}
+                        >
                           <MoreHorizontal className="h-4 w-4 text-black" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="bg-white">
-                        <DropdownMenuItem onClick={() => handleOpenSheet(item)} className="text-black hover:bg-gray-100 cursor-pointer">
+                        <DropdownMenuItem
+                          onClick={() => handleOpenSheet(item)}
+                          className="text-black hover:bg-gray-100 cursor-pointer"
+                        >
                           Request Stock Out
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -97,7 +114,8 @@ export const ProductTable: React.FC<ProductTableProps> = ({
         </Table>
       </div>
 
-      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+      {/* Stock Request Sheet */}
+      <Sheet open={isSheetOpen} onOpenChange={(open) => !open && handleCloseSheet()}>
         <SheetContent side="right" className="bg-white text-black border-gray-200">
           <SheetHeader>
             <SheetTitle className="text-black">
@@ -107,7 +125,8 @@ export const ProductTable: React.FC<ProductTableProps> = ({
           {selectedItem && (
             <StockForm
               item={selectedItem}
-              onClose={() => setIsSheetOpen(false)}
+              onClose={handleCloseSheet}
+              onSuccess={handleFormSuccess} // ✅ call success + close sheet
             />
           )}
         </SheetContent>

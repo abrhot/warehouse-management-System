@@ -13,12 +13,14 @@ datasource db {
 
 // USERS & LOGS /////////////////////////////////////////////////////////////////
 model User {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   name      String?
-  email     String   @unique
+  email     String    @unique
   password  String
-  role      Role     @default(USER)
-  createdAt DateTime @default(now())
+  role      Role      @default(USER)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   // Relations
   requests  StockRequest[] @relation("RequestedBy")
@@ -27,30 +29,37 @@ model User {
 }
 
 model AuditLog {
-  id        String     @id @default(uuid())
-  action    ActionType
+  id     String     @id @default(uuid())
+  action ActionType
+
   details   String
-  createdAt DateTime   @default(now())
+  createdAt DateTime @default(now())
 
   // Relations
-  userId String @map("user_id")
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String     @map("user_id")
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product?   @relation(fields: [productId], references: [id])
+  stockItem StockItem? @relation(fields: [stockItemId], references: [id])
+
+  productId   String?
+  stockItemId String?
 }
 
 // WAREHOUSE CORE MODELS /////////////////////////////////////////////////////////
 model Product {
-  id           String   @id @default(uuid())
-  sku          String   @unique
+  id           String     @id @default(uuid())
+  sku          String     @unique
   name         String
   location     String?
-  reorderLevel Int      @default(10)
+  reorderLevel Int        @default(10)
   weight       Float?
   dimensions   String?
-  costPrice    Decimal  @db.Decimal(10, 2)
-  sellingPrice Decimal? @db.Decimal(10, 2)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  quantity     Int      @default(0)
+  costPrice    Decimal    @db.Decimal(10, 2)
+  sellingPrice Decimal?   @db.Decimal(10, 2)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  quantity     Int        @default(0)
+  auditLogs    AuditLog[]
 
   // Relations
   categoryId Int
@@ -62,6 +71,7 @@ model Product {
   stockItems StockItem[]
 
   @@unique([name, categoryId])
+  @@index([name])
 }
 
 model StockItem {
@@ -79,6 +89,7 @@ model StockItem {
   // This is the relation field that points back to StockRequest.
   // We do not define the foreign key or references here.
   stockRequest StockRequest?
+  auditLogS    AuditLog[]
 }
 
 model Category {
@@ -86,6 +97,8 @@ model Category {
   name        String    @unique
   description String?
   products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model Supplier {

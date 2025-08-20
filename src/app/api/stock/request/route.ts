@@ -1,10 +1,14 @@
 // src/app/api/stock/request/route.ts
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+// --- FIX: Import authOptions from a central library file ---
+// This is the most stable way to handle auth configuration.
+// Ensure you have a file at 'src/lib/auth.ts' that exports your authOptions.
+import { authOptions } from '@/lib/auth'; 
 import prisma from '@/lib/prisma';
 
 export async function POST(req: Request) {
+  // This will now correctly resolve the user's session
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
@@ -17,22 +21,19 @@ export async function POST(req: Request) {
     const userId = session.user.id;
 
     // First, check if a request for this stock item already exists.
-    // This prevents the unique constraint violation.
     const existingRequest = await prisma.stockRequest.findUnique({
       where: { stockItemId },
     });
 
     if (existingRequest) {
-      // If a request already exists, return a 409 Conflict error.
-      // This is the correct HTTP status for a resource conflict.
       return NextResponse.json(
-        { error: 'A request for this item already exists. Please resolve the existing request before creating a new one.' },
+        { error: 'A request for this item already exists.' },
         { status: 409 } // 409 Conflict
       );
     }
 
-    // Now, create the stock request and update the item's status to RESERVED within a single transaction.
-    const [newRequest, updatedItem] = await prisma.$transaction([
+    // Create the request and update the item's status in a transaction
+    const [newRequest] = await prisma.$transaction([
       prisma.stockRequest.create({
         data: {
           stockItemId,
@@ -52,13 +53,10 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error('Error creating stock out request:', error);
 
-    // Provide more specific error messages to the client
     if (error.code === 'P2025') {
-      // This error code means a record was not found for an update or delete operation.
-      // In this case, it means the stockItemId from the request body doesn't exist.
       return NextResponse.json(
         { error: 'Stock item not found. Please provide a valid item ID.' },
-        { status: 404 } // 404 Not Found
+        { status: 404 }
       );
     }
 

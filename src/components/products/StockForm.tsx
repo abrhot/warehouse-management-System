@@ -1,12 +1,12 @@
-// src/components/products/StockForm.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { StockItemWithRelations } from '@/app/(main)/products/page';
+import { Loader2 } from 'lucide-react';
 
 export function StockForm({
   item,
@@ -16,6 +16,12 @@ export function StockForm({
   onClose: () => void;
 }) {
   const [notes, setNotes] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Safety: reset submitting if component unmounts
+  useEffect(() => {
+    return () => setIsSubmitting(false);
+  }, []);
 
   const handleReset = () => {
     setNotes('');
@@ -23,6 +29,8 @@ export function StockForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return; // prevent double submit
+    setIsSubmitting(true);
 
     try {
       const res = await fetch('/api/stock/request', {
@@ -37,22 +45,33 @@ export function StockForm({
 
       if (res.ok) {
         toast.success(`Request submitted for ${item.serialNumber}!`);
+        handleReset();
+
+        // FIX: reset submitting *before* closing modal
+        setIsSubmitting(false);
         onClose();
       } else {
         const errorData = await res.json();
         toast.error(errorData.error || 'Failed to submit request.');
+        setIsSubmitting(false);
       }
     } catch (err: any) {
       console.error('Submission error:', err);
       toast.error('Failed to send request. Check your network or server status.');
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-4 bg-blue-50">
+    <form
+      onSubmit={handleSubmit}
+      className="flex flex-col gap-4 p-4 bg-blue-50 rounded-lg shadow-md"
+    >
       <div>
         <Label htmlFor="serial-number">Serial Number</Label>
-        <p id="serial-number" className="font-bold text-lg">{item.serialNumber}</p>
+        <p id="serial-number" className="font-bold text-lg">
+          {item.serialNumber}
+        </p>
       </div>
 
       <div>
@@ -65,12 +84,14 @@ export function StockForm({
           placeholder="e.g., For project X, client delivery, etc."
         />
       </div>
+
       <div className="flex justify-end gap-2 mt-4">
         <Button
           type="button"
           variant="outline"
           onClick={handleReset}
           className="bg-white text-black border border-gray-300 hover:bg-blue-500 hover:text-white"
+          disabled={isSubmitting}
         >
           Reset
         </Button>
@@ -78,9 +99,17 @@ export function StockForm({
         <Button
           type="submit"
           variant="default"
-          className="bg-white text-black border border-gray-300 hover:bg-blue-500 hover:text-white"
+          className="bg-blue-500 text-white hover:bg-blue-600"
+          disabled={isSubmitting}
         >
-          Submit Request
+          {isSubmitting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Submitting...
+            </>
+          ) : (
+            'Submit Request'
+          )}
         </Button>
       </div>
     </form>
