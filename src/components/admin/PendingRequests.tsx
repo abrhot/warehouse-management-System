@@ -293,3 +293,17 @@ export default function PendingRequests() {
                           </div>
                           <div className="flex justify-between text-sm">
                             <span className="text-gray-500">Request ID:</span><span className="font-mono text-xs text-gray-500">{req.id}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
