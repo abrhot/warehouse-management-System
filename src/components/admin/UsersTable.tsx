@@ -1,5 +1,24 @@
 
+// src/components/admin/users/UsersTable.tsx
 
+const users = [
+  { username: 'abera_123', name: 'Abera Kebede', email: 'abera.kebede@example.com', role: 'Admin', status: 'Active', created: '2023-01-15', lastLogin: '2024-05-20' },
+  { username: 'chaltu_456', name: 'Chaltu Bekele', email: 'chaltu.bekele@example.com', role: 'Supervisor', status: 'Active', created: '2023-03-22', lastLogin: '2024-05-21' },
+  { username: 'dani_789', name: 'Daniel Tesfaye', email: 'daniel.tesfaye@example.com', role: 'Clerk', status: 'Inactive', created: '2023-05-10', lastLogin: '2024-04-30' },
+  { username: 'eleni_012', name: 'Eleni Alemayehu', email: 'eleni.alemayehu@example.com', role: 'Admin', status: 'Active', created: '2023-07-05', lastLogin: '2024-05-22' },
+  { username: 'fikru_345', name: 'Fikru Tadesse', email: 'fikru.tadesse@example.com', role: 'Supervisor', status: 'Active', created: '2023-09-12', lastLogin: '2024-05-19' },
+  { username: 'genet_678', name: 'Genet Hailu', email: 'genet.hailu@example.com', role: 'Clerk', status: 'Active', created: '2023-11-20', lastLogin: '2024-05-23' },
+  { username: 'hagos_901', name: 'Hagos Gebre', email: 'hagos.gebre@example.com', role: 'Admin', status: 'Inactive', created: '2024-01-08', lastLogin: '2024-03-15' },
+  { username: 'idris_234', name: 'Idris Mohammed', email: 'idris.mohammed@example.com', role: 'Supervisor', status: 'Active', created: '2024-03-18', lastLogin: '2024-05-24' },
+  { username: 'jafar_567', name: 'Jafar Ali', email: 'jafar.ali@example.com', role: 'Clerk', status: 'Active', created: '2024-05-01', lastLogin: '2024-05-25' },
+  { username: 'kalkidan_890', name: 'Kalkidan Assefa', email: 'kalkidan.assefa@example.com', role: 'Admin', status: 'Active', created: '2024-06-10', lastLogin: '2024-06-11' },
+  { username: 'leul_777', name: 'Leul Desta', email: 'leul.desta@example.com', role: 'Supervisor', status: 'Active', created: '2023-02-14', lastLogin: '2024-03-01' },
+  { username: 'mihret_666', name: 'Mihret Wolde', email: 'mihret.wolde@example.com', role: 'Clerk', status: 'Inactive', created: '2023-08-30', lastLogin: '2024-02-15' },
+  { username: 'nati_321', name: 'Natnael Tesema', email: 'natnael.tesema@example.com', role: 'Admin', status: 'Active', created: '2024-02-12', lastLogin: '2024-07-01' },
+  { username: 'osman_123', name: 'Osman Said', email: 'osman.said@example.com', role: 'Clerk', status: 'Active', created: '2024-05-10', lastLogin: '2024-07-25' },
+  { username: 'paulos_222', name: 'Paulos Getachew', email: 'paulos.getachew@example.com', role: 'Supervisor', status: 'Inactive', created: '2023-06-03', lastLogin: '2024-01-05' },
+  { username: 'ruth_333', name: 'Ruth Melaku', email: 'ruth.melaku@example.com', role: 'Admin', status: 'Active', created: '2024-01-01', lastLogin: '2024-06-30' },
+]
 export default function UsersTable() {
   return (
     <div className="px-4 py-3">
