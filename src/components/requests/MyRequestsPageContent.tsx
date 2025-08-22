@@ -1,5 +1,19 @@
 
 // src/components/requests/MyRequestsPageContent.tsx
+'use client';
+
+import React, { useState, useMemo } from 'react';
+import { toast } from 'sonner';
+import { RequestsHeader } from './RequestsHeader';
+import { RequestsTable } from './RequestsTable';
+import { RequestsBoardView } from './RequestsBoardView';
+import { UserRequestWithRelations } from '@/app/(main)/my-requests/page';
+import { RequestsSummary } from './RequestsSummary'; // Import the summary component
+// Define the type for the summary data
+interface SummaryData {
+  total: number;
+  rejected: number;
+  pending: number;
 }
 
 // Update the component's props to accept initialRequests and summary
