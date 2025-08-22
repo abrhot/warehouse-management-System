@@ -17,12 +17,12 @@ interface SummaryData {
 }
 
 // Update the component's props to accept initialRequests and summary
-export function MyRequestsPageContent({ 
+export function MyRequestsPageContent({
   initialRequests,
-  summary 
-}: { 
+  summary
+}: {
   initialRequests: UserRequestWithRelations[];
-  summary: SummaryData; 
+  summary: SummaryData;
 }) {
   const [requests, setRequests] = useState(initialRequests);
   const [searchTerm, setSearchTerm] = useState('');
@@ -39,7 +39,7 @@ export function MyRequestsPageContent({
         const errorData = await res.json();
         throw new Error(errorData.error || 'Failed to delete request');
       }
-      
+
       toast.success('Request deleted successfully!');
       setRequests(prev => prev.filter(req => req.id !== requestId));
 
@@ -55,8 +55,8 @@ export function MyRequestsPageContent({
       const serialNumber = req.stockItem?.serialNumber || '';
 
       const matchesSearch = serialNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            productName.toLowerCase().includes(searchTerm.toLowerCase());
-      
+        productName.toLowerCase().includes(searchTerm.toLowerCase());
+
       const matchesStatus = statusFilter === 'All' || req.status === statusFilter;
 
       return matchesSearch && matchesStatus;
@@ -72,20 +72,8 @@ export function MyRequestsPageContent({
           view={view}
           onViewChange={setView}
         />
-        
-      {/* The summary component is now below the header */}
+
+        {/* The summary component is now below the header */}
         <RequestsSummary summary={summary} />
-  
-        {view === 'table' ? (
-          <RequestsTable
-            requests={filteredRequests}
-            onSearchChange={setSearchTerm}
-            onDeleteRequest={handleDeleteRequest}
-          />
-        ) : (
-          <RequestsBoardView requests={filteredRequests} />
-        )}
-      </div>
-    </div>
-  );
-}
+
+
