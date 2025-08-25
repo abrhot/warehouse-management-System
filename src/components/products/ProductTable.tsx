@@ -36,14 +36,12 @@ export const ProductTable: React.FC<ProductTableProps> = ({ items, onSuccess }) 
     setIsSheetOpen(true);
   };
 
-  const handleCloseSheet = () => {
+  // --- THE FIX ---
+  // This is now the single function that handles everything after the form is done.
+  // It ensures the sheet closes AND the parent page's data is refreshed.
+  const handleFormCompletion = () => {
     setIsSheetOpen(false);
-    setSelectedItem(null);
-  };
-
-  const handleFormSuccess = () => {
-    onSuccess(); // refresh parent data
-    handleCloseSheet(); // close sheet after success
+    onSuccess(); 
   };
 
   const getStatusVariant = (status: string) => {
@@ -69,53 +67,45 @@ export const ProductTable: React.FC<ProductTableProps> = ({ items, onSuccess }) 
             </TableRow>
           </TableHeader>
           <TableBody className="bg-white">
-            {items.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center text-blue-500">
-                  No items found.
+            {items.map((item) => (
+              <TableRow key={item.id} className="border-gray-200">
+                <TableCell className="text-blue-500 font-medium">{item.serialNumber}</TableCell>
+                <TableCell className="font-medium text-black">{item.product.name}</TableCell>
+                <TableCell className="text-blue-500">{item.product.category.name}</TableCell>
+                <TableCell>
+                  <Badge variant={getStatusVariant(item.status) as any}>
+                    {item.status.replace('_', ' ')}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        className="h-8 w-8 p-0"
+                        disabled={item.status !== 'IN_STOCK'}
+                      >
+                        <MoreHorizontal className="h-4 w-4 text-black" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="bg-white">
+                      <DropdownMenuItem
+                        onClick={() => handleOpenSheet(item)}
+                        className="text-black hover:bg-gray-100 cursor-pointer"
+                      >
+                        Request Stock Out
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
-            ) : (
-              items.map((item) => (
-                <TableRow key={item.id} className="border-gray-200">
-                  <TableCell className="text-blue-500 font-medium">{item.serialNumber}</TableCell>
-                  <TableCell className="font-medium text-black">{item.product.name}</TableCell>
-                  <TableCell className="text-blue-500">{item.product.category.name}</TableCell>
-                  <TableCell>
-                    <Badge variant={getStatusVariant(item.status) as any}>
-                      {item.status.replace('_', ' ')}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          className="h-8 w-8 p-0"
-                          disabled={item.status !== 'IN_STOCK'}
-                        >
-                          <MoreHorizontal className="h-4 w-4 text-black" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="bg-white">
-                        <DropdownMenuItem
-                          onClick={() => handleOpenSheet(item)}
-                          className="text-black hover:bg-gray-100 cursor-pointer"
-                        >
-                          Request Stock Out
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
+            ))}
           </TableBody>
         </Table>
       </div>
 
-      {/* Stock Request Sheet */}
-      <Sheet open={isSheetOpen} onOpenChange={(open) => !open && handleCloseSheet()}>
+      {/* Use the stable onOpenChange handler to prevent loops */}
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetContent side="right" className="bg-white text-black border-gray-200">
           <SheetHeader>
             <SheetTitle className="text-black">
@@ -123,10 +113,10 @@ export const ProductTable: React.FC<ProductTableProps> = ({ items, onSuccess }) 
             </SheetTitle>
           </SheetHeader>
           {selectedItem && (
+            // Pass the correct combined function to the form's onClose prop
             <StockForm
               item={selectedItem}
-              onClose={handleCloseSheet}
-              onSuccess={handleFormSuccess} // ✅ call success + close sheet
+              onClose={handleFormCompletion} 
             />
           )}
         </SheetContent>

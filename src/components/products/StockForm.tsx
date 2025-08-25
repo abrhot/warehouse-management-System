@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -18,19 +18,14 @@ export function StockForm({
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Safety: reset submitting if component unmounts
-  useEffect(() => {
-    return () => setIsSubmitting(false);
-  }, []);
-
   const handleReset = () => {
     setNotes('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isSubmitting) return; // prevent double submit
     setIsSubmitting(true);
+    let success = false; // Use a flag to track success
 
     try {
       const res = await fetch('/api/stock/request', {
@@ -45,33 +40,30 @@ export function StockForm({
 
       if (res.ok) {
         toast.success(`Request submitted for ${item.serialNumber}!`);
-        handleReset();
-
-        // FIX: reset submitting *before* closing modal
-        setIsSubmitting(false);
-        onClose();
+        success = true; // Mark as successful
       } else {
         const errorData = await res.json();
         toast.error(errorData.error || 'Failed to submit request.');
-        setIsSubmitting(false);
       }
     } catch (err: any) {
       console.error('Submission error:', err);
       toast.error('Failed to send request. Check your network or server status.');
+    } finally {
+      // This is the most reliable pattern to prevent freezing.
+      // 1. ALWAYS reset the loading state first.
       setIsSubmitting(false);
+      // 2. THEN, if the request was successful, call the parent's handler.
+      if (success) {
+        onClose();
+      }
     }
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="flex flex-col gap-4 p-4 bg-blue-50 rounded-lg shadow-md"
-    >
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-4 bg-blue-50">
       <div>
         <Label htmlFor="serial-number">Serial Number</Label>
-        <p id="serial-number" className="font-bold text-lg">
-          {item.serialNumber}
-        </p>
+        <p id="serial-number" className="font-bold text-lg">{item.serialNumber}</p>
       </div>
 
       <div>
@@ -84,7 +76,6 @@ export function StockForm({
           placeholder="e.g., For project X, client delivery, etc."
         />
       </div>
-
       <div className="flex justify-end gap-2 mt-4">
         <Button
           type="button"
@@ -99,7 +90,7 @@ export function StockForm({
         <Button
           type="submit"
           variant="default"
-          className="bg-blue-500 text-white hover:bg-blue-600"
+          className="bg-white text-black border border-gray-300 hover:bg-blue-500 hover:text-white"
           disabled={isSubmitting}
         >
           {isSubmitting ? (
