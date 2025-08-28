@@ -9,118 +9,84 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { MoreHorizontal } from 'lucide-react';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { StockItemWithRelations } from '@/app/(main)/products/page';
 import { StockForm } from './StockForm';
-import { Badge } from '@/components/ui/badge';
 
-interface ProductTableProps {
+export function ProductTable({
+  items,
+  onSuccess,
+}: {
   items: StockItemWithRelations[];
   onSuccess: () => void;
-}
-
-export const ProductTable: React.FC<ProductTableProps> = ({ items, onSuccess }) => {
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
+}) {
   const [selectedItem, setSelectedItem] = useState<StockItemWithRelations | null>(null);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
-  const handleOpenSheet = (item: StockItemWithRelations) => {
+  const handleRequestClick = (item: StockItemWithRelations) => {
     setSelectedItem(item);
     setIsSheetOpen(true);
   };
 
-  // --- THE FIX ---
-  // This is now the single function that handles everything after the form is done.
-  // It ensures the sheet closes AND the parent page's data is refreshed.
-  const handleFormCompletion = () => {
-    setIsSheetOpen(false);
-    onSuccess(); 
-  };
-
-  const getStatusVariant = (status: string) => {
-    switch (status) {
-      case 'IN_STOCK': return 'success';
-      case 'RESERVED': return 'secondary';
-      case 'SHIPPED': return 'destructive';
-      default: return 'outline';
-    }
-  };
-
   return (
-    <div className="flex flex-col gap-4 w-full">
-      <div className="rounded-md border border-gray-200">
-        <Table>
-          <TableHeader className="bg-white">
-            <TableRow>
-              <TableHead className="w-[200px] text-black">Serial Number (SKU)</TableHead>
-              <TableHead className="text-black">Name</TableHead>
-              <TableHead className="text-black">Category</TableHead>
-              <TableHead className="text-black">Status</TableHead>
-              <TableHead className="text-right text-black">Actions</TableHead>
+    <div className="rounded-md border border-gray-200 bg-white text-black shadow-sm">
+      <Table>
+        <TableHeader>
+          <TableRow className="bg-white">
+            <TableHead className="text-black">Serial Number</TableHead>
+            <TableHead className="text-black">Product</TableHead>
+            <TableHead className="text-black">Status</TableHead>
+            <TableHead className="text-right text-black">Action</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {items.map((item) => (
+            <TableRow key={item.id} className="hover:bg-blue-50">
+              <TableCell className="text-black">{item.serialNumber}</TableCell>
+              <TableCell className="text-black">{item.product.name}</TableCell>
+              <TableCell className="text-black">{item.status}</TableCell>
+              <TableCell className="text-right">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="bg-white text-black border border-blue-300 hover:bg-blue-400 hover:text-white hover:shadow-[0_0_8px_#7dd3fc] transition-shadow duration-200"
+                  onClick={() => handleRequestClick(item)}
+                >
+                  Request Out
+                </Button>
+              </TableCell>
             </TableRow>
-          </TableHeader>
-          <TableBody className="bg-white">
-            {items.map((item) => (
-              <TableRow key={item.id} className="border-gray-200">
-                <TableCell className="text-blue-500 font-medium">{item.serialNumber}</TableCell>
-                <TableCell className="font-medium text-black">{item.product.name}</TableCell>
-                <TableCell className="text-blue-500">{item.product.category.name}</TableCell>
-                <TableCell>
-                  <Badge variant={getStatusVariant(item.status) as any}>
-                    {item.status.replace('_', ' ')}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        className="h-8 w-8 p-0"
-                        disabled={item.status !== 'IN_STOCK'}
-                      >
-                        <MoreHorizontal className="h-4 w-4 text-black" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="bg-white">
-                      <DropdownMenuItem
-                        onClick={() => handleOpenSheet(item)}
-                        className="text-black hover:bg-gray-100 cursor-pointer"
-                      >
-                        Request Stock Out
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+          ))}
+        </TableBody>
+      </Table>
 
-      {/* Use the stable onOpenChange handler to prevent loops */}
+      {/* Slide-out Sheet */}
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetContent side="right" className="bg-white text-black border-gray-200">
           <SheetHeader>
             <SheetTitle className="text-black">
-              Request Stock Out for {selectedItem?.product.name}
+              Request Stock Out {selectedItem ? `– ${selectedItem.product.name}` : ''}
             </SheetTitle>
           </SheetHeader>
+
           {selectedItem && (
-            // Pass the correct combined function to the form's onClose prop
             <StockForm
               item={selectedItem}
-              onClose={handleFormCompletion} 
+              onSuccess={() => {
+                setIsSheetOpen(false);
+                setSelectedItem(null);
+                onSuccess();
+              }}
             />
           )}
         </SheetContent>
       </Sheet>
     </div>
   );
-};
+}

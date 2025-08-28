@@ -10,10 +10,10 @@ import { Loader2 } from 'lucide-react';
 
 export function StockForm({
   item,
-  onClose,
+  onSuccess,
 }: {
   item: StockItemWithRelations;
-  onClose: () => void;
+  onSuccess: () => void;
 }) {
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -24,8 +24,8 @@ export function StockForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     setIsSubmitting(true);
-    let success = false; // Use a flag to track success
 
     try {
       const res = await fetch('/api/stock/request', {
@@ -40,7 +40,8 @@ export function StockForm({
 
       if (res.ok) {
         toast.success(`Request submitted for ${item.serialNumber}!`);
-        success = true; // Mark as successful
+        handleReset();
+        onSuccess(); // ✅ let parent handle sheet close + refresh
       } else {
         const errorData = await res.json();
         toast.error(errorData.error || 'Failed to submit request.');
@@ -49,21 +50,20 @@ export function StockForm({
       console.error('Submission error:', err);
       toast.error('Failed to send request. Check your network or server status.');
     } finally {
-      // This is the most reliable pattern to prevent freezing.
-      // 1. ALWAYS reset the loading state first.
       setIsSubmitting(false);
-      // 2. THEN, if the request was successful, call the parent's handler.
-      if (success) {
-        onClose();
-      }
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-4 bg-blue-50">
+    <form
+      onSubmit={handleSubmit}
+      className="flex flex-col gap-4 p-4 bg-blue-50 rounded-lg shadow-md"
+    >
       <div>
         <Label htmlFor="serial-number">Serial Number</Label>
-        <p id="serial-number" className="font-bold text-lg">{item.serialNumber}</p>
+        <p id="serial-number" className="font-bold text-lg">
+          {item.serialNumber}
+        </p>
       </div>
 
       <div>
@@ -76,6 +76,7 @@ export function StockForm({
           placeholder="e.g., For project X, client delivery, etc."
         />
       </div>
+
       <div className="flex justify-end gap-2 mt-4">
         <Button
           type="button"
@@ -90,7 +91,7 @@ export function StockForm({
         <Button
           type="submit"
           variant="default"
-          className="bg-white text-black border border-gray-300 hover:bg-blue-500 hover:text-white"
+          className="bg-blue-500 text-white hover:bg-blue-600"
           disabled={isSubmitting}
         >
           {isSubmitting ? (
