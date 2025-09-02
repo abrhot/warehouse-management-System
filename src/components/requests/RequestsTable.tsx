@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, ChevronDown, LayoutGrid, List } from 'lucide-react';
+import { AlertCircle, ChevronRight, LayoutGrid, List } from 'lucide-react';
 import { UserRequestWithRelations } from '@/app/(main)/my-requests/page';
 
 // This file now contains all related components for the requests page for simplicity.
@@ -51,6 +51,7 @@ export function RequestsTable({ requests, onSearchChange }: RequestsTableProps) 
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-[50px]"></TableHead>
             <TableHead>Serial Number</TableHead>
             <TableHead>Product Name</TableHead>
             <TableHead>Date Requested</TableHead>
@@ -59,46 +60,52 @@ export function RequestsTable({ requests, onSearchChange }: RequestsTableProps) 
         </TableHeader>
         <TableBody>
           {requests.length > 0 ? (
-            requests.map((req) => (
-              <Fragment key={req.id}>
-                <TableRow>
-                  <TableCell className="font-mono text-xs">
-                    <div className="flex items-center gap-2">
-                      <span>{req.stockItem?.serialNumber || 'N/A'}</span>
-                      {req.status === 'REJECTED' && req.reason && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6"
-                          onClick={() => toggleExpand(req.id)}
-                        >
-                          <ChevronDown className={`h-4 w-4 transition-transform ${expandedRequestId === req.id ? 'rotate-180' : ''}`} />
-                        </Button>
+            requests.map((req) => {
+              const isExpandable = req.status === 'REJECTED' && req.reason;
+              const isExpanded = expandedRequestId === req.id;
+
+              return (
+                <Fragment key={req.id}>
+                  <TableRow
+                    onClick={() => isExpandable && toggleExpand(req.id)}
+                    className={isExpandable ? 'cursor-pointer' : ''}
+                  >
+                    <TableCell>
+                      {isExpandable && (
+                        <ChevronRight className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
                       )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="font-medium">{req.stockItem?.product.name}</TableCell>
-                  <TableCell>{new Date(req.createdAt).toLocaleDateString()}</TableCell>
-                  <TableCell><StatusBadge status={req.status} /></TableCell>
-                </TableRow>
-                {expandedRequestId === req.id && (
-                  <TableRow className="bg-stone-50 hover:bg-stone-50">
-                    <TableCell colSpan={4} className="p-0">
-                      <div className="p-4 text-sm text-destructive flex items-start space-x-3">
-                        <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
-                        <div>
-                          <p className="font-semibold">Rejection Reason:</p>
-                          <p className="text-gray-600 italic">"{req.reason}"</p>
-                        </div>
-                      </div>
+                    </TableCell>
+                    <TableCell className="font-mono text-xs">
+                      {req.stockItem?.serialNumber || 'N/A'}
+                    </TableCell>
+                    <TableCell className="font-medium">{req.stockItem?.product.name}</TableCell>
+                    <TableCell>{new Date(req.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell className={
+                      req.status === 'REJECTED' ? 'bg-red-50' :
+                      req.status === 'APPROVED' ? 'bg-blue-50' : ''
+                    }>
+                      <StatusBadge status={req.status} />
                     </TableCell>
                   </TableRow>
-                )}
-              </Fragment>
-            ))
+                  {isExpanded && (
+                    <TableRow className="bg-stone-50 hover:bg-stone-50">
+                      <TableCell colSpan={5} className="p-0">
+                        <div className="p-4 text-sm text-destructive flex items-start space-x-3">
+                          <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <p className="font-semibold">Rejection Reason:</p>
+                            <p className="text-gray-600 italic">"{req.reason}"</p>
+                          </div>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </Fragment>
+              );
+            })
           ) : (
             <TableRow>
-              <TableCell colSpan={4} className="h-24 text-center">
+              <TableCell colSpan={5} className="h-24 text-center">
                 No requests found.
               </TableCell>
             </TableRow>
