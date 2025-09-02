@@ -1,15 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Package, ChevronDown, ChevronRight, Boxes, Pencil, Trash2 } from 'lucide-react';
+import { PlusCircle, Package, ChevronDown, ChevronRight, Boxes, Pencil, Trash2, MoreHorizontal } from 'lucide-react';
 import { AddCategoryModal } from './AddCategoryModal';
 import { CategoryWithProducts, SerializableProduct } from '../../app/(main)/categories/page';
 import { toast } from 'sonner';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -30,8 +31,15 @@ async function deleteCategoryAPI(id: string) {
 
 // Edit Category Modal Component
 function EditCategoryModal({ isOpen, onClose, onEditCategory, category }: { isOpen: boolean, onClose: () => void, onEditCategory: (id: string, name: string, description: string) => void, category: CategoryWithProducts | null }) {
-  const [name, setName] = useState(category?.name || '');
-  const [description, setDescription] = useState(category?.description || '');
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+
+  useEffect(() => {
+    if (category) {
+      setName(category.name || '');
+      setDescription(category.description || '');
+    }
+  }, [category]);
 
   if (!category) return null;
 
@@ -171,7 +179,7 @@ export function CategoriesPageContent({ categories, totalProducts }: { categorie
                   <TableHead>Category Name</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead className="text-right">Product Count</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="text-right w-[100px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -185,12 +193,24 @@ export function CategoriesPageContent({ categories, totalProducts }: { categorie
                       <TableCell className="text-sm text-muted-foreground">{category.description || 'N/A'}</TableCell>
                       <TableCell className="text-right">{category.products.length}</TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" onClick={() => openEditModal(category)}>
-                          <Pencil className="h-4 w-4 text-blue-600" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => setDeletingCategoryId(category.id)}>
-                           <Trash2 className="h-4 w-4 text-red-600" />
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <span className="sr-only">Open menu</span>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => openEditModal(category)}>
+                              <Pencil className="mr-2 h-4 w-4" />
+                              <span>Edit</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setDeletingCategoryId(category.id)} className="text-red-600 focus:text-red-600">
+                               <Trash2 className="mr-2 h-4 w-4" />
+                               <span>Delete</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                     {expandedCategoryId === category.id && (
@@ -247,5 +267,4 @@ export function CategoriesPageContent({ categories, totalProducts }: { categorie
     </>
   );
 }
-
 
