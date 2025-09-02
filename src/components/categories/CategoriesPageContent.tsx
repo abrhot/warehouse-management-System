@@ -1,12 +1,9 @@
 'use client';
 
 import { useState, useEffect, Fragment } from 'react';
-import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Package, ChevronDown, ChevronRight, Boxes, Pencil, Trash2, MoreHorizontal } from 'lucide-react';
-import { AddCategoryModal } from '@/components/categories/AddCategoryModal';
-import { CategoryWithProducts, SerializableProduct } from '@/app/(main)/categories/page';
 import { toast } from 'sonner';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -14,6 +11,65 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+
+// Define types used in the component
+export type SerializableProduct = {
+  id: string;
+  name: string;
+  sku: string | null;
+};
+
+export type CategoryWithProducts = {
+  id: string;
+  name: string;
+  description: string | null;
+  products: SerializableProduct[];
+};
+
+// Add Category Modal Component
+function AddCategoryModal({ isOpen, onClose, onAddCategory }: { isOpen: boolean, onClose: () => void, onAddCategory: (name: string, description: string) => void }) {
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) {
+        toast.error("Category name cannot be empty.");
+        return;
+    }
+    onAddCategory(name, description);
+    setName('');
+    setDescription('');
+  };
+  
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Add New Category</DialogTitle>
+          <DialogDescription>Enter the details for the new category.</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit}>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="add-name" className="text-right">Name</Label>
+              <Input id="add-name" value={name} onChange={(e) => setName(e.target.value)} className="col-span-3" required />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="add-description" className="text-right">Description</Label>
+              <Textarea id="add-description" value={description} onChange={(e) => setDescription(e.target.value)} className="col-span-3" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+            <Button type="submit" className="bg-blue-600 text-white hover:bg-blue-700">Add Category</Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 
 // Helper to extract error messages from API responses
 const getErrorMessage = async (response: Response, defaultMessage: string) => {
@@ -58,8 +114,15 @@ async function deleteCategoryAPI(id: string) {
   }
 }
 
+// Type for the category data used in the edit modal to improve performance
+type EditableCategory = {
+  id: string;
+  name: string;
+  description: string | null;
+};
+
 // Edit Category Modal Component
-function EditCategoryModal({ isOpen, onClose, onEditCategory, category }: { isOpen: boolean, onClose: () => void, onEditCategory: (id: string, name: string, description: string) => void, category: CategoryWithProducts | null }) {
+function EditCategoryModal({ isOpen, onClose, onEditCategory, category }: { isOpen: boolean, onClose: () => void, onEditCategory: (id: string, name: string, description: string) => void, category: EditableCategory | null }) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
 
@@ -113,17 +176,15 @@ function EditCategoryModal({ isOpen, onClose, onEditCategory, category }: { isOp
 export function CategoriesPageContent({ categories, totalProducts }: { categories: CategoryWithProducts[], totalProducts: number }) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<CategoryWithProducts | null>(null);
+  const [editingCategory, setEditingCategory] = useState<EditableCategory | null>(null);
   const [deletingCategoryId, setDeletingCategoryId] = useState<string | null>(null);
   const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>(null);
-  const router = useRouter();
 
   const handleAddCategory = async (name: string, description: string) => {
     try {
       await addCategoryAPI(name, description);
       toast.success(`Category "${name}" created successfully!`);
       setIsAddModalOpen(false);
-      router.refresh();
     } catch (error) {
       console.error("Add category error:", error);
       toast.error(error instanceof Error ? error.message : 'An unknown error occurred.');
@@ -136,7 +197,6 @@ export function CategoriesPageContent({ categories, totalProducts }: { categorie
       toast.success(`Category "${name}" updated successfully!`);
       setIsEditModalOpen(false);
       setEditingCategory(null);
-      router.refresh();
     } catch (error) {
       console.error("Update category error:", error);
       toast.error(error instanceof Error ? error.message : 'An unknown error occurred.');
@@ -149,7 +209,6 @@ export function CategoriesPageContent({ categories, totalProducts }: { categorie
       await deleteCategoryAPI(deletingCategoryId);
       toast.success('Category deleted successfully!');
       setDeletingCategoryId(null);
-      router.refresh();
     } catch (error) {
       console.error("Delete category error:", error);
       toast.error(error instanceof Error ? error.message : 'An unknown error occurred.');
@@ -157,7 +216,11 @@ export function CategoriesPageContent({ categories, totalProducts }: { categorie
   };
 
   const openEditModal = (category: CategoryWithProducts) => {
-    setEditingCategory(category);
+    setEditingCategory({
+      id: category.id,
+      name: category.name,
+      description: category.description,
+    });
     setIsEditModalOpen(true);
   };
 
@@ -165,9 +228,8 @@ export function CategoriesPageContent({ categories, totalProducts }: { categorie
     setExpandedCategoryId(expandedCategoryId === categoryId ? null : categoryId);
   };
   
-  // Corrected to navigate to a dynamic product page
-  const handleProductClick = (productId: string) => {
-    router.push(`/products/${productId}`);
+  const handleProductClick = () => {
+    window.location.href = `http://localhost:3000/products`;
   };
 
   return (
@@ -265,7 +327,7 @@ export function CategoriesPageContent({ categories, totalProducts }: { categorie
                                   </TableHeader>
                                   <TableBody>
                                       {category.products.slice(0, 5).map((product: SerializableProduct) => (
-                                          <TableRow key={product.id} onClick={() => handleProductClick(product.id)} className="cursor-pointer hover:bg-blue-100/70">
+                                          <TableRow key={product.id} onClick={() => handleProductClick()} className="cursor-pointer hover:bg-blue-100/70">
                                               <TableCell className="font-semibold text-sm text-gray-800">{product.name}</TableCell>
                                               <TableCell className="text-sm text-gray-600 font-mono">{product.sku}</TableCell>
                                           </TableRow>
@@ -287,9 +349,32 @@ export function CategoriesPageContent({ categories, totalProducts }: { categorie
         </Card>
       </div>
 
-      <AddCategoryModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onAddCategory={handleAddCategory} />
-      <EditCategoryModal isOpen={isEditModalOpen} onClose={() => { setIsEditModalOpen(false); setEditingCategory(null); }} onEditCategory={handleEditCategory} category={editingCategory} />
-      <Dialog open={!!deletingCategoryId} onOpenChange={() => setDeletingCategoryId(null)}>
+      <AddCategoryModal
+        isOpen={isAddModalOpen}
+        onClose={() => {
+            setIsAddModalOpen(false);
+            window.location.reload();
+        }}
+        onAddCategory={handleAddCategory}
+      />
+      <EditCategoryModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+            setIsEditModalOpen(false);
+            setEditingCategory(null);
+            window.location.reload();
+        }}
+        onEditCategory={handleEditCategory}
+        category={editingCategory}
+      />
+      <Dialog
+        open={!!deletingCategoryId}
+        onOpenChange={(isOpen) => {
+            if (!isOpen) {
+                setDeletingCategoryId(null);
+                window.location.reload();
+            }
+        }}>
         <DialogContent>
             <DialogHeader>
                 <DialogTitle>Are you absolutely sure?</DialogTitle>
@@ -304,3 +389,4 @@ export function CategoriesPageContent({ categories, totalProducts }: { categorie
     </>
   );
 }
+
