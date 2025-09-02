@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Package, ChevronDown, ChevronRight, Boxes, Pencil, Trash2, MoreHorizontal } from 'lucide-react';
-import { AddCategoryModal } from './AddCategoryModal';
-import { CategoryWithProducts, SerializableProduct } from '../../app/(main)/categories/page';
+import { AddCategoryModal } from '@/components/categories/AddCategoryModal';
+import { CategoryWithProducts, SerializableProduct } from '@/app/(main)/categories/page';
 import { toast } from 'sonner';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -15,18 +15,47 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 
-// Placeholder for your actual API call functions
+// Helper to extract error messages from API responses
+const getErrorMessage = async (response: Response, defaultMessage: string) => {
+  try {
+    const errorData = await response.json();
+    return errorData.message || defaultMessage;
+  } catch {
+    return defaultMessage;
+  }
+};
+
+// API call functions with improved error handling
 async function addCategoryAPI(name: string, description: string) {
-  const response = await fetch('/api/categories', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, description }) });
-  if (!response.ok) throw new Error('Failed to create category.');
+  const response = await fetch('/api/categories', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, description }),
+  });
+  if (!response.ok) {
+    const message = await getErrorMessage(response, 'Failed to create category.');
+    throw new Error(message);
+  }
 }
+
 async function editCategoryAPI(id: string, name: string, description: string) {
-  const response = await fetch(`/api/categories/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, description }) });
-  if (!response.ok) throw new Error('Failed to update category.');
+  const response = await fetch(`/api/categories/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, description }),
+  });
+  if (!response.ok) {
+    const message = await getErrorMessage(response, 'Failed to update category.');
+    throw new Error(message);
+  }
 }
+
 async function deleteCategoryAPI(id: string) {
   const response = await fetch(`/api/categories/${id}`, { method: 'DELETE' });
-  if (!response.ok) throw new Error('Failed to delete category.');
+  if (!response.ok) {
+    const message = await getErrorMessage(response, 'Failed to delete category.');
+    throw new Error(message);
+  }
 }
 
 // Edit Category Modal Component
@@ -45,6 +74,10 @@ function EditCategoryModal({ isOpen, onClose, onEditCategory, category }: { isOp
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!name.trim()) {
+        toast.error("Category name cannot be empty.");
+        return;
+    }
     onEditCategory(category.id, name, description);
   };
 
@@ -90,9 +123,10 @@ export function CategoriesPageContent({ categories, totalProducts }: { categorie
       await addCategoryAPI(name, description);
       toast.success(`Category "${name}" created successfully!`);
       setIsAddModalOpen(false);
-      router.refresh(); 
+      router.refresh();
     } catch (error) {
-      toast.error('Error creating category.');
+      console.error("Add category error:", error);
+      toast.error(error instanceof Error ? error.message : 'An unknown error occurred.');
     }
   };
 
@@ -104,7 +138,8 @@ export function CategoriesPageContent({ categories, totalProducts }: { categorie
       setEditingCategory(null);
       router.refresh();
     } catch (error) {
-      toast.error('Error updating category.');
+      console.error("Update category error:", error);
+      toast.error(error instanceof Error ? error.message : 'An unknown error occurred.');
     }
   };
 
@@ -116,7 +151,8 @@ export function CategoriesPageContent({ categories, totalProducts }: { categorie
       setDeletingCategoryId(null);
       router.refresh();
     } catch (error) {
-      toast.error('Error deleting category.');
+      console.error("Delete category error:", error);
+      toast.error(error instanceof Error ? error.message : 'An unknown error occurred.');
     }
   };
 
@@ -128,9 +164,10 @@ export function CategoriesPageContent({ categories, totalProducts }: { categorie
   const toggleExpand = (categoryId: string) => {
     setExpandedCategoryId(expandedCategoryId === categoryId ? null : categoryId);
   };
-
+  
+  // Corrected to navigate to a dynamic product page
   const handleProductClick = (productId: string) => {
-    router.push(`http://localhost:3000/products`);
+    router.push(`/products/${productId}`);
   };
 
   return (
@@ -184,8 +221,8 @@ export function CategoriesPageContent({ categories, totalProducts }: { categorie
               </TableHeader>
               <TableBody>
                 {categories.map((category) => (
-                  <>
-                    <TableRow key={category.id} className="hover:bg-gray-50">
+                  <Fragment key={category.id}>
+                    <TableRow className="hover:bg-gray-50">
                       <TableCell className="px-4 cursor-pointer" onClick={() => toggleExpand(category.id)}>
                         {expandedCategoryId === category.id ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                       </TableCell>
@@ -242,7 +279,7 @@ export function CategoriesPageContent({ categories, totalProducts }: { categorie
                         </TableCell>
                       </TableRow>
                     )}
-                  </>
+                  </Fragment>
                 ))}
               </TableBody>
             </Table>
@@ -251,12 +288,12 @@ export function CategoriesPageContent({ categories, totalProducts }: { categorie
       </div>
 
       <AddCategoryModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onAddCategory={handleAddCategory} />
-      <EditCategoryModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} onEditCategory={handleEditCategory} category={editingCategory} />
+      <EditCategoryModal isOpen={isEditModalOpen} onClose={() => { setIsEditModalOpen(false); setEditingCategory(null); }} onEditCategory={handleEditCategory} category={editingCategory} />
       <Dialog open={!!deletingCategoryId} onOpenChange={() => setDeletingCategoryId(null)}>
         <DialogContent>
             <DialogHeader>
-                <DialogTitle>Are you sure?</DialogTitle>
-                <DialogDescription>This action cannot be undone. This will permanently delete the category.</DialogDescription>
+                <DialogTitle>Are you absolutely sure?</DialogTitle>
+                <DialogDescription>This action cannot be undone. This will permanently delete the category and could affect products within it.</DialogDescription>
             </DialogHeader>
             <DialogFooter>
                 <Button variant="outline" onClick={() => setDeletingCategoryId(null)}>Cancel</Button>
@@ -267,4 +304,3 @@ export function CategoriesPageContent({ categories, totalProducts }: { categorie
     </>
   );
 }
-
