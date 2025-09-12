@@ -8,12 +8,13 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { TriangleAlert, ShieldAlert, ShieldX, PackageCheck, ChevronDown } from 'lucide-react';
-import { cn } from '@/lib/utils'; // Assumes a utility like clsx or tailwind-merge
+import { cn } from '@/lib/utils';
 
 // --- Type Definitions ---
 interface LowStockItem {
   id: string;
   name: string;
+  category: string;
   quantity: number;
   reorderLevel?: number;
 }
@@ -37,57 +38,91 @@ const getStockStatus = (quantity: number, reorderLevel?: number): StockStatus =>
   return 'ok';
 };
 
-// --- Row Sub-component ---
+// --- Row Sub-component (Updated Colors) ---
 function LowStockItemRow({ item }: { item: LowStockItem }) {
   const status = getStockStatus(item.quantity, item.reorderLevel);
   const percentage = item.reorderLevel && item.reorderLevel > 0
     ? Math.min(100, Math.round((item.quantity / item.reorderLevel) * 100))
     : 0;
 
+  // --- NEW COLOR COMPOSITION ---
   const statusConfig = {
     critical: {
       icon: <ShieldX className="h-5 w-5 text-red-500 flex-shrink-0" />,
       badgeText: 'Critical',
-      badgeVariant: 'destructive' as const,
-      rowClass: 'bg-red-500/10 hover:bg-red-500/20',
+      badgeClass: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200 border-none',
+      rowClass: 'bg-red-50 dark:bg-red-950/25 hover:bg-red-100/70 dark:hover:bg-red-950/40',
       progressClass: 'bg-red-500',
       textClass: 'text-red-600 dark:text-red-400',
     },
     warning: {
-      icon: <ShieldAlert className="h-5 w-5 text-amber-500 flex-shrink-0" />,
+      icon: <ShieldAlert className="h-5 w-5 text-blue-500 flex-shrink-0" />,
       badgeText: 'Low',
-      badgeVariant: 'secondary' as const,
-      rowClass: 'bg-amber-500/10 hover:bg-amber-500/20',
-      progressClass: 'bg-amber-500',
-      textClass: 'text-amber-600 dark:text-amber-400',
+      badgeClass: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200 border-none',
+      rowClass: 'bg-blue-50 dark:bg-blue-950/25 hover:bg-blue-100/70 dark:hover:bg-blue-950/40',
+      progressClass: 'bg-blue-500',
+      textClass: 'text-blue-600 dark:text-blue-400',
     },
-    ok: { /* ... */ },
+    ok: {
+      icon: null,
+      badgeText: 'OK',
+      badgeClass: '',
+      rowClass: '',
+      progressClass: 'bg-sky-500',
+      textClass: 'text-muted-foreground',
+    },
   };
-  const config = statusConfig[status] || statusConfig.ok;
+
+  const config = statusConfig[status];
 
   return (
-    <TableRow className={cn('transition-colors border-none', config.rowClass)}>
-      {/* ... TableCell implementation remains the same */}
+    <TableRow className={cn('transition-colors border-t', config.rowClass)}>
+      <TableCell className="p-3">
+        <div className="flex items-center gap-3">
+          {config.icon}
+          <div className="flex flex-col">
+            <span className="font-medium text-sm leading-tight">{item.name}</span>
+            <Badge variant={status === 'critical' ? 'destructive' : 'secondary'} className={cn('w-fit h-5 mt-1 px-1.5 text-xs font-normal', config.badgeClass)}>
+              {config.badgeText}
+            </Badge>
+          </div>
+        </div>
+      </TableCell>
+      <TableCell className="p-3">
+          <Badge variant="outline" className="font-normal">{item.category}</Badge>
+      </TableCell>
+      <TableCell className="text-right p-3">
+        <div className="flex flex-col items-end gap-1.5">
+          <span className={cn('font-mono font-semibold text-sm', config.textClass)}>
+            {item.quantity} {item.reorderLevel ? `/ ${item.reorderLevel}` : ''}
+          </span>
+          {item.reorderLevel ? (
+            <Progress
+              value={percentage}
+              className="h-2 w-24 sm:w-32 bg-slate-200 dark:bg-slate-700"
+              indicatorClassName={config.progressClass}
+            />
+          ) : null}
+        </div>
+      </TableCell>
     </TableRow>
   );
 }
 
-// --- Main Component (Updated) ---
+// --- Main Component (Updated Colors) ---
 export function LowStockSection({ lowStockItems }: LowStockSectionProps) {
   const [isOpen, setIsOpen] = useState(true);
 
   return (
-    <Collapsible
-      open={isOpen}
-      onOpenChange={setIsOpen}
-      className="w-full"
-    >
-      <Card className="shadow-sm bg-amber-50/40 dark:bg-amber-950/20 border-amber-500/20">
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
+      {/* Card now uses a standard neutral background */}
+      <Card className="shadow-sm">
         <CollapsibleTrigger className="w-full text-left">
           <CardHeader className="flex flex-row items-center justify-between p-4 cursor-pointer">
             <div>
               <CardTitle className="flex items-center gap-2 text-base font-semibold">
-                  <TriangleAlert className="h-5 w-5 text-amber-500" />
+                  {/* Icon is now blue to match the new "warning" theme */}
+                  <TriangleAlert className="h-5 w-5 text-blue-500" />
                   Low Stock Alerts
               </CardTitle>
               <p className="text-xs text-muted-foreground mt-1">
@@ -102,11 +137,17 @@ export function LowStockSection({ lowStockItems }: LowStockSectionProps) {
             />
           </CardHeader>
         </CollapsibleTrigger>
-
         <CollapsibleContent>
-            <CardContent className="p-0 border-t border-amber-500/20">
+            <CardContent className="p-0 border-t">
               <div className="overflow-x-auto">
                 <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="pl-4">Product</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead className="text-right pr-4">Stock Level</TableHead>
+                    </TableRow>
+                  </TableHeader>
                   <TableBody>
                     {lowStockItems.length > 0 ? (
                       lowStockItems
@@ -114,7 +155,7 @@ export function LowStockSection({ lowStockItems }: LowStockSectionProps) {
                         .map(item => <LowStockItemRow key={item.id} item={item} />)
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={2} className="h-36 text-center">
+                        <TableCell colSpan={3} className="h-36 text-center">
                           <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
                             <PackageCheck className="h-10 w-10 text-green-500" />
                             <p className="font-medium text-primary">All Good!</p>
