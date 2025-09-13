@@ -6,7 +6,8 @@ import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
-export const authOptions: NextAuthOptions = {
+// Define authOptions within the file, but do not export it
+const authOptions: NextAuthOptions = {
   // Use JWT for session strategy
   session: {
     strategy: "jwt",
@@ -32,36 +33,30 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        // Validate password
         const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
 
         if (!isPasswordValid) {
           return null;
         }
 
-        // Return user object with a string ID, which NextAuth requires
         return {
-          id: user.id, // User.id is already a string based on your schema (cuid)
+          id: user.id,
           email: user.email,
-          role: user.role as string, // Ensure role is a string
+          role: user.role as string,
         };
       }
     })
   ],
   // Callbacks are used to control what happens when an action is performed
   callbacks: {
-    // This callback is called whenever a JWT is created or updated.
     async jwt({ token, user }) {
-      // On initial sign-in, add user properties to the token
       if (user) {
         token.id = user.id;
         token.role = user.role;
       }
       return token;
     },
-    // This callback is called whenever a session is checked.
     async session({ session, token }) {
-      // Pass token properties to the session object
       if (session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
@@ -70,11 +65,12 @@ export const authOptions: NextAuthOptions = {
     }
   },
   pages: {
-    signIn: '/login', // Redirect users to /login if they are not signed in
+    signIn: '/login',
   },
   secret: process.env.NEXTAUTH_SECRET,
 };
 
+// Next.js expects the GET and POST functions to be the exports
 const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST };
