@@ -1,7 +1,7 @@
 import NextAuth from "next-auth";
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { PrismaClient } from '@/generated/prisma';
+import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -39,11 +39,11 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        // Return user object without the password
+        // Return user object with a string ID, which NextAuth requires
         return {
-          id: user.id,
+          id: user.id, // User.id is already a string based on your schema (cuid)
           email: user.email,
-          role: user.role,
+          role: user.role as string, // Ensure role is a string
         };
       }
     })
