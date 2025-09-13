@@ -1,3 +1,4 @@
+// src/app/api/auth/[...nextauth]/route.ts
 import NextAuth from "next-auth";
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
@@ -6,7 +7,7 @@ import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
-// Define authOptions within the file, but do not export it
+// The authOptions object is defined internally and NOT exported.
 const authOptions: NextAuthOptions = {
   // Use JWT for session strategy
   session: {
