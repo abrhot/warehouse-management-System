@@ -1,72 +1,46 @@
-import NextAuth from "next-auth";
-import type { NextAuthOptions } from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
-import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcrypt';
+import { NextResponse } from 'next/server';
+import prisma from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { RequestStatus, ItemStatus } from '@/generated/prisma';
 
-const prisma = new PrismaClient();
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  const session = await getServerSession(authOptions);
 
-// ✅ Exported so other files can import it
-export const authOptions: NextAuthOptions = {
-  session: {
-    strategy: "jwt",
-  },
-  providers: [
-    CredentialsProvider({
-      name: 'Credentials',
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
-      },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null;
-        }
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email }
-        });
+  const requestId = params.id;
 
-        if (!user || !user.password) {
-          return null;
-        }
+  try {
+    const requestToDelete = await prisma.stockRequest.findUnique({
+      where: { id: requestId },
+    });
 
-        const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
-
-        if (!isPasswordValid) {
-          return null;
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          role: user.role as string,
-        };
-      }
-    })
-  ],
-  callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
-        token.role = user.role;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as string;
-      }
-      return session;
+    if (!requestToDelete || requestToDelete.requestedBy !== session.user.id) {
+      return NextResponse.json({ error: 'Request not found or access denied' }, { status: 404 });
     }
-  },
-  pages: {
-    signIn: '/login',
-  },
-  secret: process.env.NEXTAUTH_SECRET,
-};
+    if (requestToDelete.status !== RequestStatus.PENDING) {
+      return NextResponse.json({ error: 'Only pending requests can be deleted' }, { status: 400 });
+    }
 
-// ✅ Keep handler for Next.js API routes
-const handler = NextAuth(authOptions);
-export { handler as GET, handler as POST };
+    await prisma.$transaction([
+      prisma.stockItem.update({
+        where: { id: requestToDelete.stockItemId },
+        data: { status: ItemStatus.IN_STOCK },
+      }),
+      prisma.stockRequest.delete({
+        where: { id: requestId },
+      }),
+    ]);
+
+    return NextResponse.json({ message: 'Request deleted successfully' }, { status: 200 });
+  } catch (error) {
+    console.error('Failed to delete request:', error);
+    return NextResponse.json({ error: 'Failed to delete request' }, { status: 500 });
+  }
+}

@@ -1,4 +1,3 @@
-// src/app/api/auth/[...nextauth]/route.ts
 import NextAuth from "next-auth";
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
@@ -7,7 +6,7 @@ import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
-// The authOptions object is defined internally and NOT exported.
+// Define authOptions within the file, but do not export it
 const authOptions: NextAuthOptions = {
   // Use JWT for session strategy
   session: {
@@ -74,4 +73,4 @@ const authOptions: NextAuthOptions = {
 // Next.js expects the GET and POST functions to be the exports
 const handler = NextAuth(authOptions);
 
-export { handler as GET, handler as POST };c
+export { handler as GET, handler as POST };
