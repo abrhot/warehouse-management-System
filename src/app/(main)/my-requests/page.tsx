@@ -4,7 +4,7 @@
 import { MyRequestsPageContent } from '@/components/requests/MyRequestsPageContent';
 import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from "@/lib/auth";
 import { StockRequest, StockItem, Product, User, RequestStatus } from '@/generated/prisma';
 
 export type UserRequestWithRelations = StockRequest & {
