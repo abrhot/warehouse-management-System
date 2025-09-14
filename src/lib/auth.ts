@@ -1,42 +1,33 @@
 // src/lib/auth.ts
-import { PrismaAdapter } from '@next-auth/prisma-adapter';
-import { NextAuthOptions } from 'next-auth';
-import CredentialsProvider from 'next-auth/providers/credentials';
-import prisma from '@/lib/prisma';
-import bcrypt from 'bcrypt';
+import { PrismaAdapter } from "@next-auth/prisma-adapter";
+import { NextAuthOptions } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+import prisma from "@/lib/prisma";
+import bcrypt from "bcrypt";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
     CredentialsProvider({
-      name: 'Credentials',
+      name: "Credentials",
       credentials: {
         email: { label: "Email", type: "text" },
-        password: { label: "Password", type: "password" }
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials.password) {
-          return null;
-        }
+        if (!credentials?.email || !credentials.password) return null;
 
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
         });
-
-        if (!user) {
-          return null;
-        }
+        if (!user) return null;
 
         const isPasswordValid = await bcrypt.compare(
           credentials.password,
           user.password
         );
+        if (!isPasswordValid) return null;
 
-        if (!isPasswordValid) {
-          return null;
-        }
-
-        // Return the user object without the password
         return {
           id: user.id,
           name: user.name,
@@ -47,11 +38,10 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   session: {
-    strategy: 'jwt',
+    strategy: "jwt",
   },
   callbacks: {
     async jwt({ token, user }) {
-      // On sign in, add user id and role to the token
       if (user) {
         token.id = user.id;
         token.role = user.role;
@@ -59,7 +49,6 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
-      // Add id and role to the session object from the token
       if (session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
@@ -69,6 +58,6 @@ export const authOptions: NextAuthOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET,
   pages: {
-    signIn: '/login',
+    signIn: "/login",
   },
 };
