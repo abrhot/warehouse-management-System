@@ -34,7 +34,6 @@ interface MessageBoxProps {
 }
 
 // A simple message box component to replace alerts and toasts
-// Update the function signature to use the defined interface
 const MessageBox = ({ message, type, onClose }: MessageBoxProps) => {
   const isSuccess = type === 'success';
   const bgColor = isSuccess ? 'bg-blue-200' : 'bg-red-500';
@@ -56,13 +55,19 @@ const MessageBox = ({ message, type, onClose }: MessageBoxProps) => {
   );
 };
 
+// Add a type definition for the message state
+interface MessageState {
+  text: string;
+  type: 'success' | 'error' | '';
+}
+
 export default function CreateUserPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('USER'); // Default role is USER
   const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState({ text: '', type: '' });
+  const [message, setMessage] = useState<MessageState>({ text: '', type: '' });
 
   // This function is updated to use the custom message box
   const handleSubmit = async (e: React.FormEvent) => {
