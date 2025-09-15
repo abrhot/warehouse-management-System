@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, ChangeEvent } from 'react';
 
 // A simple SVG spinner component for the loading state
 const Spinner = () => (
@@ -65,10 +65,10 @@ export default function CreateUserPage() {
   const [role, setRole] = useState('USER');
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<MessageState>({ text: '', type: '' });
-  const [searchQuery, setSearchQuery] = useState(''); // ✅ Added search state
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // ✅ Correctly typed input change handler
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handler for the search input field
+  const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
   };
 
@@ -120,7 +120,6 @@ export default function CreateUserPage() {
           </p>
         </div>
 
-        {/* ✅ Example search input field */}
         <input
           type="text"
           placeholder="Search users..."
