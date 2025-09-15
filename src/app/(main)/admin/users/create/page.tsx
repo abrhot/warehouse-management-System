@@ -2,11 +2,6 @@
 
 import React, { useState } from 'react';
 
-// Note: The original code used Next.js and Shadcn components that are not
-// available in this environment. This version has been refactored to use
-// standard HTML elements and Tailwind CSS for a self-contained solution.
-// In your actual Next.js project, you should use the original imports.
-
 // A simple SVG spinner component for the loading state
 const Spinner = () => (
   <svg
@@ -31,8 +26,16 @@ const Spinner = () => (
   </svg>
 );
 
+// Define a type for the props of the MessageBox component
+interface MessageBoxProps {
+  message: string;
+  type: 'success' | 'error' | '';
+  onClose: () => void;
+}
+
 // A simple message box component to replace alerts and toasts
-const MessageBox = ({ message, type, onClose }) => {
+// Update the function signature to use the defined interface
+const MessageBox = ({ message, type, onClose }: MessageBoxProps) => {
   const isSuccess = type === 'success';
   const bgColor = isSuccess ? 'bg-blue-200' : 'bg-red-500';
   const textColor = isSuccess ? 'text-blue-800' : 'text-white';
@@ -52,7 +55,6 @@ const MessageBox = ({ message, type, onClose }) => {
     </div>
   );
 };
-
 
 export default function CreateUserPage() {
   const [name, setName] = useState('');
