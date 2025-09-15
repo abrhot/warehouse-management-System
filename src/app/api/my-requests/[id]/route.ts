@@ -6,9 +6,9 @@ import { RequestStatus, ItemStatus } from "@/generated/prisma";
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } } // ✅ Correct type here
+  context: { params: { id: string } } // ✅ Don’t destructure here
 ) {
-  const { id } = params; // ✅ No await needed
+  const { id } = context.params; // ✅ Destructure inside the function
 
   const session = await getServerSession(authOptions);
 
