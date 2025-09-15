@@ -1,25 +1,24 @@
-// src/app/api/my-requests/[id]/route.ts
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { RequestStatus, ItemStatus } from "@/generated/prisma";
 
 export async function DELETE(
-  request: Request,
-  context: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: { id: string } } // ✅ Correct type here
 ) {
+  const { id } = params; // ✅ No await needed
+
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const requestId = context.params.id;
-
   try {
     const requestToDelete = await prisma.stockRequest.findUnique({
-      where: { id: requestId },
+      where: { id },
     });
 
     if (!requestToDelete || requestToDelete.requestedBy !== session.user.id) {
@@ -42,7 +41,7 @@ export async function DELETE(
         data: { status: ItemStatus.IN_STOCK },
       }),
       prisma.stockRequest.delete({
-        where: { id: requestId },
+        where: { id },
       }),
     ]);
 
