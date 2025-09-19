@@ -3,6 +3,7 @@
 
 generator client {
   provider = "prisma-client-js"
+  output   = "./src/generated/prisma"
 }
 
 datasource db {
@@ -79,7 +80,7 @@ model StockItem {
   status       ItemStatus @default(IN_STOCK)
   location     String?
   createdAt    DateTime   @default(now())
-  updatedAt    DateTime?  @updatedAt
+  updatedAt    DateTime   @default(now()) @updatedAt
 
   // Relations
   productId String
@@ -97,7 +98,7 @@ model Category {
   description String?
   products    Product[]
   createdAt   DateTime  @default(now())
-  updatedAt   DateTime? @updatedAt
+  updatedAt   DateTime  @default(now()) @updatedAt
 }
 
 model Supplier {
@@ -115,7 +116,7 @@ model StockRequest {
   notes     String?
   reason    String?
   createdAt DateTime      @default(now())
-  updatedAt DateTime?     @updatedAt
+  updatedAt DateTime      @default(now()) @updatedAt
 
   // Relations: One StockRequest links to one StockItem.
   // The foreign key (stockItemId) and the relation definition are correctly placed here.
