@@ -18,7 +18,7 @@ model User {
   password  String
   role      Role      @default(USER)
   createdAt DateTime  @default(now())
-  updatedAt DateTime? @updatedAt
+  updatedAt DateTime  @default(now()) @updatedAt
   deletedAt DateTime?
 
   // Relations
@@ -56,7 +56,7 @@ model Product {
   costPrice    Decimal    @db.Decimal(10, 2)
   sellingPrice Decimal?   @db.Decimal(10, 2)
   createdAt    DateTime   @default(now())
-  updatedAt    DateTime?  @updatedAt
+  updatedAt    DateTime   @default(now()) @updatedAt
   quantity     Int        @default(0)
   auditLogs    AuditLog[]
 
@@ -79,7 +79,7 @@ model StockItem {
   status       ItemStatus @default(IN_STOCK)
   location     String?
   createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  updatedAt    DateTime?  @updatedAt
 
   // Relations
   productId String
@@ -97,7 +97,7 @@ model Category {
   description String?
   products    Product[]
   createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  updatedAt   DateTime? @updatedAt
 }
 
 model Supplier {
@@ -115,7 +115,7 @@ model StockRequest {
   notes     String?
   reason    String?
   createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+  updatedAt DateTime?     @updatedAt
 
   // Relations: One StockRequest links to one StockItem.
   // The foreign key (stockItemId) and the relation definition are correctly placed here.
