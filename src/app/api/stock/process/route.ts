@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from "@/lib/auth";
-import prisma from '@/lib/prisma';
-import { RequestStatus, ItemStatus } from '@/generated/prisma';
+// FIX 1: Corrected to a named import
+import { prisma } from '@/lib/prisma';
+// FIX 2: Corrected the import path to the standard client location
+import { RequestStatus, ItemStatus } from '@prisma/client';
 
 export async function POST(req: Request) {
   try {
@@ -18,13 +20,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing requestId or newStatus' }, { status: 400 });
     }
 
-    if (!Object.values(RequestStatus).includes(newStatus)) {
+    if (newStatus !== 'APPROVED' && newStatus !== 'REJECTED') {
       return NextResponse.json({ error: 'Invalid status provided' }, { status: 400 });
     }
 
     const request = await prisma.stockRequest.findUnique({
       where: { id: requestId },
-      include: { stockItem: true },
     });
 
     if (!request) {
@@ -34,42 +35,49 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Request has already been processed' }, { status: 400 });
     }
 
-    if (newStatus === RequestStatus.APPROVED) {
-      const [updatedRequest, updatedStockItem] = await prisma.$transaction([
+    // Use a transaction to ensure both updates succeed or fail together
+    if (newStatus === 'APPROVED') {
+      await prisma.$transaction([
         prisma.stockRequest.update({
           where: { id: requestId },
           data: {
             status: RequestStatus.APPROVED,
-            approvedBy: session.user.id,
+            // FIX 3: Use 'connect' on the 'approver' relation field
+            approver: {
+              connect: { id: session.user.id },
+            },
           },
         }),
         prisma.stockItem.update({
           where: { id: request.stockItemId! },
           data: {
-            status: ItemStatus.SHIPPED,
+            status: ItemStatus.SHIPPED, // Or whatever status is appropriate after approval
           },
         }),
       ]);
-      return NextResponse.json({ updatedRequest, updatedStockItem });
     } else { // If the status is REJECTED
-      const [updatedRequest, updatedStockItem] = await prisma.$transaction([
+      await prisma.$transaction([
         prisma.stockRequest.update({
           where: { id: requestId },
           data: {
             status: RequestStatus.REJECTED,
-            approvedBy: session.user.id,
             reason: remark, // Save the rejection remark
+             // FIX 3: Use 'connect' on the 'approver' relation field
+            approver: {
+              connect: { id: session.user.id },
+            },
           },
         }),
         prisma.stockItem.update({
           where: { id: request.stockItemId! },
           data: {
-            status: ItemStatus.IN_STOCK, // Revert status
+            status: ItemStatus.IN_STOCK, // Revert item status to available
           },
         })
       ]);
-      return NextResponse.json({ updatedRequest, updatedStockItem });
     }
+    
+    return NextResponse.json({ success: true, newStatus: newStatus });
 
   } catch (error: any) {
     console.error('Error processing request:', error);

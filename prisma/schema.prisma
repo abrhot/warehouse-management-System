@@ -119,7 +119,6 @@ model StockRequest {
   updatedAt DateTime      @default(now()) @updatedAt
 
   // Relations: One StockRequest links to one StockItem.
-  // The foreign key (stockItemId) and the relation definition are correctly placed here.
   stockItemId String?    @unique
   stockItem   StockItem? @relation(fields: [stockItemId], references: [id], onDelete: SetNull)
 
@@ -145,6 +144,7 @@ enum RequestStatus {
   PENDING
   APPROVED
   REJECTED
+  RESERVED // ✅ added
 }
 
 enum ItemStatus {
