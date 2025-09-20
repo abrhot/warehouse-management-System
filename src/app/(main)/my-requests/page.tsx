@@ -1,16 +1,27 @@
-// ⬇️ ENSURE there is NO 'use client' directive at the top of THIS file.
 // This is a Server Component for fetching data.
-
-import { MyRequestsPageContent } from '@/components/requests/MyRequestsPageContent';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma'; // Corrected: Use a named import
+import { Prisma, RequestStatus } from '@prisma/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from "@/lib/auth";
-import { StockRequest, StockItem, Product, User, RequestStatus } from '@/generated/prisma';
+import { MyRequestsPageContent } from '@/components/requests/MyRequestsPageContent';
 
-export type UserRequestWithRelations = StockRequest & {
-  stockItem: (StockItem & { product: Product }) | null;
-  requester: User;
-};
+// Define the query arguments to reuse for type generation and the actual query
+const requestWithRelationsArgs = {
+  include: {
+    stockItem: {
+      include: {
+        product: true,
+      },
+    },
+    requester: true, // Include the user who made the request
+  },
+  orderBy: {
+    createdAt: 'desc',
+  },
+} satisfies Prisma.StockRequestFindManyArgs;
+
+// Generate the specific type from the query for type safety
+export type UserRequestWithRelations = Prisma.StockRequestGetPayload<typeof requestWithRelationsArgs>;
 
 // This async function is a valid React Server Component.
 export default async function MyRequestsPage() {
@@ -18,18 +29,9 @@ export default async function MyRequestsPage() {
 
   const requests = session?.user?.id
     ? await prisma.stockRequest.findMany({
-        where: { requestedBy: session.user.id },
-        include: {
-          stockItem: {
-            include: {
-              product: true,
-            },
-          },
-          requester: true,
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
+        // Corrected: The field name is 'requestedBy' according to the error log.
+        where: { requestedBy: session.user.id }, 
+        ...requestWithRelationsArgs,
       })
     : [];
 
@@ -42,19 +44,30 @@ export default async function MyRequestsPage() {
   // Ensure all data passed to the client component is serializable
   const serializableRequests = requests.map(request => ({
     ...request,
+    createdAt: request.createdAt.toISOString(),
+    updatedAt: request.updatedAt.toISOString(),
     stockItem: request.stockItem
       ? {
           ...request.stockItem,
+          createdAt: request.stockItem.createdAt.toISOString(),
+          updatedAt: request.stockItem.updatedAt.toISOString(),
           product: {
             ...request.stockItem.product,
             costPrice: request.stockItem.product.costPrice.toString(),
             sellingPrice: request.stockItem.product.sellingPrice?.toString() || null,
+            createdAt: request.stockItem.product.createdAt.toISOString(),
+            updatedAt: request.stockItem.product.updatedAt.toISOString(),
           },
         }
       : null,
-    requester: request.requester,
+    requester: {
+      ...request.requester,
+      // Handle potentially null date fields in the User model
+      emailVerified: request.requester.emailVerified?.toISOString() || null,
+    },
   }));
 
   // It returns a valid JSX element, which is the client component with props.
   return <MyRequestsPageContent initialRequests={serializableRequests} summary={summary} />;
 }
+

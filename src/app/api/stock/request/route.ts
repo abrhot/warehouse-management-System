@@ -1,14 +1,13 @@
 // src/app/api/stock/request/route.ts
+
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-// --- FIX: Import authOptions from a central library file ---
-// This is the most stable way to handle auth configuration.
-// Ensure you have a file at 'src/lib/auth.ts' that exports your authOptions.
-import { authOptions } from '@/lib/auth'; 
-import prisma from '@/lib/prisma';
+import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+// FIX 1: Import the 'RequestStatus' enum from your generated prisma client
+import { RequestStatus } from '@/generated/prisma'; 
 
 export async function POST(req: Request) {
-  // This will now correctly resolve the user's session
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
@@ -18,29 +17,38 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { stockItemId, notes, reason } = body;
+    if (!stockItemId) {
+        return NextResponse.json({ error: 'Stock Item ID is required.' }, { status: 400 });
+    }
+    
     const userId = session.user.id;
 
-    // First, check if a request for this stock item already exists.
-    const existingRequest = await prisma.stockRequest.findUnique({
-      where: { stockItemId },
+    const existingRequest = await prisma.stockRequest.findFirst({
+      where: { 
+        stockItemId: stockItemId,
+        // FIX 2: Use the enum members directly instead of strings
+        status: { in: [RequestStatus.PENDING, RequestStatus.RESERVED] }
+      },
     });
 
     if (existingRequest) {
       return NextResponse.json(
-        { error: 'A request for this item already exists.' },
+        { error: 'An active request for this item already exists.' },
         { status: 409 } // 409 Conflict
       );
     }
-
-    // Create the request and update the item's status in a transaction
+    
     const [newRequest] = await prisma.$transaction([
       prisma.stockRequest.create({
         data: {
           stockItemId,
           type: 'OUT',
+          // FIX 3: Use the enum here as well
+          status: RequestStatus.PENDING, 
           notes: notes || null,
           reason: reason || null,
-          requestedBy: userId,
+          // FIX 4: Correct the field name to match your Prisma schema
+          requestedBy: userId, 
         },
       }),
       prisma.stockItem.update({
@@ -53,7 +61,7 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error('Error creating stock out request:', error);
 
-    if (error.code === 'P2025') {
+    if (error.code === 'P2025' || error.code === 'P2003') {
       return NextResponse.json(
         { error: 'Stock item not found. Please provide a valid item ID.' },
         { status: 404 }

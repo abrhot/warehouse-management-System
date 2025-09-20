@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 
 // --- Helper Icons (No change needed here) ---
 const ChevronDownIcon = ({ className }: { className?: string }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`h-5 w-5 ${className}`}><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+  <svg xmlns="http://www.w.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`h-5 w-5 ${className}`}><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
 );
 const ArrowUpTrayIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-5 w-5 text-red-500"><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>
@@ -29,11 +29,11 @@ interface PendingRequest {
   quantity: number;
   createdAt: string;
   notes: string | null;
-  product?: { // Marking as optional for safety
+  product?: {
     name: string;
     quantity: number;
   };
-  requester?: { // Marking as optional for safety
+  requester?: {
     name: string | null;
     email: string;
   };
@@ -82,7 +82,7 @@ const RejectionModal = ({ isOpen, onClose, onSubmit, remark, setRemark }: {
 };
 
 
-export default function PendingRequests() {
+export default function ApprovalPage() {
   const [requests, setRequests] = useState<PendingRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -96,11 +96,26 @@ export default function PendingRequests() {
     setError(null);
     try {
       const res = await fetch('/api/stock/pending');
-      if (!res.ok) throw new Error('Failed to fetch requests');
+      if (!res.ok) {
+        let errorMessage = 'Failed to fetch requests due to a server error.';
+        try {
+          // Attempt to parse a more specific error from the API response body
+          const errorData = await res.json();
+          if (errorData && errorData.error) {
+            errorMessage = errorData.error;
+          }
+        } catch (parseError) {
+          // The response was not JSON, stick with the generic server error message.
+          console.error("Could not parse error response:", parseError);
+        }
+        throw new Error(errorMessage);
+      }
       const data = await res.json();
       setRequests(data);
     } catch (err: any) {
       setError(err.message);
+      toast.error(err.message || 'An unexpected error occurred while fetching requests.');
+      console.error("Failed to fetch requests:", err);
     } finally {
       setLoading(false);
     }
@@ -224,7 +239,6 @@ export default function PendingRequests() {
                       </div>
                       <div className="flex-1">
                         <div className="mb-1.5 flex items-center space-x-3">
-                          {/* --- FIX #1: Added optional chaining for product name --- */}
                           <h3 className="text-md font-semibold text-gray-900">{req.product?.name || 'Unknown Product'}</h3>
                           <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${ req.type === 'IN' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }`}>
                             {req.type === 'IN' ? 'Stock In' : 'Stock Out'}
@@ -237,7 +251,6 @@ export default function PendingRequests() {
                           </div>
                           <div className="flex items-center space-x-1.5">
                             <UserIcon />
-                            {/* --- FIX #2: Added optional chaining for requester name/email --- */}
                             <span>by <span className="font-medium text-gray-900">{req.requester?.name || req.requester?.email || 'Unknown User'}</span></span>
                           </div>
                           <div className="flex items-center space-x-1.5">
@@ -262,8 +275,8 @@ export default function PendingRequests() {
                         <svg className="mr-1.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                         Approve
                       </button>
-                      <button 
-                        onClick={() => handleToggleDetails(req.id)} 
+                      <button
+                        onClick={() => handleToggleDetails(req.id)}
                         className="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
                       >
                         <ChevronDownIcon className={`transition-transform duration-200 ${expandedRequestId === req.id ? 'rotate-180' : ''}`} />
@@ -288,7 +301,6 @@ export default function PendingRequests() {
                           </div>
                           <div className="flex justify-between text-sm">
                             <span className="text-gray-500">Current Stock:</span>
-                            {/* --- FIX #3: Added optional chaining and nullish coalescing for product quantity --- */}
                             <span className="font-medium text-gray-900">{req.product?.quantity ?? 'N/A'} units</span>
                           </div>
                           <div className="flex justify-between text-sm">
@@ -307,3 +319,4 @@ export default function PendingRequests() {
     </div>
   );
 }
+
