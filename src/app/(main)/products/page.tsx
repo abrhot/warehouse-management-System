@@ -1,42 +1,39 @@
+// src/app/(main)/products/page.tsx
 import { ProductsPageContent } from '@/components/products/ProductsPageContent';
-// Corrected: Use a named import for prisma
 import prisma from '@/lib/prisma';
-// Corrected: Import Prisma types directly from the client
 import { Prisma } from '@prisma/client';
 
-// Define the query arguments in a variable to reuse them for type generation
+// Define query args for Prisma
 const stockItemWithRelationsArgs = {
   include: {
     product: {
       include: {
         category: true,
-        supplier: true,
+        supplier: true, // supplier included, but no timestamps assumed
       },
     },
   },
   orderBy: {
-      createdAt: 'desc',
-  }
+    createdAt: 'desc',
+  },
 } satisfies Prisma.StockItemFindManyArgs;
 
-// Use Prisma's generated types to create a precise type for your data.
-// This automatically updates if you change the query above.
+// Create precise type for stock items
 export type StockItemWithRelations = Prisma.StockItemGetPayload<typeof stockItemWithRelationsArgs>;
 
 export default async function ProductsPage() {
-  // The findMany call now uses the args object
+  // Fetch stock items
   const stockItems = await prisma.stockItem.findMany(stockItemWithRelationsArgs);
 
-  // Serialize the data for the client component. Your logic here is correct.
-  // Using .map() is necessary to convert Decimal types to strings for serialization.
+  // Serialize for client component (convert Dates and Decimals to strings)
   const serializableItems = stockItems.map(item => ({
     ...item,
-    createdAt: item.createdAt.toISOString(), // Serialize Date objects
+    createdAt: item.createdAt.toISOString(),
     updatedAt: item.updatedAt.toISOString(),
     product: {
       ...item.product,
-      costPrice: item.product.costPrice.toString(), // Serialize Decimal
-      sellingPrice: item.product.sellingPrice?.toString() || null, // Serialize Decimal
+      costPrice: item.product.costPrice.toString(),
+      sellingPrice: item.product.sellingPrice?.toString() || null,
       createdAt: item.product.createdAt.toISOString(),
       updatedAt: item.product.updatedAt.toISOString(),
       category: {
@@ -44,14 +41,15 @@ export default async function ProductsPage() {
         createdAt: item.product.category.createdAt.toISOString(),
         updatedAt: item.product.category.updatedAt.toISOString(),
       },
-      supplier: item.product.supplier ? {
-        ...item.product.supplier,
-        createdAt: item.product.supplier.createdAt.toISOString(),
-        updatedAt: item.product.supplier.updatedAt.toISOString(),
-      } : null,
-    }
+      supplier: item.product.supplier
+        ? {
+            ...item.product.supplier,
+            // Remove createdAt/updatedAt because your schema doesn't have them
+          }
+        : null,
+    },
   }));
 
+  // Render client component with serialized data
   return <ProductsPageContent initialItems={serializableItems} />;
 }
-
