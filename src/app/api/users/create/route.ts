@@ -1,34 +1,44 @@
+// src/app/api/users/create/route.ts
+
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcrypt';
-import { Role } from '@/generated/prisma'; // Import the Role enum
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth'; // You need to import your authOptions
+import { Role } from '@prisma/client'; // A more stable import path for the enum
 
 export async function POST(req: Request) {
+  // --- FIX: Add Authorization Check ---
+  // This ensures only an authenticated ADMIN can create a new user.
+  const session = await getServerSession(authOptions);
+  if (!session?.user || session.user.role !== 'ADMIN') {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  }
+
   try {
     const body = await req.json();
     const { name, email, password, role } = body;
 
-    // --- Validation ---
+    // --- Validation (Your existing code is good) ---
     if (!name || !email || !password || !role) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    if (!['ADMIN', 'USER'].includes(role)) {
+    if (!Object.values(Role).includes(role)) {
         return NextResponse.json({ error: 'Invalid role specified' }, { status: 400 });
     }
 
-    // --- Check if user already exists ---
+    // --- Check if user already exists (Your existing code is good) ---
     const existingUser = await prisma.user.findUnique({
       where: { email },
     });
 
     if (existingUser) {
-      return NextResponse.json({ error: 'User with this email already exists' }, { status: 409 }); // 409 Conflict
+      return NextResponse.json({ error: 'User with this email already exists' }, { status: 409 });
     }
 
-    // --- Hash the password ---
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    // --- Hash the password (Your existing code is good) ---
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     // --- Create the new user ---
     const newUser = await prisma.user.create({
@@ -36,7 +46,7 @@ export async function POST(req: Request) {
         name,
         email,
         password: hashedPassword,
-        role: role as Role, // Cast the string to the Role enum type
+        role: role, // Prisma is smart enough to infer the enum type here
       },
     });
     

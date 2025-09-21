@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from "@/lib/auth";
 // FIX 1: Corrected to a named import
-import { prisma } from '@/lib/prisma';
+import prisma from '@/lib/prisma';
 // FIX 2: Corrected the import path to the standard client location
 import { RequestStatus, ItemStatus } from '@prisma/client';
 

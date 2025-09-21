@@ -1,6 +1,6 @@
 import { ProductsPageContent } from '@/components/products/ProductsPageContent';
 // Corrected: Use a named import for prisma
-import { prisma } from '@/lib/prisma';
+import prisma from '@/lib/prisma';
 // Corrected: Import Prisma types directly from the client
 import { Prisma } from '@prisma/client';
 

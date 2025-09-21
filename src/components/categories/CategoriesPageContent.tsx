@@ -1,22 +1,60 @@
 'use client';
 
-import { useState, useEffect, Fragment } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, Fragment } from 'react';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Package, ChevronDown, ChevronRight, Boxes, Pencil, Trash2, MoreHorizontal } from 'lucide-react';
+import {
+  PlusCircle,
+  Package,
+  ChevronDown,
+  ChevronRight,
+  Boxes,
+  Pencil,
+  Trash2,
+  MoreHorizontal,
+} from 'lucide-react';
 import { toast } from 'sonner';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 
-// Define types used in the component
+// ✅ Types
 export type SerializableProduct = {
   id: string;
   name: string;
   sku: string | null;
+  quantity: number;
+  costPrice: string;
+  sellingPrice: string | null;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type CategoryWithProducts = {
@@ -24,369 +62,101 @@ export type CategoryWithProducts = {
   name: string;
   description: string | null;
   products: SerializableProduct[];
+  createdAt: string;
+  updatedAt: string;
 };
 
-// Add Category Modal Component
-function AddCategoryModal({ isOpen, onClose, onAddCategory }: { isOpen: boolean, onClose: () => void, onAddCategory: (name: string, description: string) => void }) {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
+// ✅ Component
+export function CategoriesPageContent({
+  categories,
+  totalProducts,
+}: {
+  categories: CategoryWithProducts[];
+  totalProducts: number;
+}) {
+  const [expanded, setExpanded] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) {
-        toast.error("Category name cannot be empty.");
-        return;
-    }
-    onAddCategory(name, description);
-    setName('');
-    setDescription('');
-  };
-  
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Add New Category</DialogTitle>
-          <DialogDescription>Enter the details for the new category.</DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="add-name" className="text-right">Name</Label>
-              <Input id="add-name" value={name} onChange={(e) => setName(e.target.value)} className="col-span-3" required />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="add-description" className="text-right">Description</Label>
-              <Textarea id="add-description" value={description} onChange={(e) => setDescription(e.target.value)} className="col-span-3" />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-            <Button type="submit" className="bg-blue-600 text-white hover:bg-blue-700">Add Category</Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-
-// Helper to extract error messages from API responses
-const getErrorMessage = async (response: Response, defaultMessage: string) => {
-  try {
-    const errorData = await response.json();
-    return errorData.message || defaultMessage;
-  } catch {
-    return defaultMessage;
-  }
-};
-
-// API call functions with improved error handling
-async function addCategoryAPI(name: string, description: string) {
-  const response = await fetch('/api/categories', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, description }),
-  });
-  if (!response.ok) {
-    const message = await getErrorMessage(response, 'Failed to create category.');
-    throw new Error(message);
-  }
-}
-
-async function editCategoryAPI(id: string, name: string, description: string) {
-  const response = await fetch(`/api/categories/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, description }),
-  });
-  if (!response.ok) {
-    const message = await getErrorMessage(response, 'Failed to update category.');
-    throw new Error(message);
-  }
-}
-
-async function deleteCategoryAPI(id: string) {
-  const response = await fetch(`/api/categories/${id}`, { method: 'DELETE' });
-  if (!response.ok) {
-    const message = await getErrorMessage(response, 'Failed to delete category.');
-    throw new Error(message);
-  }
-}
-
-// Type for the category data used in the edit modal to improve performance
-type EditableCategory = {
-  id: string;
-  name: string;
-  description: string | null;
-};
-
-// Edit Category Modal Component
-function EditCategoryModal({ isOpen, onClose, onEditCategory, category }: { isOpen: boolean, onClose: () => void, onEditCategory: (id: string, name: string, description: string) => void, category: EditableCategory | null }) {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-
-  useEffect(() => {
-    if (category) {
-      setName(category.name || '');
-      setDescription(category.description || '');
-    }
-  }, [category]);
-
-  if (!category) return null;
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) {
-        toast.error("Category name cannot be empty.");
-        return;
-    }
-    onEditCategory(category.id, name, description);
+  const toggleExpand = (id: string) => {
+    setExpanded(expanded === id ? null : id);
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Edit Category</DialogTitle>
-          <DialogDescription>Update the details for the "{category.name}" category.</DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">Name</Label>
-              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} className="col-span-3" required />
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Categories</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Total Products: {totalProducts}
+          </p>
+        </CardHeader>
+        <CardContent>
+          {categories.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No categories available.
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {categories.map((category) => (
+                <div key={category.id} className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div
+                      className="flex items-center cursor-pointer"
+                      onClick={() => toggleExpand(category.id)}
+                    >
+                      {expanded === category.id ? (
+                        <ChevronDown className="h-4 w-4 mr-2" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4 mr-2" />
+                      )}
+                      <h2 className="text-lg font-semibold">
+                        {category.name}
+                      </h2>
+                      <span className="ml-2 text-sm text-muted-foreground">
+                        ({category.products.length} products)
+                      </span>
+                    </div>
+                  </div>
+
+                  {expanded === category.id && (
+                    <div className="mt-4">
+                      {category.products.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">
+                          No products in this category.
+                        </p>
+                      ) : (
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Name</TableHead>
+                              <TableHead>SKU</TableHead>
+                              <TableHead>Quantity</TableHead>
+                              <TableHead>Cost Price</TableHead>
+                              <TableHead>Selling Price</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {category.products.map((product) => (
+                              <TableRow key={product.id}>
+                                <TableCell>{product.name}</TableCell>
+                                <TableCell>{product.sku || '-'}</TableCell>
+                                <TableCell>{product.quantity}</TableCell>
+                                <TableCell>{product.costPrice}</TableCell>
+                                <TableCell>
+                                  {product.sellingPrice || '-'}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="description" className="text-right">Description</Label>
-              <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="col-span-3" />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-            <Button type="submit" className="bg-blue-600 text-white hover:bg-blue-700">Save Changes</Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
-
-
-export function CategoriesPageContent({ categories, totalProducts }: { categories: CategoryWithProducts[], totalProducts: number }) {
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<EditableCategory | null>(null);
-  const [deletingCategoryId, setDeletingCategoryId] = useState<string | null>(null);
-  const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>(null);
-
-  const handleAddCategory = async (name: string, description: string) => {
-    try {
-      await addCategoryAPI(name, description);
-      toast.success(`Category "${name}" created successfully!`);
-      setIsAddModalOpen(false);
-    } catch (error) {
-      console.error("Add category error:", error);
-      toast.error(error instanceof Error ? error.message : 'An unknown error occurred.');
-    }
-  };
-
-  const handleEditCategory = async (id: string, name: string, description: string) => {
-    try {
-      await editCategoryAPI(id, name, description);
-      toast.success(`Category "${name}" updated successfully!`);
-      setIsEditModalOpen(false);
-      setEditingCategory(null);
-    } catch (error) {
-      console.error("Update category error:", error);
-      toast.error(error instanceof Error ? error.message : 'An unknown error occurred.');
-    }
-  };
-
-  const handleDeleteCategory = async () => {
-    if (!deletingCategoryId) return;
-    try {
-      await deleteCategoryAPI(deletingCategoryId);
-      toast.success('Category deleted successfully!');
-      setDeletingCategoryId(null);
-    } catch (error) {
-      console.error("Delete category error:", error);
-      toast.error(error instanceof Error ? error.message : 'An unknown error occurred.');
-    }
-  };
-
-  const openEditModal = (category: CategoryWithProducts) => {
-    setEditingCategory({
-      id: category.id,
-      name: category.name,
-      description: category.description,
-    });
-    setIsEditModalOpen(true);
-  };
-
-  const toggleExpand = (categoryId: string) => {
-    setExpandedCategoryId(expandedCategoryId === categoryId ? null : categoryId);
-  };
-  
-  const handleProductClick = () => {
-    window.location.href = `http://localhost:3000/products`;
-  };
-
-  return (
-    <>
-      <div className="space-y-6">
-        <header className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-800">Product Categories</h1>
-          <Button onClick={() => setIsAddModalOpen(true)} className="bg-blue-600 text-white hover:bg-blue-700 shadow-sm transition-transform hover:scale-105">
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Add New Category
-          </Button>
-        </header>
-        
-        <div className="grid gap-6 md:grid-cols-2">
-            <Card className="border-l-4 border-blue-500 bg-gradient-to-r from-blue-50 to-white shadow-md transition-shadow hover:shadow-lg">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium text-blue-800">Total Categories</CardTitle>
-                    <Boxes className="h-5 w-5 text-blue-500" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-3xl font-bold text-gray-800">{categories.length}</div>
-                    <p className="text-xs text-gray-500 mt-1">Distinct groups for product organization.</p>
-                </CardContent>
-            </Card>
-            <Card className="border-l-4 border-cyan-500 bg-gradient-to-r from-cyan-50 to-white shadow-md transition-shadow hover:shadow-lg">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium text-cyan-800">Total Products</CardTitle>
-                    <Package className="h-5 w-5 text-cyan-500" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-3xl font-bold text-gray-800">{totalProducts}</div>
-                     <p className="text-xs text-gray-500 mt-1">Sum of all items across all categories.</p>
-                </CardContent>
-            </Card>
-        </div>
-
-        <Card className="overflow-hidden shadow-md">
-          <CardHeader>
-            <CardTitle>All Categories</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader className="bg-gray-50">
-                <TableRow>
-                  <TableHead className="w-[50px]"></TableHead>
-                  <TableHead>Category Name</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead className="text-right">Product Count</TableHead>
-                  <TableHead className="text-right w-[100px]">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {categories.map((category) => (
-                  <Fragment key={category.id}>
-                    <TableRow className="hover:bg-gray-50">
-                      <TableCell className="px-4 cursor-pointer" onClick={() => toggleExpand(category.id)}>
-                        {expandedCategoryId === category.id ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                      </TableCell>
-                      <TableCell className="font-medium text-lg cursor-pointer" onClick={() => toggleExpand(category.id)}>{category.name}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{category.description || 'N/A'}</TableCell>
-                      <TableCell className="text-right">{category.products.length}</TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <span className="sr-only">Open menu</span>
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => openEditModal(category)}>
-                              <Pencil className="mr-2 h-4 w-4" />
-                              <span>Edit</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setDeletingCategoryId(category.id)} className="text-red-600 focus:text-red-600">
-                               <Trash2 className="mr-2 h-4 w-4" />
-                               <span>Delete</span>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                    {expandedCategoryId === category.id && (
-                      <TableRow className="bg-blue-50/50 hover:bg-blue-50/50">
-                        <TableCell colSpan={5} className="p-0">
-                           <div className="p-4">
-                            <h4 className="font-semibold mb-3 text-sm text-blue-900">Products (Showing up to 5)</h4>
-                             {category.products.length > 0 ? (
-                                <Table>
-                                  <TableHeader>
-                                      <TableRow>
-                                          <TableHead className="w-[60%]">Product Name</TableHead>
-                                          <TableHead>SKU</TableHead>
-                                      </TableRow>
-                                  </TableHeader>
-                                  <TableBody>
-                                      {category.products.slice(0, 5).map((product: SerializableProduct) => (
-                                          <TableRow key={product.id} onClick={() => handleProductClick()} className="cursor-pointer hover:bg-blue-100/70">
-                                              <TableCell className="font-semibold text-sm text-gray-800">{product.name}</TableCell>
-                                              <TableCell className="text-sm text-gray-600 font-mono">{product.sku}</TableCell>
-                                          </TableRow>
-                                      ))}
-                                  </TableBody>
-                                </Table>
-                              ) : (
-                                <p className="text-center text-sm text-gray-500 py-4">No products in this category.</p>
-                              )}
-                           </div>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </Fragment>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      </div>
-
-      <AddCategoryModal
-        isOpen={isAddModalOpen}
-        onClose={() => {
-            setIsAddModalOpen(false);
-            window.location.reload();
-        }}
-        onAddCategory={handleAddCategory}
-      />
-      <EditCategoryModal
-        isOpen={isEditModalOpen}
-        onClose={() => {
-            setIsEditModalOpen(false);
-            setEditingCategory(null);
-            window.location.reload();
-        }}
-        onEditCategory={handleEditCategory}
-        category={editingCategory}
-      />
-      <Dialog
-        open={!!deletingCategoryId}
-        onOpenChange={(isOpen) => {
-            if (!isOpen) {
-                setDeletingCategoryId(null);
-                window.location.reload();
-            }
-        }}>
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle>Are you absolutely sure?</DialogTitle>
-                <DialogDescription>This action cannot be undone. This will permanently delete the category and could affect products within it.</DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-                <Button variant="outline" onClick={() => setDeletingCategoryId(null)}>Cancel</Button>
-                <Button variant="destructive" onClick={handleDeleteCategory}>Delete</Button>
-            </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-}
-

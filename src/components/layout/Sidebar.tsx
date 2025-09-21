@@ -3,8 +3,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useSession, signOut } from 'next-auth/react';
-import { getNavRoutes } from '@/config/routes'; // Make sure this path is correct
+import { signOut } from 'next-auth/react';
+import { getNavRoutes } from '@/config/routes';
 import {
   LayoutDashboard,
   Package,
@@ -13,10 +13,8 @@ import {
   Users,
   LogOut,
   LucideIcon,
-  Mail,
   ClipboardList,
   Menu,
-  Tag,
   Boxes,
   Layers3,
   Bell,
@@ -25,10 +23,16 @@ import { Button } from '@/components/ui/button';
 import clsx from 'clsx';
 import { useState } from 'react';
 
-// --- Icon Mapping ---
+interface SidebarProps {
+  user: {
+    role: string;
+    name: string;
+    email: string;
+  };
+}
+
 const iconMap: { [key: string]: LucideIcon } = {
   '/my-requests': ClipboardList,
-
   '/dashboard': LayoutDashboard,
   '/products': Boxes,
   '/categories': Layers3,
@@ -38,21 +42,17 @@ const iconMap: { [key: string]: LucideIcon } = {
   '/admin/requests': Bell,
 };
 
-export function Sidebar() {
+export function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname();
-  const { data: session } = useSession();
-  const user = session?.user;
   const [isOpen, setIsOpen] = useState(true);
 
-  // Generate navigation routes based on the user's role.
-  const navRoutes = getNavRoutes(user?.role);
+  const navRoutes = getNavRoutes(user.role);
 
   return (
     <aside className={clsx(
         'fixed top-0 left-0 z-50 flex h-screen flex-col border-r bg-white p-4 shadow-lg transition-all duration-300 ease-in-out',
         isOpen ? 'w-64' : 'w-20'
     )}>
-      {/* Top Section: WMS Logo & Hamburger Menu */}
       <div className="flex h-16 items-center justify-between">
         {isOpen && (
             <Link href="/dashboard" className="text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
@@ -69,7 +69,6 @@ export function Sidebar() {
         </Button>
       </div>
 
-      {/* Main Navigation Links & User Profile */}
       <div className="flex flex-1 flex-col justify-between overflow-y-auto">
         <nav className="mt-6 flex flex-col gap-2">
           {navRoutes.map((route) => {
@@ -94,7 +93,6 @@ export function Sidebar() {
           })}
         </nav>
 
-      {/* User profile and logout section */}
         <div className="pt-4">
             <div className={clsx('flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors cursor-pointer text-slate-700 hover:bg-red-50 hover:text-red-600')}
                 onClick={() => signOut()}
@@ -107,4 +105,3 @@ export function Sidebar() {
     </aside>
   );
 }
-  

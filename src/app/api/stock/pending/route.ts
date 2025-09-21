@@ -1,7 +1,7 @@
 // src/app/api/stock/pending/route.ts
 
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import prisma from '@/lib/prisma';
 // FIX: Corrected the enum name from 'StockItemStatus' to 'ItemStatus' to match your schema
 import { RequestStatus, ItemStatus } from '@prisma/client';
 
