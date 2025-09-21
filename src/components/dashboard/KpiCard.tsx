@@ -4,7 +4,7 @@ import React from 'react';
 
 export function KpiCard({ title, value, percentage, trend, Icon, children }: any) {
   return (
-    <Card className="shadow-sm bg-[#edf3e8] text-[#141b0e]">
+    <Card className="shadow-sm bg-white text-[#141b0e]">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
         <Icon className="h-4 w-4 text-[#6f9550]" />

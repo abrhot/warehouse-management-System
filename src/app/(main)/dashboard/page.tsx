@@ -1,11 +1,11 @@
-// src/app/(main)/dashboard/page.tsx
-
 import { KpiSection } from '@/components/dashboard/KpiSection';
 import { MainChart } from '@/components/dashboard/MainChart';
 import CategoriesChart from '@/components/dashboard/CategoriesChart';
 import { LowStockSection } from '@/components/dashboard/LowStockSection';
 import { Footer } from '@/components/dashboard/Footer';
 import { prisma } from '@/lib/prisma';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Activity } from 'lucide-react';
 
 const getThirtyDaysAgo = () => {
   const date = new Date();
@@ -13,10 +13,23 @@ const getThirtyDaysAgo = () => {
   return date;
 };
 
+// Placeholder component for recent activity items
+const ActivityItem = ({ title, description, time }: { title: string, description: string, time: string }) => (
+    <div className="flex items-start gap-3">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
+            <Activity className="h-4 w-4 text-muted-foreground" />
+        </div>
+        <div className="flex-1 space-y-1">
+            <p className="text-sm font-medium text-foreground">{title}</p>
+            <p className="text-xs text-muted-foreground">{description}</p>
+            <time className="text-xs text-muted-foreground">{time}</time>
+        </div>
+    </div>
+);
+
 export default async function DashboardPage() {
   try {
-    // --- Data Fetching Logic (Unchanged) ---
-    const totalItemsInStock = await prisma.stockItem.count({ where: { status: 'IN_STOCK' } });
+    // --- Data Fetching Logic ---
     const totalProducts = await prisma.product.count();
     const pendingRequests = await prisma.stockRequest.count({ where: { status: 'PENDING' } });
     const stockOutCount = await prisma.product.count({
@@ -40,6 +53,7 @@ export default async function DashboardPage() {
       orderBy: { name: 'asc' }
     });
 
+    // FIX: Limit the low stock items to a maximum of 4
     const lowStockItems = productsWithStockCount
       .filter(p => p._count.stockItems <= p.reorderLevel)
       .map(p => ({
@@ -47,7 +61,8 @@ export default async function DashboardPage() {
         name: p.name,
         quantity: p._count.stockItems,
         reorderLevel: p.reorderLevel,
-      }));
+      }))
+      .slice(0, 4);
 
     const productsForCategoryChart = await prisma.product.findMany({
       select: {
@@ -73,25 +88,34 @@ export default async function DashboardPage() {
 
     // --- NEW & IMPROVED UI LAYOUT ---
     return (
-      <main className="p-4 sm:px-6 sm:py-0 md:p-6 bg-gray-50 min-h-screen">
+      <main className="p-4 sm:px-6 md:p-8 bg-gray-50 min-h-screen">
         {/* Top Section: KPI Cards */}
         <KpiSection data={kpiData} />
         
-        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
-          {/* Left Section: Main Chart */}
-          <div className="lg:col-span-2">
-            <MainChart data={mainChartData} />
-          </div>
-          
-          {/* Right Section: Categories Chart */}
-          <div className="lg:col-span-1">
-            <CategoriesChart data={categoriesChartData} />
-          </div>
-        </div>
+        {/* Main Content Grid */}
+        <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-2">
+          {/* Column 1 */}
+          <div className="space-y-8">
+            <MainChart data={mainChartData} />
+            <LowStockSection lowStockItems={lowStockItems} />
+          </div>
 
-        {/* Bottom Section: Full-width Low Stock Alerts */}
-        <div className="mt-6">
-          <LowStockSection lowStockItems={lowStockItems} />
+          {/* Column 2 */}
+          <div className="space-y-8">
+            <CategoriesChart data={categoriesChartData} />
+            
+            {/* New Recent Activity Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base font-semibold">Recent Activity</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <ActivityItem title="New Product Added" description="Heavy Duty Wrench was added to inventory" time="15 minutes ago" />
+                <ActivityItem title="Stock Request Approved" description="Request for Safety Goggles was approved" time="2 hours ago" />
+                <ActivityItem title="User Logged In" description="Admin user logged in from new device" time="1 day ago" />
+              </CardContent>
+            </Card>
+          </div>
         </div>
         
         <Footer />
@@ -107,3 +131,4 @@ export default async function DashboardPage() {
     );
   }
 }
+
