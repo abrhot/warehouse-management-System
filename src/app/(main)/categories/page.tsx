@@ -1,5 +1,5 @@
 import prisma from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '@/generated/prisma';
 import { CategoriesPageContent, CategoryWithProducts } from '@/components/categories/CategoriesPageContent';
 
 // Query args

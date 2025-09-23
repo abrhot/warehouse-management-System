@@ -1,5 +1,3 @@
-// C:\Users\USER\Desktop\warehouse-management\src\app\(main)\stock\in\page.tsx
-
 import { StockInForm } from "@/components/stock/StockInForm";
 import { PageHeader } from "@/components/ui/PageHeader";
 

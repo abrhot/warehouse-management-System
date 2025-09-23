@@ -1,6 +1,6 @@
 // src/app/(main)/my-requests/page.tsx
 import prisma from '@/lib/prisma';
-import { Prisma, RequestStatus } from '@prisma/client';
+import { Prisma, RequestStatus } from '@/generated/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from "@/lib/auth";
 import { MyRequestsPageContent } from '@/components/requests/MyRequestsPageContent';

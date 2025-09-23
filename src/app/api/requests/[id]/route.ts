@@ -1,15 +1,17 @@
-// src/app/api/requests/[id]/route.ts
-
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma'; // Ensure you have a prisma client instance
-import { RequestStatus } from '@/generated/prisma'; // Import your enum
+import prisma from '@/lib/prisma';
+import { RequestStatus, ItemStatus } from '@/generated/prisma';
 
 export async function PATCH(
   request: Request,
   { params }: { params: { id: string } }
 ) {
+  const { id } = params;
+  if (!id) {
+    return NextResponse.json({ error: 'Request ID is missing.' }, { status: 400 });
+  }
+
   try {
-    const { id } = params;
     const body = await request.json();
     const { status } = body;
 
@@ -21,18 +23,82 @@ export async function PATCH(
       );
     }
 
-    // 2. Update the request in the database
-    const updatedRequest = await prisma.stockRequest.update({
-      where: { id: id },
-      data: { status: status },
+    // --- Transactional Logic ---
+    // This ensures that updating the request and the stock item's quantity
+    // either both succeed or both fail together.
+    const updatedRequest = await prisma.$transaction(async (tx) => {
+      // First, get the original request details
+      const originalRequest = await tx.stockRequest.findUnique({
+        where: { id },
+        select: { status: true, type: true, stockItemId: true },
+      });
+
+      if (!originalRequest) {
+        throw new Error('Request not found.');
+      }
+      
+      // Prevent re-processing an already approved/rejected request
+      if (originalRequest.status !== 'PENDING') {
+          throw new Error(`Request has already been ${originalRequest.status.toLowerCase()}.`);
+      }
+
+      // 2. If the status is changing to APPROVED, update stock item status
+      if (status === 'APPROVED') {
+        const stockItem = await tx.stockItem.findUnique({
+          where: { id: originalRequest.stockItemId! },
+          select: { id: true, productId: true },
+        });
+
+        if (!stockItem) {
+          throw new Error('Associated stock item not found.');
+        }
+
+        if (originalRequest.type === 'OUT') {
+          // Mark item as shipped and decrement product quantity by 1
+          await tx.stockItem.update({
+            where: { id: stockItem.id },
+            data: { status: ItemStatus.SHIPPED },
+          });
+          if (stockItem.productId) {
+            await tx.product.update({
+              where: { id: stockItem.productId },
+              data: { quantity: { decrement: 1 } },
+            });
+          }
+        } else if (originalRequest.type === 'IN') {
+          // Mark item as in stock and increment product quantity by 1
+          await tx.stockItem.update({
+            where: { id: stockItem.id },
+            data: { status: ItemStatus.IN_STOCK },
+          });
+          if (stockItem.productId) {
+            await tx.product.update({
+              where: { id: stockItem.productId },
+              data: { quantity: { increment: 1 } },
+            });
+          }
+        }
+      }
+
+      // 3. Finally, update the request's status
+      const finalUpdatedRequest = await tx.stockRequest.update({
+        where: { id: id },
+        data: { status: status },
+      });
+
+      return finalUpdatedRequest;
     });
 
-    // 3. IMPORTANT: Return the updated data as JSON
-    // This is the part that fixes your error.
     return NextResponse.json(updatedRequest, { status: 200 });
-    
-  } catch (error) {
+  } catch (error: any) {
     console.error('Update Request Error:', error);
+    // Provide specific feedback for common errors
+    if (error.message.includes('Insufficient stock')) {
+        return NextResponse.json({ error: error.message }, { status: 409 }); // 409 Conflict
+    }
+     if (error.message.includes('Request has already been')) {
+        return NextResponse.json({ error: error.message }, { status: 400 });
+    }
     return NextResponse.json(
       { error: 'Failed to update the request.' },
       { status: 500 }

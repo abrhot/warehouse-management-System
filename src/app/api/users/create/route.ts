@@ -2,10 +2,10 @@
 
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth'; // You need to import your authOptions
-import { Role } from '@prisma/client'; // A more stable import path for the enum
+import { Role } from '@/generated/prisma'; // Use generated Prisma client enums
 
 export async function POST(req: Request) {
   // --- FIX: Add Authorization Check ---

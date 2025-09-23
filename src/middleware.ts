@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
+import { jwtVerify } from "jose";
 
 const PUBLIC_PATHS = ["/", "/login"];
 const ADMIN_PATHS = ["/admin/users", "/admin/requests"];
@@ -12,14 +12,20 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
+  // Allow NextAuth routes without auth
+  if (pathname.startsWith("/api/auth")) {
+    return NextResponse.next();
+  }
+
   if (!token) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!);
-    const userId = (decoded as any).id;
-    const userRole = (decoded as any).role;
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
+    const { payload } = await jwtVerify(token, secret);
+    const userId = (payload as any).id as string;
+    const userRole = (payload as any).role as string;
 
     if (ADMIN_PATHS.some(path => pathname.startsWith(path)) && userRole !== "ADMIN") {
       return NextResponse.redirect(new URL("/dashboard", req.url));

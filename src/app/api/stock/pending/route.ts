@@ -3,7 +3,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 // FIX: Corrected the enum name from 'StockItemStatus' to 'ItemStatus' to match your schema
-import { RequestStatus, ItemStatus } from '@prisma/client';
+import { RequestStatus, ItemStatus } from '@/generated/prisma';
 
 export async function GET() {
   try {

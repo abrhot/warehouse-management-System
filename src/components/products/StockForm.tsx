@@ -1,3 +1,4 @@
+// src/components/products/StockForm.tsx
 'use client';
 
 import { useState } from 'react';
@@ -11,9 +12,11 @@ import { Loader2 } from 'lucide-react';
 export function StockForm({
   item,
   onSuccess,
+  type, // Added type prop
 }: {
   item: StockItemWithRelations;
   onSuccess: () => void;
+  type: 'IN' | 'OUT'; // Added type prop
 }) {
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -35,6 +38,7 @@ export function StockForm({
         body: JSON.stringify({
           stockItemId: item.id,
           notes: notes,
+          type: type, // Pass the type in the body
         }),
       });
 

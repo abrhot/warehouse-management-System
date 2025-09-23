@@ -1,22 +1,55 @@
 'use client';
 
 import React, { useState, useMemo } from "react";
-import { useRouter } from 'next/navigation'; // NEW: Import the router
+import { useRouter } from 'next/navigation';
 import { ProductTable } from './ProductTable';
 import { ProductHeader } from './ProductHeader';
 import { Button } from '@/components/ui/button';
-import { StockItemWithRelations } from '@/app/(main)/products/page';
 
-const ITEMS_PER_PAGE = 20;
+// --- Define a client-friendly, serialized type ---
+export interface SerializableStockItem {
+  id: number;
+  productId: string;
+  serialNumber: string;
+  status: string;
+  quantity: number;
+  createdAt: string;
+  updatedAt: string;
+  product: {
+    id: string;
+    name: string;
+    costPrice: string; // Decimal serialized as string
+    sellingPrice: string | null; // Decimal serialized as string
+    createdAt: string;
+    updatedAt: string;
+    category: {
+      id: number;
+      name: string;
+      description: string | null;
+      createdAt: string;
+      updatedAt: string;
+    };
+    supplier: {
+      id: number;
+      name: string;
+      contactInfo: string | null;
+    } | null;
+  };
+}
 
-export function ProductsPageContent({ initialItems }: { initialItems: StockItemWithRelations[] }) {
-  const router = useRouter(); // NEW: Initialize the router
+interface ProductsPageContentProps {
+  initialItems: SerializableStockItem[];
+}
+
+export function ProductsPageContent({ initialItems }: ProductsPageContentProps) {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedAvailability, setSelectedAvailability] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
 
-  // NEW: This function tells Next.js to re-fetch the data for the page
+  const ITEMS_PER_PAGE = 20;
+
   const handleRequestSuccess = () => {
     router.refresh();
   };
@@ -60,7 +93,7 @@ export function ProductsPageContent({ initialItems }: { initialItems: StockItemW
         />
         <ProductTable
           items={paginatedItems}
-          onSuccess={handleRequestSuccess} // --- FIX: Pass the refresh function to the table ---
+          onSuccess={handleRequestSuccess}
         />
         <div className="flex items-center justify-between p-4 border-t">
             <span className="text-sm text-gray-600">

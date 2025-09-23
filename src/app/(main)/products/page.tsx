@@ -1,15 +1,14 @@
-// src/app/(main)/products/page.tsx
 import { ProductsPageContent } from '@/components/products/ProductsPageContent';
 import prisma from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '@/generated/prisma';
 
-// Define query args for Prisma
+// Query arguments with relations, unchanged
 const stockItemWithRelationsArgs = {
   include: {
     product: {
       include: {
         category: true,
-        supplier: true, // supplier included, but no timestamps assumed
+        supplier: true,
       },
     },
   },
@@ -18,22 +17,48 @@ const stockItemWithRelationsArgs = {
   },
 } satisfies Prisma.StockItemFindManyArgs;
 
-// Create precise type for stock items
-export type StockItemWithRelations = Prisma.StockItemGetPayload<typeof stockItemWithRelationsArgs>;
+// This is the full type Prisma returns from the query
+export type StockItemWithRelations = Prisma.StockItemGetPayload<
+  typeof stockItemWithRelationsArgs
+>;
 
-export default async function ProductsPage() {
-  // Fetch stock items
-  const stockItems = await prisma.stockItem.findMany(stockItemWithRelationsArgs);
+// This is the type that is safe to pass to a Client Component
+export type SerializableStockItem = Omit<
+  StockItemWithRelations,
+  'createdAt' | 'updatedAt' | 'product'
+> & {
+  createdAt: string;
+  updatedAt: string;
+  product: Omit<
+    StockItemWithRelations['product'],
+    'createdAt' | 'updatedAt' | 'costPrice' | 'sellingPrice' | 'category'
+  > & {
+    costPrice: string;
+    sellingPrice: string | null;
+    createdAt: string;
+    updatedAt: string;
+    category: Omit<
+      StockItemWithRelations['product']['category'],
+      'createdAt' | 'updatedAt'
+    > & {
+      createdAt: string;
+      updatedAt: string;
+    };
+  };
+};
 
-  // Serialize for client component (convert Dates and Decimals to strings)
-  const serializableItems = stockItems.map(item => ({
+// Helper function to make data safe for the client
+function makeSerializable(item: StockItemWithRelations): SerializableStockItem {
+  return {
     ...item,
-    createdAt: item.createdAt.toISOString(),
+    costPrice: item.product.costPrice.toString(), // Convert Decimal to string
+    sellingPrice: item.product.sellingPrice?.toString() ?? null,
+    createdAt: item.createdAt.toISOString(), // Convert Date to string
     updatedAt: item.updatedAt.toISOString(),
     product: {
       ...item.product,
       costPrice: item.product.costPrice.toString(),
-      sellingPrice: item.product.sellingPrice?.toString() || null,
+      sellingPrice: item.product.sellingPrice?.toString() ?? null,
       createdAt: item.product.createdAt.toISOString(),
       updatedAt: item.product.updatedAt.toISOString(),
       category: {
@@ -41,15 +66,16 @@ export default async function ProductsPage() {
         createdAt: item.product.category.createdAt.toISOString(),
         updatedAt: item.product.category.updatedAt.toISOString(),
       },
-      supplier: item.product.supplier
-        ? {
-            ...item.product.supplier,
-            // Remove createdAt/updatedAt because your schema doesn't have them
-          }
-        : null,
     },
-  }));
+  };
+}
 
-  // Render client component with serialized data
+
+export default async function ProductsPage() {
+  const stockItems = await prisma.stockItem.findMany(stockItemWithRelationsArgs);
+
+  // Serialize the data before sending it to the client component
+  const serializableItems: SerializableStockItem[] = stockItems.map(makeSerializable);
+
   return <ProductsPageContent initialItems={serializableItems} />;
 }
