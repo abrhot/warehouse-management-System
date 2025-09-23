@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { RequestStatus, ItemStatus } from "@/generated/prisma";
+// Use string literals for enum values
 
 export async function DELETE(
   request: NextRequest,
@@ -28,7 +28,7 @@ export async function DELETE(
       );
     }
 
-    if (requestToDelete.status !== RequestStatus.PENDING) {
+    if (requestToDelete.status !== 'PENDING') {
       return NextResponse.json(
         { error: "Only pending requests can be deleted" },
         { status: 400 }
@@ -38,7 +38,7 @@ export async function DELETE(
     await prisma.$transaction([
       prisma.stockItem.update({
         where: { id: requestToDelete.stockItemId },
-        data: { status: ItemStatus.IN_STOCK },
+        data: { status: 'IN_STOCK' },
       }),
       prisma.stockRequest.delete({
         where: { id },

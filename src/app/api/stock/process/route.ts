@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 // FIX 1: Corrected to a named import
 import prisma from '@/lib/prisma';
 // FIX 2: Corrected the import path to the standard client location
-import { RequestStatus, ItemStatus } from '@/generated/prisma';
+// Use string literals for enum values at runtime
 
 export async function POST(req: Request) {
   try {
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
     if (!request) {
       return NextResponse.json({ error: 'Request not found' }, { status: 404 });
     }
-    if (request.status !== RequestStatus.PENDING) {
+    if (request.status !== 'PENDING') {
       return NextResponse.json({ error: 'Request has already been processed' }, { status: 400 });
     }
 
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
         prisma.stockRequest.update({
           where: { id: requestId },
           data: {
-            status: RequestStatus.APPROVED,
+            status: 'APPROVED',
             // FIX 3: Use 'connect' on the 'approver' relation field
             approver: {
               connect: { id: session.user.id },
@@ -51,7 +51,7 @@ export async function POST(req: Request) {
         prisma.stockItem.update({
           where: { id: request.stockItemId! },
           data: {
-            status: ItemStatus.SHIPPED, // Or whatever status is appropriate after approval
+            status: 'SHIPPED', // Or whatever status is appropriate after approval
           },
         }),
       ]);
@@ -60,7 +60,7 @@ export async function POST(req: Request) {
         prisma.stockRequest.update({
           where: { id: requestId },
           data: {
-            status: RequestStatus.REJECTED,
+            status: 'REJECTED',
             reason: remark, // Save the rejection remark
              // FIX 3: Use 'connect' on the 'approver' relation field
             approver: {
@@ -71,7 +71,7 @@ export async function POST(req: Request) {
         prisma.stockItem.update({
           where: { id: request.stockItemId! },
           data: {
-            status: ItemStatus.IN_STOCK, // Revert item status to available
+            status: 'IN_STOCK', // Revert item status to available
           },
         })
       ]);

@@ -5,7 +5,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from "@/lib/auth";
 // CORRECT
 import prisma from '@/lib/prisma';
-import { RequestStatus } from '@/generated/prisma'; // Import RequestStatus
+// Use string literals for enum values
 
 
 export async function GET() {
@@ -19,7 +19,7 @@ export async function GET() {
   const notifications = await prisma.stockRequest.findMany({
     where: {
       requestedBy: session.user.id,
-      status: RequestStatus.PENDING, // Filter for only pending requests
+      status: 'PENDING', // Filter for only pending requests
     },
     include: {
       stockItem: {

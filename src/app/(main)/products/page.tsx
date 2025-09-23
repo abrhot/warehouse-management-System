@@ -1,6 +1,6 @@
 import { ProductsPageContent } from '@/components/products/ProductsPageContent';
 import prisma from '@/lib/prisma';
-import { Prisma } from '@/generated/prisma';
+import { Prisma } from '@prisma/client';
 
 // Query arguments with relations, unchanged
 const stockItemWithRelationsArgs = {

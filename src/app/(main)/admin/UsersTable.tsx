@@ -15,7 +15,8 @@ import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { MoreHorizontal } from 'lucide-react';
-import { User } from '@/generated/prisma';
+// Define minimal User type for component props
+type User = { id: string; name: string | null; email: string; role: string; createdAt: Date };
 
 export function UsersTable({ users }: { users: User[] }) {
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());

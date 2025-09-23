@@ -1,7 +1,7 @@
 // src/app/api/dashboard/summary/route.ts
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { RequestStatus } from '@/generated/prisma';
+// Use string literals for enum values
 
 export async function GET() {
   try {
@@ -43,4 +43,4 @@ export async function GET() {
     console.error("Failed to fetch summary data:", error)
     return NextResponse.json({ error: 'Failed to fetch summary data' }, { status: 500 });
   }
-}s
+}

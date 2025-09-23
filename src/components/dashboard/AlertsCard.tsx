@@ -2,7 +2,9 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle, History, Package } from 'lucide-react';
-import { Product, StockRequest } from '@/generated/prisma'; // Assuming these types are available
+// Define minimal local types for component props
+type Product = { id: string; name: string; quantity: number; reorderLevel?: number };
+type StockRequest = { id: string; status: string; type: string };
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';

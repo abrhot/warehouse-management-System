@@ -3,13 +3,17 @@
 
 import { UserRequestWithRelations } from '@/app/(main)/my-requests/page';
 import { RequestCard } from './RequestCard';
-import { RequestStatus } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
 interface RequestsBoardViewProps {
   requests: UserRequestWithRelations[];
 }
 
-const statusColumns: RequestStatus[] = [RequestStatus.PENDING, RequestStatus.APPROVED, RequestStatus.REJECTED];
+const statusColumns: Prisma.RequestStatus[] = [
+  Prisma.RequestStatus.PENDING,
+  Prisma.RequestStatus.APPROVED,
+  Prisma.RequestStatus.REJECTED,
+];
 
 const statusConfig = {
     PENDING: { title: 'Pending', color: 'bg-yellow-500' },

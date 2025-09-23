@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { RequestStatus } from '@/generated/prisma';
+// Use string literals for enum values
 import prisma from '@/lib/prisma';
 
 export async function GET() {
@@ -7,7 +7,7 @@ export async function GET() {
     const requestHistory = await prisma.stockRequest.findMany({
       where: {
         status: {
-          in: [RequestStatus.APPROVED, RequestStatus.REJECTED],
+          in: ['APPROVED', 'REJECTED'],
         },
       },
       include: {

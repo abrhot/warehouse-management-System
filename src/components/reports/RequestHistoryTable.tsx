@@ -2,7 +2,19 @@
 'use client';
 
 import useSWR from 'swr';
-import { StockRequest, Product, User, StockType, RequestStatus } from '@/generated/prisma'; // 👈 FINAL CORRECTED IMPORT
+
+// Define minimal local types to avoid importing Prisma types in a client component
+type StockType = 'IN' | 'OUT';
+type RequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'RESERVED';
+type Product = { name: string };
+type User = { name: string | null };
+type StockRequest = {
+  id: string;
+  type: StockType;
+  quantity: number;
+  status: RequestStatus;
+  updatedAt: string | Date;
+};
 
 // ... rest of the file remains the same
 type RequestHistoryItem = StockRequest & {
@@ -38,7 +50,7 @@ export default function RequestHistoryTable() {
                 <td className="px-4 py-2 text-[#141b0e]">{item.product.name}</td>
                 <td className="px-4 py-2">
                   <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                    item.type === StockType.IN ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    item.type === 'IN' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                   }`}>
                     {item.type}
                   </span>
@@ -46,7 +58,7 @@ export default function RequestHistoryTable() {
                 <td className="px-4 py-2">{item.quantity}</td>
                 <td className="px-4 py-2">
                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                    item.status === RequestStatus.APPROVED ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'
+                    item.status === 'APPROVED' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'
                   }`}>
                     {item.status}
                   </span>

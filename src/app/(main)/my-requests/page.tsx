@@ -1,6 +1,6 @@
 // src/app/(main)/my-requests/page.tsx
 import prisma from '@/lib/prisma';
-import { Prisma, RequestStatus } from '@/generated/prisma';
+import { Prisma } from '@prisma/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from "@/lib/auth";
 import { MyRequestsPageContent } from '@/components/requests/MyRequestsPageContent';
@@ -38,8 +38,8 @@ export default async function MyRequestsPage() {
   // Summarize request statuses
   const summary = {
     total: requests.length,
-    rejected: requests.filter(req => req.status === RequestStatus.REJECTED).length,
-    pending: requests.filter(req => req.status === RequestStatus.PENDING).length,
+    rejected: requests.filter(req => req.status === 'REJECTED').length,
+    pending: requests.filter(req => req.status === 'PENDING').length,
   };
 
   // Pass Date objects directly; no conversion to strings

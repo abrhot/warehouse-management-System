@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { RequestStatus, ItemStatus } from '@/generated/prisma';
+// Use string literals for enum values
 
 export async function PATCH(
   request: Request,
@@ -16,7 +16,7 @@ export async function PATCH(
     const { status } = body;
 
     // 1. Validate the incoming status
-    if (!status || !Object.values(RequestStatus).includes(status)) {
+    if (!status || !['PENDING', 'APPROVED', 'REJECTED', 'RESERVED'].includes(status)) {
       return NextResponse.json(
         { error: 'Invalid status provided.' },
         { status: 400 }
@@ -57,7 +57,7 @@ export async function PATCH(
           // Mark item as shipped and decrement product quantity by 1
           await tx.stockItem.update({
             where: { id: stockItem.id },
-            data: { status: ItemStatus.SHIPPED },
+            data: { status: 'SHIPPED' },
           });
           if (stockItem.productId) {
             await tx.product.update({
@@ -69,7 +69,7 @@ export async function PATCH(
           // Mark item as in stock and increment product quantity by 1
           await tx.stockItem.update({
             where: { id: stockItem.id },
-            data: { status: ItemStatus.IN_STOCK },
+            data: { status: 'IN_STOCK' },
           });
           if (stockItem.productId) {
             await tx.product.update({

@@ -5,7 +5,6 @@ import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth'; // You need to import your authOptions
-import { Role } from '@/generated/prisma'; // Use generated Prisma client enums
 
 export async function POST(req: Request) {
   // --- FIX: Add Authorization Check ---
@@ -24,7 +23,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    if (!Object.values(Role).includes(role)) {
+    if (role !== 'ADMIN' && role !== 'USER') {
         return NextResponse.json({ error: 'Invalid role specified' }, { status: 400 });
     }
 

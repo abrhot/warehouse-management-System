@@ -2,14 +2,12 @@
 
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-// FIX: Corrected the enum name from 'StockItemStatus' to 'ItemStatus' to match your schema
-import { RequestStatus, ItemStatus } from '@/generated/prisma';
 
 export async function GET() {
   try {
     const pendingRequests = await prisma.stockRequest.findMany({
       where: {
-        status: RequestStatus.PENDING,
+        status: 'PENDING',
       },
       include: {
         stockItem: {
@@ -51,8 +49,7 @@ export async function GET() {
       by: ['productId'], 
       where: {
         productId: { in: productIds },
-        // FIX: Using the correct 'ItemStatus' enum
-        status: ItemStatus.IN_STOCK, 
+        status: 'IN_STOCK', 
       },
       _count: {
         id: true,

@@ -1,4 +1,4 @@
-import { Role } from "@/generated/prisma";
+// No Prisma import needed; use simple string role checks
 
 interface NavRoute {
   label: string;
@@ -26,7 +26,7 @@ const adminRoutes: NavRoute[] = [
  * @param role The role of the current user.
  * @returns An array of NavRoute objects.
  */
-export const getNavRoutes = (role?: Role): NavRoute[] => {
+export const getNavRoutes = (role?: string): NavRoute[] => {
   if (role === "ADMIN") {
     // Admins see all base routes plus the admin routes
     return [...baseRoutes, ...adminRoutes];

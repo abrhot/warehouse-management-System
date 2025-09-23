@@ -4,7 +4,6 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
-import { RequestStatus } from '@/generated/prisma'; 
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -25,7 +24,7 @@ export async function POST(req: Request) {
     const existingRequest = await prisma.stockRequest.findFirst({
       where: { 
         stockItemId: stockItemId,
-        status: RequestStatus.PENDING 
+        status: 'PENDING' 
       },
     });
 
@@ -40,7 +39,7 @@ export async function POST(req: Request) {
       prisma.stockRequest.create({
         data: {
           type: 'OUT',
-          status: RequestStatus.PENDING, 
+          status: 'PENDING', 
           notes: notes || null,
           reason: reason || null,
           // --- FIX: Use 'connect' for both relations ---

@@ -3,7 +3,8 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PieChart, LineChart } from 'lucide-react';
-import { Product } from '@/generated/prisma';
+
+type Product = { id: string; name: string; quantity: number };
 
 export function StockOverview({ products }: { products: Product[] }) {
   return (
