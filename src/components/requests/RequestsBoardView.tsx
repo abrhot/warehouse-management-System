@@ -3,7 +3,7 @@
 
 import { UserRequestWithRelations } from '@/app/(main)/my-requests/page';
 import { RequestCard } from './RequestCard';
-import { RequestStatus } from '@/generated/prisma';
+import { RequestStatus } from '@prisma/client';
 
 interface RequestsBoardViewProps {
   requests: UserRequestWithRelations[];
