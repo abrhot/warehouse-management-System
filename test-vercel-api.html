@@ -14,8 +14,8 @@
             resultDiv.innerHTML = 'Testing...';
             
             try {
-                // Test debug login endpoint
-                const response = await fetch('https://wms-sys.vercel.app/api/debug-login', {
+                // Test original login endpoint
+                const response = await fetch('https://wms-sys.vercel.app/api/auth/login', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
