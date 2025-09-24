@@ -6,11 +6,19 @@ import jwt from "jsonwebtoken";
 export async function POST(req: Request) {
   try {
     const { email, password } = await req.json();
-    console.log("Login attempt:", email);
+    const normalizedEmail = email.trim().toLowerCase();
+    console.log("Login attempt:", normalizedEmail);
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    // Debug: Check database connection and user count
+    const userCount = await prisma.user.count();
+    console.log("Total users in database:", userCount);
+    
+    const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (!user) {
-      console.log("User not found");
+      console.log("User not found for email:", normalizedEmail);
+      // Debug: Show first few users
+      const allUsers = await prisma.user.findMany({ select: { email: true }, take: 5 });
+      console.log("Available users:", allUsers.map((u: any) => u.email));
       return NextResponse.json({ error: "User not found" }, { status: 401 });
     }
     console.log("User found:", user.email);
