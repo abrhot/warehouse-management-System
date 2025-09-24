@@ -6,45 +6,61 @@ export async function POST(req: Request) {
   try {
     const { email, password, createTestUser = false } = await req.json();
     
+    console.log('Login attempt for email:', email);
+    console.log('Environment:', process.env.NODE_ENV);
+    console.log('Database URL exists:', !!process.env.DATABASE_URL);
+    
     // Test database connection first
     const userCount = await prisma.user.count();
-    console.log('Total users:', userCount);
+    console.log('Total users in database:', userCount);
     
-    // Find user with exact email match
-    let user = await prisma.user.findUnique({
-      where: { email: email }
+    // Find user with case-insensitive email match
+    let user = await prisma.user.findFirst({
+      where: { 
+        email: {
+          equals: email,
+          mode: 'insensitive'
+        }
+      }
     });
     
     // If user not found and createTestUser is true, create a new test user
     if (!user && createTestUser) {
-      const hashedPassword = await bcrypt.hash('test123', 10);
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const role = email.includes('admin') ? 'ADMIN' : 'USER';
       user = await prisma.user.create({
         data: {
           email: email,
-          name: 'Test User',
+          name: email.includes('admin') ? 'Admin User' : 'Test User',
           password: hashedPassword,
-          role: 'USER'
+          role: role
         }
       });
-      console.log('Created test user:', user.email);
+      console.log('Created test user:', user.email, 'with role:', role);
     } 
-    // If still no user, return error
+    // If still no user, return error with detailed debugging
     else if (!user) {
       // Show available users for debugging
       const allUsers = await prisma.user.findMany({
-        select: { email: true },
+        select: { email: true, name: true, role: true },
         take: 10
       });
-      console.log('Available emails:', allUsers.map((u: any) => u.email));
+      console.log('Available users:', allUsers);
+      console.log('Searched email:', email);
+      console.log('Email type:', typeof email);
+      console.log('Email length:', email?.length);
       
       return NextResponse.json({
         success: false,
         error: 'User not found',
         debug: {
           searchedEmail: email,
+          emailType: typeof email,
+          emailLength: email?.length,
           totalUsers: userCount,
-          availableEmails: allUsers.map((u: any) => u.email),
-          suggestion: 'Use createTestUser: true to create a test user'
+          availableUsers: allUsers,
+          suggestion: 'Use createTestUser: true to create a test user',
+          databaseConnected: true
         }
       }, { status: 401 });
     }
