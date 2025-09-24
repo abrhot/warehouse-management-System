@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
+// Removed NextAuth import - using custom auth
 import { Button } from "@/components/ui/button";
 import {
  
@@ -30,18 +30,27 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const result = await signIn("credentials", {
-        redirect: false,
-        email: email,
-        password: password,
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: email.trim(),
+          password: password.trim(),
+        }),
       });
 
-      if (result?.ok) {
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Login successful:", data);
         router.push("/dashboard");
       } else {
-        setError("Invalid email or password. Please try again.");
+        const errorData = await response.json();
+        setError(errorData.error || "Invalid email or password. Please try again.");
       }
     } catch (err) {
+      console.error("Login error:", err);
       setError("An unexpected error occurred. Please try again later.");
     } finally {
       setIsLoading(false);
