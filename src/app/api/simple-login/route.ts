@@ -87,7 +87,7 @@ export async function POST(req: Request) {
       .setExpirationTime('24h')
       .sign(secret);
     
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       user: {
         id: user.id,
@@ -97,6 +97,17 @@ export async function POST(req: Request) {
       },
       token
     });
+    
+    // Set the auth cookie server-side
+    response.cookies.set('authToken', token, {
+      path: '/',
+      maxAge: 86400, // 24 hours
+      httpOnly: false, // Allow JavaScript access
+      secure: false, // Allow over HTTP for localhost
+      sameSite: 'lax'
+    });
+    
+    return response;
     
   } catch (error: any) {
     console.error('Login error:', error);

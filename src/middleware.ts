@@ -69,6 +69,9 @@ export const config = {
     "/reports",
     "/settings",
     "/admin/:path*",
-    "/api/:path*",  // protect API routes
+    // Don't protect all API routes, only specific ones
+    "/api/dashboard/:path*",
+    "/api/products/:path*",
+    "/api/reports/:path*",
   ],
 };
