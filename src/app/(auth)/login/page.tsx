@@ -34,12 +34,18 @@ export default function LoginPage() {
       if (email === "test@example.com" && password === "test123") {
         console.log("Using hardcoded test credentials"); // Debug log
         // Store user info in localStorage for now
-        localStorage.setItem("user", JSON.stringify({
+        const testUser = {
           id: "test-user",
           email: "test@example.com",
           name: "Test User",
           role: "USER"
-        }));
+        };
+        localStorage.setItem("user", JSON.stringify(testUser));
+        
+        // Create a simple token for the test user (for middleware)
+        const testToken = btoa(JSON.stringify(testUser)); // Simple base64 encoding
+        document.cookie = `authToken=${testToken}; path=/; max-age=86400`; // 24 hours
+        
         console.log("Redirecting to dashboard..."); // Debug log
         router.push("/dashboard");
         return;

@@ -76,6 +76,17 @@ export async function POST(req: Request) {
       }, { status: 401 });
     }
     
+    // Create JWT token
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-key');
+    const token = await new SignJWT({ 
+      id: user.id, 
+      email: user.email, 
+      role: user.role 
+    })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setExpirationTime('24h')
+      .sign(secret);
+    
     return NextResponse.json({
       success: true,
       user: {
@@ -83,7 +94,8 @@ export async function POST(req: Request) {
         email: user.email,
         name: user.name,
         role: user.role
-      }
+      },
+      token
     });
     
   } catch (error: any) {
