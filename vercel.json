@@ -9,5 +9,6 @@
   },
   "env": {
     "PRISMA_GENERATE_DATAPROXY": "true"
-  }
+  },
+  "installCommand": "npm install && prisma generate"
 }

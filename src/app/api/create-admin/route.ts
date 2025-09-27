@@ -18,7 +18,7 @@ export async function POST() {
     }
 
     // Create admin user
-    const hashedPassword = await bcrypt.hash('admin123', 10);
+    const hashedPassword = await bcrypt.hash('test123', 10);
     
     const adminUser = await prisma.user.create({
       data: {
@@ -39,7 +39,7 @@ export async function POST() {
       },
       loginCredentials: {
         email: 'admin@warehouse.com',
-        password: 'admin123'
+        password: 'test123'
       }
     });
 
