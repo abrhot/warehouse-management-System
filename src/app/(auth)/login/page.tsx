@@ -23,12 +23,16 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    console.log("Login form submitted"); // Debug log
     setError("");
     setIsLoading(true);
 
     try {
+      console.log("Attempting login with:", { email, password: "***" }); // Debug log
+
       // Simple hardcoded test login
       if (email === "test@example.com" && password === "test123") {
+        console.log("Using hardcoded test credentials"); // Debug log
         // Store user info in localStorage for now
         localStorage.setItem("user", JSON.stringify({
           id: "test-user",
@@ -36,10 +40,12 @@ export default function LoginPage() {
           name: "Test User",
           role: "USER"
         }));
+        console.log("Redirecting to dashboard..."); // Debug log
         router.push("/dashboard");
         return;
       }
 
+      console.log("Making API call to /api/simple-login"); // Debug log
       // Try the API
       const response = await fetch("/api/simple-login", {
         method: "POST",
@@ -52,15 +58,25 @@ export default function LoginPage() {
         }),
       });
 
+      console.log("API response status:", response.status); // Debug log
+
       if (response.ok) {
         const data = await response.json();
         console.log("Login successful:", data);
 
-        // Store user info
+        // Store user info in localStorage
         localStorage.setItem("user", JSON.stringify(data.user));
+        
+        // Set authentication cookie for middleware
+        if (data.token) {
+          document.cookie = `authToken=${data.token}; path=/; max-age=86400`; // 24 hours
+        }
+        
+        console.log("User stored in localStorage, redirecting to dashboard..."); // Debug log
         router.push("/dashboard");
       } else {
         const errorData = await response.json();
+        console.log("Login failed:", errorData); // Debug log
         setError(errorData.error || "Login failed. Please try again.");
       }
     } catch (err) {
