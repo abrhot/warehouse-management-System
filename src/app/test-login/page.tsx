@@ -98,7 +98,9 @@ export default function TestLoginPage() {
           
           <div className="mt-6 p-4 bg-blue-50 rounded">
             <h4 className="font-semibold mb-2">Current Cookies:</h4>
-            <p className="text-sm font-mono">{document.cookie || 'No cookies'}</p>
+            <p className="text-sm font-mono">
+              {typeof window !== 'undefined' ? document.cookie || 'No cookies' : 'Loading...'}
+            </p>
           </div>
         </CardContent>
       </Card>
