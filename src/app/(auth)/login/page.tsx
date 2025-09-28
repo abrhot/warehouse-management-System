@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -19,7 +19,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
+  const { login } = useAuth();
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -30,29 +30,10 @@ export default function LoginPage() {
     try {
       console.log("Attempting login with:", { email, password: "***" }); // Debug log
 
-      // Simple hardcoded test login
-      if (email === "test@example.com" && password === "test123") {
-        console.log("Using hardcoded test credentials"); // Debug log
-        // Store user info in localStorage for now
-        const testUser = {
-          id: "test-user",
-          email: "test@example.com",
-          name: "Test User",
-          role: "USER"
-        };
-        localStorage.setItem("user", JSON.stringify(testUser));
-        
-        // Create a simple token for the test user (for middleware)
-        const testToken = btoa(JSON.stringify(testUser)); // Simple base64 encoding
-        document.cookie = `authToken=${testToken}; path=/; max-age=86400`; // 24 hours
-        
-        console.log("Redirecting to dashboard..."); // Debug log
-        router.push("/dashboard");
-        return;
-      }
-
       console.log("Making API call to /api/simple-login"); // Debug log
-      // Try the API
+
+      const isTestUser = email.trim() === "test@example.com";
+
       const response = await fetch("/api/simple-login", {
         method: "POST",
         headers: {
@@ -61,6 +42,7 @@ export default function LoginPage() {
         body: JSON.stringify({
           email: email.trim(),
           password: password.trim(),
+          createTestUser: isTestUser, // Create the user if it's the test user and it doesn't exist
         }),
       });
 
@@ -74,12 +56,8 @@ export default function LoginPage() {
         localStorage.setItem("user", JSON.stringify(data.user));
         
         // Set authentication cookie for middleware
-        if (data.token) {
-          document.cookie = `authToken=${data.token}; path=/; max-age=86400`; // 24 hours
-        }
         
-        console.log("User stored in localStorage, redirecting to dashboard..."); // Debug log
-        router.push("/dashboard");
+        login(data.user);
       } else {
         const errorData = await response.json();
         console.log("Login failed:", errorData); // Debug log
