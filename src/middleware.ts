@@ -6,9 +6,10 @@ const ADMIN_PATHS = ["/admin/users", "/admin/requests"];
 
 export async function middleware(req: NextRequest) {
   const token = req.cookies.get("authToken")?.value;
+  const nextAuthToken = req.cookies.get("next-auth.session-token")?.value;
   const { pathname } = req.nextUrl;
 
-  console.log(`[Middleware] ${pathname} - Token exists: ${!!token}`);
+  console.log(`[Middleware] ${pathname} - AuthToken exists: ${!!token}, NextAuth token exists: ${!!nextAuthToken}`);
 
   if (PUBLIC_PATHS.some(path => pathname.startsWith(path))) {
     return NextResponse.next();
@@ -24,9 +25,16 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  if (!token) {
+  // If neither custom token nor NextAuth token exists, redirect to login
+  if (!token && !nextAuthToken) {
     console.log(`[Middleware] No token found, redirecting to login`);
     return NextResponse.redirect(new URL("/login", req.url));
+  }
+
+  // If NextAuth token exists but no custom token, allow access (NextAuth handles session validation)
+  if (nextAuthToken && !token) {
+    console.log(`[Middleware] NextAuth session found, allowing access`);
+    return NextResponse.next();
   }
 
   try {
