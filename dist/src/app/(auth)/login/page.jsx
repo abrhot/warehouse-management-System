@@ -32,10 +32,10 @@ function LoginPage() {
             else {
                 // On successful login, NextAuth returns a result object without an error
                 console.log("Login successful, redirecting to dashboard...");
-                // Add a small delay to ensure session is established
+                // Use window.location for a full page redirect to ensure session is properly established
                 setTimeout(() => {
-                    router.push("/dashboard");
-                }, 100);
+                    window.location.href = "/dashboard";
+                }, 200);
             }
         }
         catch (err) {

@@ -67,24 +67,28 @@ export async function middleware(req: NextRequest) {
         }
       }
 
-    if (ADMIN_PATHS.some(path => pathname.startsWith(path)) && userRole !== "ADMIN") {
-      return NextResponse.redirect(new URL("/dashboard", req.url));
+      if (ADMIN_PATHS.some(path => pathname.startsWith(path)) && userRole !== "ADMIN") {
+        return NextResponse.redirect(new URL("/dashboard", req.url));
+      }
+
+      // Clone request headers and add user info headers
+      const requestHeaders = new Headers(req.headers);
+      requestHeaders.set("x-user-id", userId);
+      requestHeaders.set("x-user-role", userRole);
+
+      // IMPORTANT: Create a new NextResponse and pass the modified request with new headers
+      return NextResponse.next({
+        request: {
+          headers: requestHeaders,
+        },
+      });
+    } catch (error) {
+      return NextResponse.redirect(new URL("/login", req.url));
     }
-
-    // Clone request headers and add user info headers
-    const requestHeaders = new Headers(req.headers);
-    requestHeaders.set("x-user-id", userId);
-    requestHeaders.set("x-user-role", userRole);
-
-    // IMPORTANT: Create a new NextResponse and pass the modified request with new headers
-    return NextResponse.next({
-      request: {
-        headers: requestHeaders,
-      },
-    });
-  } catch (error) {
-    return NextResponse.redirect(new URL("/login", req.url));
   }
+
+  // If we reach here, we have a NextAuth token but no custom token, allow access
+  return NextResponse.next();
 }
 
 export const config = {
