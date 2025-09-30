@@ -25,9 +25,8 @@ async function login(email, password) {
     }
     
     // 💡 THE FIX IS HERE: Ensure user.id is a string before returning
-    return { 
+    return {
+        ...user,
         id: user.id.toString(), // <-- CONVERT ID TO STRING HERE
-        email: user.email, 
-        role: user.role 
     };
 }
