@@ -19,9 +19,9 @@ function LoginPage() {
         try {
             // 💡 CRITICAL CHANGE: We remove 'redirect: false' and let NextAuth handle the redirect
             const result = await (0, react_2.signIn)("credentials", {
-                callbackUrl: "/dashboard", // Tell NextAuth where to go on success
-                email: email,
-                password: password,
+                redirect: false, // 💡 PREVENT NextAuth from automatically redirecting
+                email: email,
+                password: password,
             });
             
             // 💡 Only handle error state on the client now
@@ -29,7 +29,11 @@ function LoginPage() {
                 // The result.error object exists if authentication failed
                 setError("Invalid email or password. Please try again.");
             }
-            // No manual router.push() here anymore!
+            else {
+                // On successful login, NextAuth returns a result object without an error
+                // Manually redirect to the dashboard
+                router.push("/dashboard");
+            }
         }
         catch (err) {
             setError("An unexpected error occurred. Please try again later.");
