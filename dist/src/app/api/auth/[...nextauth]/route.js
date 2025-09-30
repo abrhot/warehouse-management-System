@@ -44,7 +44,15 @@ exports.authOptions = {
                 }
                 // Use your custom login logic to verify the user
                 const user = await (0, auth_1.login)(credentials.email, credentials.password);
-                if (user) {
+                
+                if (user) {
+                    // 💡 DEBUGGING STEP: Log the user object to check ID format and existence
+                    console.log("Authorization successful. User object returned:", user);
+                    if (!user.id || typeof user.id !== 'string') {
+                        console.error("CRITICAL ERROR: User object is missing a string 'id' field. This will cause the redirect loop.");
+                        // Force log the user out if the ID is malformed to avoid loop
+                        return null; 
+                    }
                     // Return the user object if login is successful
                     return user;
                 }

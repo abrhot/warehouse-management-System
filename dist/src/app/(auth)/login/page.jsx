@@ -26,9 +26,10 @@ function LoginPage() {
             
             // 💡 Only handle error state on the client now
             if (result === null || result === void 0 ? void 0 : result.error) {
-                // If there's an error, display it (this covers bad credentials)
+                // The result.error object exists if authentication failed
                 setError("Invalid email or password. Please try again.");
             }
+            // No manual router.push() here anymore!
         }
         catch (err) {
             setError("An unexpected error occurred. Please try again later.");
