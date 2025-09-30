@@ -6,9 +6,12 @@ const ADMIN_PATHS = ["/admin/users", "/admin/requests"];
 
 export async function middleware(req: NextRequest) {
   const token = req.cookies.get("authToken")?.value;
-  const nextAuthToken = req.cookies.get("next-auth.session-token")?.value;
+  const nextAuthToken = req.cookies.get("next-auth.session-token")?.value || 
+                       req.cookies.get("__Secure-next-auth.session-token")?.value;
   const { pathname } = req.nextUrl;
 
+  // Debug: Log all cookies to see what's available
+  console.log(`[Middleware] ${pathname} - All cookies:`, req.cookies.getAll().map(c => c.name));
   console.log(`[Middleware] ${pathname} - AuthToken exists: ${!!token}, NextAuth token exists: ${!!nextAuthToken}`);
 
   if (PUBLIC_PATHS.some(path => pathname.startsWith(path))) {
@@ -37,30 +40,32 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  try {
-    let userId: string;
-    let userRole: string;
-
-    // Try to decode as JWT first
+  // Only process custom token validation if we have a custom token
+  if (token) {
     try {
-      const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-key');
-      const { payload } = await jwtVerify(token, secret);
-      userId = (payload as any).id as string;
-      userRole = (payload as any).role as string;
-      console.log(`[Middleware] JWT decoded successfully - User: ${userId}, Role: ${userRole}`);
-    } catch (jwtError) {
-      console.log(`[Middleware] JWT decode failed: ${(jwtError as Error).message}`);
-      // If JWT fails, try base64 decoding (for test user)
+      let userId: string;
+      let userRole: string;
+
+      // Try to decode as JWT first
       try {
-        const decoded = JSON.parse(atob(token));
-        userId = decoded.id;
-        userRole = decoded.role;
-        console.log(`[Middleware] Base64 decoded successfully - User: ${userId}, Role: ${userRole}`);
-      } catch (base64Error) {
-        console.log(`[Middleware] Base64 decode failed: ${(base64Error as Error).message}`);
-        throw new Error('Invalid token format');
+        const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-key');
+        const { payload } = await jwtVerify(token, secret);
+        userId = (payload as any).id as string;
+        userRole = (payload as any).role as string;
+        console.log(`[Middleware] JWT decoded successfully - User: ${userId}, Role: ${userRole}`);
+      } catch (jwtError) {
+        console.log(`[Middleware] JWT decode failed: ${(jwtError as Error).message}`);
+        // If JWT fails, try base64 decoding (for test user)
+        try {
+          const decoded = JSON.parse(atob(token));
+          userId = decoded.id;
+          userRole = decoded.role;
+          console.log(`[Middleware] Base64 decoded successfully - User: ${userId}, Role: ${userRole}`);
+        } catch (base64Error) {
+          console.log(`[Middleware] Base64 decode failed: ${(base64Error as Error).message}`);
+          throw new Error('Invalid token format');
+        }
       }
-    }
 
     if (ADMIN_PATHS.some(path => pathname.startsWith(path)) && userRole !== "ADMIN") {
       return NextResponse.redirect(new URL("/dashboard", req.url));
