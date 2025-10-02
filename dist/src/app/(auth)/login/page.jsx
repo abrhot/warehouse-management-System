@@ -38,11 +38,11 @@ function LoginPage() {
                 console.log(`[Login] Login successful:`, data);
                 console.log(`[Login] Current cookies:`, document.cookie);
                 
-                // Add a small delay to ensure cookie is set
+                // Add a longer delay to ensure cookie is set and use window.location for full page reload
                 setTimeout(() => {
                     console.log(`[Login] Redirecting to dashboard...`);
-                    window.location.href = "/dashboard";
-                }, 100);
+                    window.location.replace("/dashboard");
+                }, 500);
             } else {
                 const errorData = await response.json();
                 console.log(`[Login] Login failed:`, errorData);

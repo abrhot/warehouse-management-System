@@ -48,7 +48,7 @@ export async function POST(req: Request) {
       response.cookies.set('authToken', token, {
         path: '/',
         maxAge: 86400, // 24 hours
-        httpOnly: true,
+        httpOnly: false, // Allow JavaScript access for testing
         secure: false, // Allow over HTTP for localhost
         sameSite: 'lax'
       });
