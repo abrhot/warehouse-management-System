@@ -6,38 +6,33 @@ const ADMIN_PATHS = ["/admin/users", "/admin/requests"];
 
 export async function middleware(req: NextRequest) {
   const token = req.cookies.get("authToken")?.value;
-  const nextAuthToken = req.cookies.get("next-auth.session-token")?.value || 
-                       req.cookies.get("__Secure-next-auth.session-token")?.value;
   const { pathname } = req.nextUrl;
 
-  // Debug: Log all cookies to see what's available
-  console.log(`[Middleware] ${pathname} - All cookies:`, req.cookies.getAll().map(c => c.name));
-  console.log(`[Middleware] ${pathname} - AuthToken exists: ${!!token}, NextAuth token exists: ${!!nextAuthToken}`);
+  console.log(`[Middleware] ${pathname} - AuthToken exists: ${!!token}`);
+  if (token) {
+    console.log(`[Middleware] AuthToken value: ${token.substring(0, 20)}...`);
+  }
 
   if (PUBLIC_PATHS.some(path => pathname.startsWith(path))) {
+    console.log(`[Middleware] Public path, allowing access`);
     return NextResponse.next();
   }
 
   // Allow NextAuth routes without auth
   if (pathname.startsWith("/api/auth")) {
+    console.log(`[Middleware] API auth route, allowing access`);
     return NextResponse.next();
   }
 
   // Allow test and debug routes
   if (pathname.startsWith("/test-") || pathname.startsWith("/simple-")) {
+    console.log(`[Middleware] Test route, allowing access`);
     return NextResponse.next();
   }
 
-  // If neither custom token nor NextAuth token exists, redirect to login
-  if (!token && !nextAuthToken) {
-    console.log(`[Middleware] No token found, redirecting to login`);
+  if (!token) {
+    console.log(`[Middleware] No authToken found, redirecting to login`);
     return NextResponse.redirect(new URL("/login", req.url));
-  }
-
-  // If NextAuth token exists but no custom token, allow access (NextAuth handles session validation)
-  if (nextAuthToken && !token) {
-    console.log(`[Middleware] NextAuth session found, allowing access`);
-    return NextResponse.next();
   }
 
   // Only process custom token validation if we have a custom token
@@ -93,8 +88,7 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    // Temporarily disable dashboard protection to test login
-    // "/dashboard/:path*",
+    "/dashboard/:path*",
     "/products/:path*",
     "/reports",
     "/settings",
