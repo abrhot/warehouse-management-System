@@ -25,7 +25,7 @@ export async function middleware(req: NextRequest) {
   }
 
   // Allow test and debug routes
-  if (pathname.startsWith("/test-") || pathname.startsWith("/simple-")) {
+  if (pathname.startsWith("/test-")) {
     console.log(`[Middleware] Test route, allowing access`);
     return NextResponse.next();
   }
@@ -35,55 +35,51 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  // Only process custom token validation if we have a custom token
-  if (token) {
+  // Process token validation
+  try {
+    let userId: string;
+    let userRole: string;
+
+    // Try to decode as JWT first
     try {
-      let userId: string;
-      let userRole: string;
-
-      // Try to decode as JWT first
+      const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-key');
+      const { payload } = await jwtVerify(token, secret);
+      userId = (payload as any).id as string;
+      userRole = (payload as any).role as string;
+      console.log(`[Middleware] JWT decoded successfully - User: ${userId}, Role: ${userRole}`);
+    } catch (jwtError) {
+      console.log(`[Middleware] JWT decode failed: ${(jwtError as Error).message}`);
+      // If JWT fails, try base64 decoding (for test user)
       try {
-        const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-key');
-        const { payload } = await jwtVerify(token, secret);
-        userId = (payload as any).id as string;
-        userRole = (payload as any).role as string;
-        console.log(`[Middleware] JWT decoded successfully - User: ${userId}, Role: ${userRole}`);
-      } catch (jwtError) {
-        console.log(`[Middleware] JWT decode failed: ${(jwtError as Error).message}`);
-        // If JWT fails, try base64 decoding (for test user)
-        try {
-          const decoded = JSON.parse(atob(token));
-          userId = decoded.id;
-          userRole = decoded.role;
-          console.log(`[Middleware] Base64 decoded successfully - User: ${userId}, Role: ${userRole}`);
-        } catch (base64Error) {
-          console.log(`[Middleware] Base64 decode failed: ${(base64Error as Error).message}`);
-          throw new Error('Invalid token format');
-        }
+        const decoded = JSON.parse(atob(token));
+        userId = decoded.id;
+        userRole = decoded.role;
+        console.log(`[Middleware] Base64 decoded successfully - User: ${userId}, Role: ${userRole}`);
+      } catch (base64Error) {
+        console.log(`[Middleware] Base64 decode failed: ${(base64Error as Error).message}`);
+        throw new Error('Invalid token format');
       }
-
-      if (ADMIN_PATHS.some(path => pathname.startsWith(path)) && userRole !== "ADMIN") {
-        return NextResponse.redirect(new URL("/dashboard", req.url));
-      }
-
-      // Clone request headers and add user info headers
-      const requestHeaders = new Headers(req.headers);
-      requestHeaders.set("x-user-id", userId);
-      requestHeaders.set("x-user-role", userRole);
-
-      // IMPORTANT: Create a new NextResponse and pass the modified request with new headers
-      return NextResponse.next({
-        request: {
-          headers: requestHeaders,
-        },
-      });
-    } catch (error) {
-      return NextResponse.redirect(new URL("/login", req.url));
     }
-  }
 
-  // If we reach here, we have a NextAuth token but no custom token, allow access
-  return NextResponse.next();
+    if (ADMIN_PATHS.some(path => pathname.startsWith(path)) && userRole !== "ADMIN") {
+      return NextResponse.redirect(new URL("/dashboard", req.url));
+    }
+
+    // Clone request headers and add user info headers
+    const requestHeaders = new Headers(req.headers);
+    requestHeaders.set("x-user-id", userId);
+    requestHeaders.set("x-user-role", userRole);
+
+    // Create a new NextResponse and pass the modified request with new headers
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
+  } catch (error) {
+    console.log(`[Middleware] Token validation failed, redirecting to login`);
+    return NextResponse.redirect(new URL("/login", req.url));
+  }
 }
 
 export const config = {
