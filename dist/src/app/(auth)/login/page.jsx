@@ -20,7 +20,7 @@ function LoginPage() {
         try {
             console.log(`[Login] Attempting login for: ${email}`);
             // Use the simple-login API that sets JWT tokens
-            const response = await fetch('/api/auth/simple-login', {
+            const response = await fetch('/api/simple-login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -41,14 +41,16 @@ function LoginPage() {
                 // Add a longer delay to ensure cookie is set and use window.location for full page reload
                 setTimeout(() => {
                     console.log(`[Login] Redirecting to dashboard...`);
-                    window.location.replace("/dashboard");
-                }, 500);
+                    window.location.href = "/dashboard";
+                }, 200);
+                return; // Prevent further execution
             } else {
                 const errorData = await response.json();
                 console.log(`[Login] Login failed:`, errorData);
                 setError(errorData.message || "Invalid email or password. Please try again.");
             }
         } catch (err) {
+            console.log(`[Login] Error:`, err);
             setError("An unexpected error occurred. Please try again later.");
         } finally {
             setIsLoading(false);
