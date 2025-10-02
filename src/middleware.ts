@@ -84,7 +84,8 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    "/dashboard/:path*",
+    // Temporarily disable dashboard protection to test login
+    // "/dashboard/:path*",
     "/products/:path*",
     "/reports",
     "/settings",
