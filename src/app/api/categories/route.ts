@@ -1,8 +1,6 @@
 // src/app/api/categories/route.ts
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from "@/lib/auth";
 
 // GET all categories with product counts
 export async function GET() {
@@ -26,9 +24,12 @@ export async function GET() {
 
 // POST a new category
 export async function POST(req: Request) {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id || session.user.role !== 'ADMIN') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Check JWT headers from middleware
+    const userId = req.headers.get('x-user-id');
+    const userRole = req.headers.get('x-user-role');
+    
+    if (!userId || userRole !== 'ADMIN') {
+        return NextResponse.json({ error: 'Unauthorized - Admin access required' }, { status: 401 });
     }
 
     try {

@@ -1,16 +1,14 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from "@/lib/auth";
-// FIX 1: Corrected to a named import
 import prisma from '@/lib/prisma';
-// FIX 2: Corrected the import path to the standard client location
-// Use string literals for enum values at runtime
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Check JWT headers from middleware
+    const userId = req.headers.get('x-user-id');
+    const userRole = req.headers.get('x-user-role');
+    
+    if (!userId || userRole !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized - Admin access required' }, { status: 401 });
     }
 
     const body = await req.json();
@@ -42,9 +40,9 @@ export async function POST(req: Request) {
           where: { id: requestId },
           data: {
             status: 'APPROVED',
-            // FIX 3: Use 'connect' on the 'approver' relation field
+            // Use 'connect' on the 'approver' relation field
             approver: {
-              connect: { id: session.user.id },
+              connect: { id: userId },
             },
           },
         }),
@@ -62,9 +60,9 @@ export async function POST(req: Request) {
           data: {
             status: 'REJECTED',
             reason: remark, // Save the rejection remark
-             // FIX 3: Use 'connect' on the 'approver' relation field
+             // Use 'connect' on the 'approver' relation field
             approver: {
-              connect: { id: session.user.id },
+              connect: { id: userId },
             },
           },
         }),

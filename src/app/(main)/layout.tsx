@@ -1,21 +1,38 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { Sidebar } from '@/components/layout/Sidebar';
 import { redirect } from 'next/navigation';
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { cookies } from 'next/headers';
+import { jwtVerify } from 'jose';
 
 export default async function MainLayout({ children }: { children: React.ReactNode }) {
-  const session = await getServerSession(authOptions);
+  // Check for JWT token in cookies instead of NextAuth session
+  const cookieStore = cookies();
+  const token = cookieStore.get('authToken')?.value;
 
-  if (!session) {
+  if (!token) {
     redirect('/login');
   }
 
-  const user = {
-    role: session.user?.role || 'USER',
-    name: session.user?.name || '',
-    email: session.user?.email || '',
+  let user = {
+    role: 'USER',
+    name: 'User',
+    email: 'user@example.com',
   };
+
+  try {
+    // Verify and decode JWT token
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-key');
+    const { payload } = await jwtVerify(token, secret);
+    
+    user = {
+      role: (payload as any).role || 'USER',
+      name: (payload as any).name || 'User',
+      email: (payload as any).email || 'user@example.com',
+    };
+  } catch (error) {
+    console.error('JWT verification failed in layout:', error);
+    redirect('/login');
+  }
 
   return (
     <div className="flex min-h-screen bg-muted/40">

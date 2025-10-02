@@ -1,14 +1,14 @@
 // src/app/api/stock/request/route.ts
 
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions);
+  // Check JWT headers from middleware
+  const userId = req.headers.get('x-user-id');
+  const userRole = req.headers.get('x-user-role');
 
-  if (!session?.user?.id) {
+  if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Stock Item ID is required.' }, { status: 400 });
     }
     
-    const userId = session.user.id;
+    // userId is already available from headers
     
     const existingRequest = await prisma.stockRequest.findFirst({
       where: { 

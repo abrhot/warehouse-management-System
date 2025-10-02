@@ -84,15 +84,21 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    // Temporarily disable dashboard protection to test login
-    // "/dashboard/:path*",
+    "/dashboard/:path*",
     "/products/:path*",
     "/reports",
     "/settings",
     "/admin/:path*",
-    // Don't protect all API routes, only specific ones
+    // Protect API routes that need authentication
     "/api/dashboard/:path*",
     "/api/products/:path*",
+    "/api/users/:path*",
+    "/api/requests/:path*",
+    "/api/my-requests/:path*",
     "/api/reports/:path*",
+    "/api/notifications/:path*",
+    "/api/stock/process/:path*",
+    "/api/stock/request/:path*",
+    "/api/categories/:path*",
   ],
 };

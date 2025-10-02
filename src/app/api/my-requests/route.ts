@@ -1,21 +1,21 @@
 // src/app/api/my-requests/route.ts
 
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from "@/lib/auth";
 import prisma from '@/lib/prisma';
 
-export async function GET() {
-  const session = await getServerSession(authOptions);
+export async function GET(req: Request) {
+  // Check JWT headers from middleware
+  const userId = req.headers.get('x-user-id');
+  const userRole = req.headers.get('x-user-role');
 
-  if (!session?.user?.id) {
+  if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
     const userRequests = await prisma.stockRequest.findMany({
       where: {
-        requestedBy: session.user.id,
+        requestedBy: userId,
       },
       include: {
         stockItem: {
