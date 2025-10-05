@@ -36,13 +36,13 @@ export default function CreateUserPage() {
       const res = await fetch('/api/users/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Include cookies for authentication
         body: JSON.stringify({ name, email, password, role }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        // The API should return an `error` field in the JSON response
         throw new Error(data.error || 'An unknown error occurred.');
       }
 

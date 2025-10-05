@@ -78,6 +78,7 @@ export function ProductTable({
           {selectedItem && (
             <StockForm
               item={selectedItem}
+              type="OUT" // Add the required type prop for stock out requests
               onSuccess={() => {
                 setIsSheetOpen(false);
                 setSelectedItem(null);

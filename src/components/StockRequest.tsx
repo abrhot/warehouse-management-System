@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { StockForm } from './StockForm';
+import { StockForm } from './products/StockForm';
 import { StockItemWithRelations } from '@/app/(main)/products/page';
 
 export function StockRequest({ item }: { item: StockItemWithRelations }) {
@@ -23,7 +23,8 @@ export function StockRequest({ item }: { item: StockItemWithRelations }) {
 
           <StockForm
             item={item}
-            onClose={() => setOpen(false)} // closes modal + unmounts
+            onSuccess={() => setOpen(false)} // closes modal + unmounts
+            type="OUT" // Default to OUT for stock requests
           />
         </DialogContent>
       </Dialog>

@@ -2,53 +2,77 @@
 
 import React, { useState, useEffect } from 'react';
 
-// The interface and all logic remain UNCHANGED.
-interface Product {
+// Updated interface to work with stock items
+interface StockItem {
   id: string;
-  name: string;
-  category: string;
-  quantity: number;
+  serialNumber: string;
+  status: string;
+  product: {
+    id: string;
+    name: string;
+    category: {
+      name: string;
+    };
+  };
 }
 
 export default function StockOutForm() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [selectedProductId, setSelectedProductId] = useState('');
-  const [quantity, setQuantity] = useState('');
+  const [stockItems, setStockItems] = useState<StockItem[]>([]);
+  const [selectedStockItemId, setSelectedStockItemId] = useState('');
   const [notes, setNotes] = useState('');
 
-  // All of the logic functions (useEffect, handleSubmit) are unchanged.
+  // Fetch available stock items (IN_STOCK only)
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchStockItems = async () => {
       try {
         const res = await fetch('/api/products');
         if (!res.ok) throw new Error('Failed to fetch');
-        const data: Product[] = await res.json();
-        setProducts(data);
+        const data = await res.json();
+        
+        // Extract stock items from products
+        const allStockItems: StockItem[] = [];
+        data.forEach((product: any) => {
+          if (product.stockItems) {
+            product.stockItems.forEach((item: any) => {
+              if (item.status === 'IN_STOCK') {
+                allStockItems.push({
+                  id: item.id,
+                  serialNumber: item.serialNumber,
+                  status: item.status,
+                  product: {
+                    id: product.id,
+                    name: product.name,
+                    category: product.category
+                  }
+                });
+              }
+            });
+          }
+        });
+        
+        setStockItems(allStockItems);
       } catch (error) {
-        console.error("Could not fetch products:", error);
-        alert("❌ Could not load product list.");
+        console.error("Could not fetch stock items:", error);
+        alert("❌ Could not load stock items.");
       }
     };
-    fetchProducts();
+    fetchStockItems();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedProductId || !quantity) {
-      alert("Please select a product and enter a quantity.");
+    if (!selectedStockItemId) {
+      alert("Please select a stock item.");
       return;
     }
-    if (isNaN(Number(quantity)) || Number(quantity) <= 0) {
-      alert("Quantity must be a positive number.");
-      return;
-    }
+    
     try {
       const res = await fetch("/api/stock/request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: 'include',
         body: JSON.stringify({
-          productId: selectedProductId,
-          quantity: Number(quantity),
+          stockItemId: selectedStockItemId,
           type: "OUT",
           notes: notes,
         }),
@@ -56,8 +80,7 @@ export default function StockOutForm() {
 
       if (res.ok) {
         alert("✅ Stock-out request sent for approval!");
-        setSelectedProductId('');
-        setQuantity('');
+        setSelectedStockItemId('');
         setNotes('');
       } else {
         const { error } = await res.json();
@@ -69,42 +92,42 @@ export default function StockOutForm() {
     }
   };
 
-  const selectedProduct = products.find(p => p.id === selectedProductId);
+  const selectedStockItem = stockItems.find(item => item.id === selectedStockItemId);
 
   return (
     <div className="mx-auto w-full max-w-2xl rounded-xl bg-white p-8 shadow-lg">
       {/* The header section has been removed as requested */}
       <form className="space-y-6" onSubmit={handleSubmit}>
-        {/* Product Selection */}
+        {/* Stock Item Selection */}
         <div>
-          <label htmlFor="productSelect" className="mb-2 block text-sm font-medium text-gray-700">Product</label>
-          <select id="productSelect" value={selectedProductId} onChange={(e) => setSelectedProductId(e.target.value)} className="w-full rounded-lg border-gray-300 bg-gray-50 p-3 text-gray-800 shadow-sm focus:border-red-500 focus:ring-2 focus:ring-red-200" required>
-            <option value="" disabled>Select a product...</option>
-            {products.map((product) => (
-              <option key={product.id} value={product.id}>
-                {product.name} (In Stock: {product.quantity})
+          <label htmlFor="stockItemSelect" className="mb-2 block text-sm font-medium text-gray-700">Stock Item</label>
+          <select id="stockItemSelect" value={selectedStockItemId} onChange={(e) => setSelectedStockItemId(e.target.value)} className="w-full rounded-lg border-gray-300 bg-gray-50 p-3 text-gray-800 shadow-sm focus:border-red-500 focus:ring-2 focus:ring-red-200" required>
+            <option value="" disabled>Select a stock item...</option>
+            {stockItems.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.product.name} - {item.serialNumber} ({item.status})
               </option>
             ))}
           </select>
         </div>
 
-        {/* Conditional Product Info */}
-        {selectedProduct && (
+        {/* Conditional Stock Item Info */}
+        {selectedStockItem && (
           <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
             <p className="text-sm font-medium text-blue-800">
-              <span className="font-semibold">Category:</span> {selectedProduct.category}
+              <span className="font-semibold">Product:</span> {selectedStockItem.product.name}
+            </p>
+            <p className="text-sm font-medium text-blue-800">
+              <span className="font-semibold">Serial Number:</span> {selectedStockItem.serialNumber}
+            </p>
+            <p className="text-sm font-medium text-blue-800">
+              <span className="font-semibold">Category:</span> {selectedStockItem.product.category.name}
             </p>
             <p className="mt-1 text-xs text-blue-600">
-              There are currently {selectedProduct.quantity} units available in stock.
+              This item is currently {selectedStockItem.status.toLowerCase().replace('_', ' ')}.
             </p>
           </div>
         )}
-
-        {/* Quantity Input */}
-        <div>
-          <label htmlFor="quantityOut" className="mb-2 block text-sm font-medium text-gray-700">Quantity to Issue</label>
-          <input id="quantityOut" type="number" placeholder="Enter Quantity" value={quantity} onChange={(e) => setQuantity(e.target.value)} className="w-full rounded-lg border-gray-300 bg-gray-50 p-3 text-gray-800 shadow-sm focus:border-red-500 focus:ring-2 focus:ring-red-200" min="1" max={selectedProduct?.quantity} required/>
-        </div>
         
         {/* Remarks/Notes */}
         <div>

@@ -14,7 +14,7 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { stockItemId, notes, reason } = body;
+    const { stockItemId, notes, reason, type } = body;
     if (!stockItemId) {
         return NextResponse.json({ error: 'Stock Item ID is required.' }, { status: 400 });
     }
@@ -38,7 +38,7 @@ export async function POST(req: Request) {
     const [newRequest] = await prisma.$transaction([
       prisma.stockRequest.create({
         data: {
-          type: 'OUT',
+          type: type || 'OUT', // Use the type from request or default to OUT
           status: 'PENDING', 
           notes: notes || null,
           reason: reason || null,

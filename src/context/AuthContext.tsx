@@ -34,14 +34,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     checkAuth();
   }, []);
-
   const login = (userData: User) => {
     setUser(userData);
     router.push('/dashboard');
   };
 
   const logout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
+    try {
+      // Call the logout API to clear server-side cookies
+      await fetch('/api/auth/logout', { 
+        method: 'POST',
+        credentials: 'include'
+      });
+      
+      // Also clear client-side cookie as backup
+      document.cookie = 'authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Even if API call fails, clear client state
+      document.cookie = 'authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    }
+    
     setUser(null);
     router.push('/login');
   };

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 
-const PUBLIC_PATHS = ["/", "/login"];
+const PUBLIC_PATHS = ["/login"];
 const ADMIN_PATHS = ["/admin/users", "/admin/requests"];
 
 export async function middleware(req: NextRequest) {
@@ -13,7 +13,8 @@ export async function middleware(req: NextRequest) {
     console.log(`[Middleware] AuthToken value: ${token.substring(0, 20)}...`);
   }
 
-  if (PUBLIC_PATHS.some(path => pathname.startsWith(path))) {
+  // Allow root path and login page
+  if (pathname === "/" || PUBLIC_PATHS.some(path => pathname.startsWith(path))) {
     console.log(`[Middleware] Public path, allowing access`);
     return NextResponse.next();
   }
@@ -94,9 +95,9 @@ export const config = {
     "/api/products/:path*",
     "/api/users/:path*",
     "/api/requests/:path*",
-    "/api/my-requests/:path*",
+    "/api/my-requests",
     "/api/reports/:path*",
-    "/api/notifications/:path*",
+    "/api/notifications",
     "/api/stock/process/:path*",
     "/api/stock/request/:path*",
     "/api/categories/:path*",
