@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { signOut } from 'next-auth/react';
+import { useAuth } from '@/context/AuthContext';
 import { getNavRoutes } from '@/config/routes';
 import {
   LayoutDashboard,
@@ -45,6 +45,7 @@ const iconMap: { [key: string]: LucideIcon } = {
 export function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(true);
+  const { logout } = useAuth();
 
   const navRoutes = getNavRoutes(user.role);
 
@@ -95,7 +96,7 @@ export function Sidebar({ user }: SidebarProps) {
 
         <div className="pt-4">
             <div className={clsx('flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors cursor-pointer text-slate-700 hover:bg-red-50 hover:text-red-600')}
-                onClick={() => signOut()}
+                onClick={() => logout()}
             >
                 <LogOut className="h-5 w-5 flex-shrink-0" />
                 {isOpen && <span>Log out</span>}
