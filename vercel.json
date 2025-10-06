@@ -1,14 +1,4 @@
 {
-  "buildCommand": "prisma generate && prisma migrate deploy && next build",
-  "outputDirectory": ".next",
   "framework": "nextjs",
-  "functions": {
-    "src/app/api/**/*.ts": {
-      "runtime": "nodejs18.x"
-    }
-  },
-  "env": {
-    "PRISMA_GENERATE_DATAPROXY": "true"
-  },
-  "installCommand": "npm install && prisma generate"
+  "buildCommand": "npm run vercel-build"
 }
