@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Seed</title>
+</head>
+<body>
+    <h1>Database Seeder</h1>
+    <button onclick="seed()">Click to Seed Database</button>
+    <div id="result"></div>
+    
+    <script>
+    function seed() {
+        document.getElementById('result').innerHTML = 'Seeding...';
+        
+        // Use relative URL to avoid CORS
+        fetch('/api/seed', {method: 'POST'})
+        .then(r => r.json())
+        .then(data => {
+            if(data.success) {
+                document.getElementById('result').innerHTML = '✅ SUCCESS! Products: ' + data.data.products;
+            } else {
+                document.getElementById('result').innerHTML = '❌ Error: ' + data.error;
+            }
+        })
+        .catch(err => {
+            document.getElementById('result').innerHTML = '❌ Network Error: ' + err.message;
+        });
+    }
+    </script>
+</body>
+</html>
