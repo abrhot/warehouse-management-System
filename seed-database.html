@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seed Database - Warehouse Management</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        .button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .loading {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌱 Seed Database</h1>
+        <p>This will populate your warehouse management database with sample data:</p>
+        
+        <ul>
+            <li><strong>7 Categories:</strong> Routers, Switches, Firewalls, Servers, Cables, Access Points, Storage</li>
+            <li><strong>50 Products:</strong> Realistic network equipment with names, SKUs, and pricing</li>
+            <li><strong>Stock Items:</strong> Individual items with serial numbers for each product</li>
+            <li><strong>5 Sample Requests:</strong> Pending requests to show on the dashboard</li>
+            <li><strong>User Accounts:</strong> Admin and test user accounts</li>
+        </ul>
+
+        <button id="seedBtn" class="button" onclick="seedDatabase()">
+            🚀 Seed Database Now
+        </button>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const DEPLOYMENT_URL = 'https://warehouse-management-if46ilowl-abrihott-9019s-projects.vercel.app';
+        
+        async function seedDatabase() {
+            const button = document.getElementById('seedBtn');
+            const result = document.getElementById('result');
+            
+            button.disabled = true;
+            button.textContent = '⏳ Seeding Database...';
+            
+            result.className = 'result loading';
+            result.textContent = 'Seeding database with sample data...\nThis may take a few moments.';
+            
+            try {
+                const response = await fetch(`${DEPLOYMENT_URL}/api/seed`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    result.className = 'result success';
+                    result.textContent = `✅ SUCCESS!\n\n${data.message}\n\nData Created:\n- Categories: ${data.data.categories}\n- Products: ${data.data.products}\n- Stock Items: ${data.data.stockItems}\n- Sample Requests: ${data.data.requests}\n\nUsers:\n${data.data.users.map(u => `- ${u.email} (${u.role})`).join('\n')}\n\n🎉 Your dashboard should now show products and pending requests!`;
+                } else {
+                    result.className = 'result error';
+                    result.textContent = `❌ ERROR: ${data.error || data.message}`;
+                }
+            } catch (error) {
+                result.className = 'result error';
+                result.textContent = `❌ NETWORK ERROR: ${error.message}\n\nPlease check:\n1. Your internet connection\n2. The deployment URL is correct\n3. The API endpoint is accessible`;
+            }
+            
+            button.disabled = false;
+            button.textContent = '🌱 Seed Database Again';
+        }
+    </script>
+</body>
+</html>
