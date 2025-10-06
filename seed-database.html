@@ -80,12 +80,8 @@
     </div>
 
     <script>
-        // Try multiple possible deployment URLs
-        const POSSIBLE_URLS = [
-            'https://warehouse-management-if46ilowl-abrihott-9019s-projects.vercel.app',
-            'https://warehouse-management-abrihott-9019s-projects.vercel.app',
-            'https://warehouse-management-3k427ilwi-abrihott-9019s-projects.vercel.app'
-        ];
+        // Current deployment URL
+        const DEPLOYMENT_URL = 'https://warehouse-management-56s7xzqgm-abrihott-9019s-projects.vercel.app';
         
         async function tryUrl(url) {
             const response = await fetch(`${url}/api/seed`, {
