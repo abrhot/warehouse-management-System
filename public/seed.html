@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Seed Database</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 50px; text-align: center; }
+        button { padding: 20px 40px; font-size: 18px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        #result { margin-top: 20px; padding: 20px; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>🌱 Database Seeder</h1>
+    <p>Click the button below to populate your database with sample data</p>
+    <button onclick="seedNow()">Seed Database</button>
+    <div id="result"></div>
+
+    <script>
+    function seedNow() {
+        const result = document.getElementById('result');
+        result.innerHTML = 'Seeding database...';
+        
+        fetch('/api/seed', {method: 'POST'})
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                result.className = 'success';
+                result.innerHTML = '✅ SUCCESS!<br>Products: ' + data.data.products + '<br>Categories: ' + data.data.categories + '<br>Requests: ' + data.data.requests;
+            } else {
+                result.className = 'error';
+                result.innerHTML = '❌ Error: ' + data.error;
+            }
+        })
+        .catch(error => {
+            result.className = 'error';
+            result.innerHTML = '❌ Network Error: ' + error.message;
+        });
+    }
+    </script>
+</body>
+</html>
