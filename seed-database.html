@@ -80,7 +80,23 @@
     </div>
 
     <script>
-        const DEPLOYMENT_URL = 'https://warehouse-management-if46ilowl-abrihott-9019s-projects.vercel.app';
+        // Try multiple possible deployment URLs
+        const POSSIBLE_URLS = [
+            'https://warehouse-management-if46ilowl-abrihott-9019s-projects.vercel.app',
+            'https://warehouse-management-abrihott-9019s-projects.vercel.app',
+            'https://warehouse-management-3k427ilwi-abrihott-9019s-projects.vercel.app'
+        ];
+        
+        async function tryUrl(url) {
+            const response = await fetch(`${url}/api/seed`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                mode: 'cors'
+            });
+            return { response, url };
+        }
         
         async function seedDatabase() {
             const button = document.getElementById('seedBtn');
@@ -90,32 +106,45 @@
             button.textContent = '⏳ Seeding Database...';
             
             result.className = 'result loading';
-            result.textContent = 'Seeding database with sample data...\nThis may take a few moments.';
+            result.textContent = 'Trying to connect to your deployment...\nTesting multiple URLs...';
             
-            try {
-                const response = await fetch(`${DEPLOYMENT_URL}/api/seed`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
+            let lastError = null;
+            
+            for (const url of POSSIBLE_URLS) {
+                try {
+                    result.textContent = `Trying: ${url}...`;
+                    const { response } = await tryUrl(url);
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            result.className = 'result success';
+                            result.textContent = `✅ SUCCESS!\n\nConnected to: ${url}\n\n${data.message}\n\nData Created:\n- Categories: ${data.data.categories}\n- Products: ${data.data.products}\n- Stock Items: ${data.data.stockItems}\n- Sample Requests: ${data.data.requests}\n\nUsers:\n${data.data.users.map(u => `- ${u.email} (${u.role})`).join('\n')}\n\n🎉 Your dashboard should now show products and pending requests!`;
+                            button.disabled = false;
+                            button.textContent = '🌱 Seed Database Again';
+                            return;
+                        } else {
+                            result.className = 'result error';
+                            result.textContent = `❌ API ERROR from ${url}: ${data.error || data.message}`;
+                            button.disabled = false;
+                            button.textContent = '🌱 Try Again';
+                            return;
+                        }
                     }
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    result.className = 'result success';
-                    result.textContent = `✅ SUCCESS!\n\n${data.message}\n\nData Created:\n- Categories: ${data.data.categories}\n- Products: ${data.data.products}\n- Stock Items: ${data.data.stockItems}\n- Sample Requests: ${data.data.requests}\n\nUsers:\n${data.data.users.map(u => `- ${u.email} (${u.role})`).join('\n')}\n\n🎉 Your dashboard should now show products and pending requests!`;
-                } else {
-                    result.className = 'result error';
-                    result.textContent = `❌ ERROR: ${data.error || data.message}`;
+                } catch (error) {
+                    lastError = error;
+                    console.log(`Failed to connect to ${url}:`, error);
+                    continue;
                 }
-            } catch (error) {
-                result.className = 'result error';
-                result.textContent = `❌ NETWORK ERROR: ${error.message}\n\nPlease check:\n1. Your internet connection\n2. The deployment URL is correct\n3. The API endpoint is accessible`;
             }
             
+            // If all URLs failed
+            result.className = 'result error';
+            result.textContent = `❌ NETWORK ERROR: Could not connect to any deployment URL.\n\nLast error: ${lastError?.message}\n\nTried URLs:\n${POSSIBLE_URLS.map(url => `- ${url}`).join('\n')}\n\nMANUAL SOLUTION:\n1. Go to your deployment URL directly in a new tab\n2. Add '/api/seed' to the end of the URL\n3. You should see a POST request form or JSON response\n\nAlternatively, use the browser console:\nfetch('YOUR_DEPLOYMENT_URL/api/seed', {method: 'POST'})`;
+            
             button.disabled = false;
-            button.textContent = '🌱 Seed Database Again';
+            button.textContent = '🌱 Try Again';
         }
     </script>
 </body>
