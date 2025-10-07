@@ -1,13 +1,3 @@
-import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
-import bcrypt from 'bcryptjs';
-
-// Helper function to generate a random number within a range
-function getRandomInt(min: number, max: number) {
-  min = Math.ceil(min);
-  max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
 
 // Helper function to generate a unique product SKU
 function generateSku(categoryName: string, index: number) {
