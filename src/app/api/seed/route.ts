@@ -16,38 +16,52 @@ function generateSku(categoryName: string, index: number) {
   return `${categoryCode}-${randomNumber}-${index}`;
 }
 
+// Support both GET and POST requests
+export async function GET(req: Request) {
+  return POST(req);
+}
+
 export async function POST(req: Request) {
   try {
-    console.log('Starting database seeding...');
+    console.log('🌱 Starting NEON database seeding...');
+    
+    // Check database connection and current state
+    const dbUrl = process.env.DATABASE_URL;
+    const isNeon = dbUrl?.includes('neon.tech') || dbUrl?.includes('neon.db');
+    console.log(`Database type: ${dbUrl?.split('://')[0]}, Is Neon: ${isNeon}`);
+
+    const existingProducts = await prisma.product.count();
+    const existingCategories = await prisma.category.count();
+    console.log(`Current state: ${existingProducts} products, ${existingCategories} categories`);
 
     // 1. Create categories first
     const categories = [
-      { name: 'Routers', description: 'Devices that forward data packets between computer networks.' },
-      { name: 'Switches', description: 'Devices that connect devices together on a computer network.' },
-      { name: 'Firewalls', description: 'Network security devices that monitor and filter incoming and outgoing network traffic.' },
-      { name: 'Servers', description: 'Hardware and software that provides functionality for other programs or devices.' },
-      { name: 'Cables', description: 'Ethernet, fiber, and other cables for network connections.' },
-      { name: 'Access Points', description: 'Networking hardware that allows Wi-Fi devices to connect to a wired network.' },
-      { name: 'Storage', description: 'Network-Attached Storage (NAS) and Storage Area Networks (SAN).' },
+      { name: 'Routers', description: 'Network routing devices and equipment' },
+      { name: 'Switches', description: 'Network switching devices and equipment' },
+      { name: 'Firewalls', description: 'Network security and firewall devices' },
+      { name: 'Servers', description: 'Server hardware and equipment' },
+      { name: 'Cables', description: 'Network cables and connectivity equipment' },
+      { name: 'Access Points', description: 'Wireless access points and equipment' },
+      { name: 'Storage', description: 'Network storage devices and equipment' },
     ];
 
-    const createdCategories = await Promise.all(
-      categories.map(cat => 
-        prisma.category.upsert({
-          where: { name: cat.name },
-          update: {},
-          create: { name: cat.name, description: cat.description },
-        })
-      )
-    );
-    console.log(`${createdCategories.length} categories created.`);
+    const createdCategories = [];
+    for (const cat of categories) {
+      const category = await prisma.category.upsert({
+        where: { name: cat.name },
+        update: { description: cat.description },
+        create: { name: cat.name, description: cat.description },
+      });
+      createdCategories.push(category);
+    }
+    console.log(`✅ ${createdCategories.length} categories processed`);
 
-    // 2. Create users
+    // 2. Create/update users
     const hashedPassword = await bcrypt.hash('test123', 10);
     
     const adminUser = await prisma.user.upsert({
       where: { email: 'admin@warehouse.com' },
-      update: {},
+      update: { password: hashedPassword },
       create: {
         email: 'admin@warehouse.com',
         name: 'Admin User',
@@ -58,7 +72,7 @@ export async function POST(req: Request) {
 
     const testUser = await prisma.user.upsert({
       where: { email: 'test@example.com' },
-      update: {},
+      update: { password: hashedPassword },
       create: {
         email: 'test@example.com',
         name: 'Test User',
@@ -66,77 +80,125 @@ export async function POST(req: Request) {
         role: 'USER'
       }
     });
+    console.log('✅ Users processed');
 
-    // 3. Create products and stock items
-    const productPrefixes = ['ProLink', 'NetCore', 'DataStream', 'SecureGate', 'FiberOptix', 'Apex', 'Titan'];
-    const productModels = ['XG', 'ZR', 'S-Class', 'G-Force', 'Z-Series'];
-    
-    const productsCreated = [];
-    const stockItemsCreated = [];
+    // 3. Create products and stock items (only if we don't have many)
+    let productsCreated = 0;
+    let stockItemsCreated = 0;
 
-    for (let i = 1; i <= 50; i++) {
-      const category = createdCategories[getRandomInt(0, createdCategories.length - 1)];
-      const prefix = productPrefixes[getRandomInt(0, productPrefixes.length - 1)];
-      const model = productModels[getRandomInt(0, productModels.length - 1)];
+    if (existingProducts < 10) {
+      console.log('Creating products and stock items...');
+      const productPrefixes = ['ProLink', 'NetCore', 'DataStream', 'SecureGate', 'FiberOptix', 'TechCore', 'MaxNet'];
+      const productModels = ['Pro', 'Elite', 'Max', 'Ultra', 'Plus', 'Advanced'];
       
-      const productName = `${prefix} ${category.name.slice(0, -1)} ${model}-${getRandomInt(100, 9000)}`;
-      
-      // Create the product
-      const product = await prisma.product.create({
-        data: {
-          name: productName,
-          sku: generateSku(category.name, i),
-          categoryId: category.id,
-          quantity: getRandomInt(1, 5), // Random quantity between 1-5
-          reorderLevel: getRandomInt(5, 15),
-          costPrice: parseFloat((Math.random() * (500 - 50) + 50).toFixed(2)),
-          sellingPrice: parseFloat((Math.random() * (1000 - 100) + 100).toFixed(2)),
-          location: `Aisle ${getRandomInt(1, 10)}-Shelf ${String.fromCharCode(65 + getRandomInt(0, 4))}`,
-        },
-      });
-      productsCreated.push(product);
+      for (let i = 1; i <= 30; i++) {
+        const category = createdCategories[getRandomInt(0, createdCategories.length - 1)];
+        const prefix = productPrefixes[getRandomInt(0, productPrefixes.length - 1)];
+        const model = productModels[getRandomInt(0, productModels.length - 1)];
+        
+        const productName = `${prefix} ${category.name.slice(0, -1)} ${model} ${getRandomInt(1000, 9999)}`;
+        
+        try {
+          // Check if product exists
+          const existingProduct = await prisma.product.findFirst({
+            where: { name: productName }
+          });
 
-      // Create stock items for each product
-      const quantity = product.quantity;
-      for (let j = 1; j <= quantity; j++) {
-        const stockItem = await prisma.stockItem.create({
-          data: {
-            productId: product.id,
-            serialNumber: `SN-${product.sku}-${Date.now()}-${j}`,
-            status: 'IN_STOCK',
-            location: product.location,
+          if (!existingProduct) {
+            const product = await prisma.product.create({
+              data: {
+                name: productName,
+                sku: generateSku(category.name, i + existingProducts),
+                categoryId: category.id,
+                quantity: getRandomInt(1, 4),
+                reorderLevel: getRandomInt(5, 12),
+                costPrice: parseFloat((Math.random() * 500 + 50).toFixed(2)),
+                sellingPrice: parseFloat((Math.random() * 1000 + 100).toFixed(2)),
+                location: `Aisle ${getRandomInt(1, 10)}-Shelf ${String.fromCharCode(65 + getRandomInt(0, 4))}`,
+              },
+            });
+            productsCreated++;
+
+            // Create stock items
+            for (let j = 1; j <= product.quantity; j++) {
+              await prisma.stockItem.create({
+                data: {
+                  productId: product.id,
+                  serialNumber: `SN-${product.sku}-${Date.now()}-${j}`,
+                  status: 'IN_STOCK',
+                  location: product.location,
+                }
+              });
+              stockItemsCreated++;
+            }
           }
+        } catch (error: any) {
+          if (error.code === 'P2002') {
+            console.log(`Skipping duplicate: ${productName}`);
+            continue;
+          }
+          console.error(`Error creating ${productName}:`, error.message);
+        }
+      }
+    } else {
+      console.log('Products already exist, skipping creation');
+    }
+
+    // 4. Create sample requests
+    console.log('Creating sample requests...');
+    const availableStockItems = await prisma.stockItem.findMany({
+      where: { status: 'IN_STOCK' },
+      take: 5
+    });
+    
+    let requestsCreated = 0;
+    for (let i = 0; i < Math.min(3, availableStockItems.length); i++) {
+      try {
+        const existingRequest = await prisma.stockRequest.findFirst({
+          where: { stockItemId: availableStockItems[i].id }
         });
-        stockItemsCreated.push(stockItem);
+
+        if (!existingRequest) {
+          await prisma.stockRequest.create({
+            data: {
+              type: 'OUT',
+              status: 'PENDING',
+              notes: `Sample request ${i + 1} for dashboard testing`,
+              requestedBy: testUser.id,
+              stockItemId: availableStockItems[i].id,
+            }
+          });
+          requestsCreated++;
+        }
+      } catch (error: any) {
+        console.error(`Error creating request ${i + 1}:`, error.message);
       }
     }
 
-    // 4. Create some sample stock requests
-    const sampleRequests = [];
-    for (let i = 0; i < 5; i++) {
-      const randomStockItem = stockItemsCreated[getRandomInt(0, stockItemsCreated.length - 1)];
-      const request = await prisma.stockRequest.create({
-        data: {
-          type: 'OUT',
-          status: 'PENDING',
-          notes: `Sample request ${i + 1} for testing dashboard`,
-          requestedBy: testUser.id,
-          stockItemId: randomStockItem.id,
-        }
-      });
-      sampleRequests.push(request);
-    }
+    // Get final counts
+    const finalProducts = await prisma.product.count();
+    const finalCategories = await prisma.category.count();
+    const finalStockItems = await prisma.stockItem.count();
+    const finalRequests = await prisma.stockRequest.count();
 
-    console.log('Database seeding completed successfully!');
+    console.log('🎉 NEON database seeding completed!');
 
     return NextResponse.json({
       success: true,
-      message: 'Database seeded successfully with sample data',
+      message: 'NEON database seeded successfully with sample data',
+      database: {
+        type: dbUrl?.split('://')[0] || 'unknown',
+        isNeon: isNeon,
+        environment: process.env.NODE_ENV || 'unknown'
+      },
       data: {
-        categories: createdCategories.length,
-        products: productsCreated.length,
-        stockItems: stockItemsCreated.length,
-        requests: sampleRequests.length,
+        categories: finalCategories,
+        products: finalProducts,
+        stockItems: finalStockItems,
+        requests: finalRequests,
+        newProductsCreated: productsCreated,
+        newStockItemsCreated: stockItemsCreated,
+        newRequestsCreated: requestsCreated,
         users: [
           { email: adminUser.email, role: adminUser.role },
           { email: testUser.email, role: testUser.role }
@@ -145,11 +207,14 @@ export async function POST(req: Request) {
     });
 
   } catch (error: any) {
-    console.error('Seeding error:', error);
+    console.error('❌ NEON seeding error:', error);
     return NextResponse.json({
       success: false,
       error: error.message,
-      details: error.stack
+      details: error.stack,
+      database: {
+        connected: false
+      }
     }, { status: 500 });
   }
 }
