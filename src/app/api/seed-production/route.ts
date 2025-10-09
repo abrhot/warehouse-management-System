@@ -1,3 +1,6 @@
+import { NextResponse } from 'next/server';
+import prisma from '@/lib/prisma';
+import bcrypt from 'bcryptjs';
 
 // Helper function to generate a random number within a range
 function getRandomInt(min: number, max: number) {
