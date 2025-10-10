@@ -16,20 +16,20 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
-import { StockItemWithRelations } from '@/app/(main)/products/page';
+import { SerializableStockItem } from '@/app/(main)/products/page';
 import { StockForm } from './StockForm';
 
 export function ProductTable({
   items,
   onSuccess,
 }: {
-  items: StockItemWithRelations[];
+  items: SerializableStockItem[];
   onSuccess: () => void;
 }) {
-  const [selectedItem, setSelectedItem] = useState<StockItemWithRelations | null>(null);
+  const [selectedItem, setSelectedItem] = useState<SerializableStockItem | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
-  const handleRequestClick = (item: StockItemWithRelations) => {
+  const handleRequestClick = (item: SerializableStockItem) => {
     setSelectedItem(item);
     setIsSheetOpen(true);
   };

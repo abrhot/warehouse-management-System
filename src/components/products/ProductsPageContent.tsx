@@ -4,7 +4,9 @@ import React, { useState, useMemo } from "react";
 import { useRouter } from 'next/navigation';
 import { ProductTable } from './ProductTable';
 import { ProductHeader } from './ProductHeader';
+import { NewProductForm } from './NewProductForm';
 import { Button } from '@/components/ui/button';
+import { PlusCircle } from 'lucide-react';
 
 // --- Define a client-friendly, serialized type ---
 export interface SerializableStockItem {
@@ -47,6 +49,7 @@ export function ProductsPageContent({ initialItems }: ProductsPageContentProps) 
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedAvailability, setSelectedAvailability] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
+  const [showNewProductForm, setShowNewProductForm] = useState(false);
 
   const ITEMS_PER_PAGE = 20;
 
@@ -85,12 +88,22 @@ export function ProductsPageContent({ initialItems }: ProductsPageContentProps) 
   return (
     <div className="px-40 flex flex-1 justify-center py-5 bg-[#fafbf8]">
       <div className="max-w-[960px] w-full flex flex-col space-y-4">
-        <ProductHeader
-          categories={uniqueCategories}
-          onSearchChange={setSearchTerm}
-          onCategoryChange={setSelectedCategory}
-          onAvailabilityChange={setSelectedAvailability}
-        />
+        <div className="flex justify-between items-center">
+          <ProductHeader
+            categories={uniqueCategories}
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            onCategoryChange={setSelectedCategory}
+            onAvailabilityChange={setSelectedAvailability}
+          />
+          <Button
+            onClick={() => setShowNewProductForm(true)}
+            className="ml-4 bg-green-600 hover:bg-green-700"
+          >
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add New Product
+          </Button>
+        </div>
         <ProductTable
           items={paginatedItems}
           onSuccess={handleRequestSuccess}
@@ -117,6 +130,12 @@ export function ProductsPageContent({ initialItems }: ProductsPageContentProps) 
             </div>
           </div>
       </div>
+      
+      <NewProductForm
+        open={showNewProductForm}
+        onOpenChange={setShowNewProductForm}
+        onSuccess={handleRequestSuccess}
+      />
     </div>
   );
 }
