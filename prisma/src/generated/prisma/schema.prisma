@@ -26,6 +26,12 @@ model User {
   requests  StockRequest[] @relation("RequestedBy")
   approvals StockRequest[] @relation("ApprovedBy")
   auditLogs AuditLog[]
+  
+  // Pending approval relations
+  submittedProducts  PendingProduct[] @relation("ProductSubmittedBy")
+  reviewedProducts   PendingProduct[] @relation("ProductReviewedBy")
+  submittedCategories PendingCategory[] @relation("CategorySubmittedBy")
+  reviewedCategories  PendingCategory[] @relation("CategoryReviewedBy")
 }
 
 model AuditLog {
@@ -97,6 +103,7 @@ model Category {
   name        String    @unique
   description String?
   products    Product[]
+  pendingProducts PendingProduct[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @default(now()) @updatedAt
 }
@@ -106,6 +113,60 @@ model Supplier {
   name        String    @unique
   contactInfo String?
   products    Product[]
+  pendingProducts PendingProduct[]
+}
+
+// PENDING APPROVAL MODELS //////////////////////////////////////////////////////
+model PendingProduct {
+  id           String   @id @default(uuid())
+  sku          String   @unique
+  name         String
+  location     String?
+  reorderLevel Int      @default(10)
+  weight       Float?
+  dimensions   String?
+  costPrice    Decimal  @db.Decimal(10, 2)
+  sellingPrice Decimal? @db.Decimal(10, 2)
+  quantity     Int      @default(0)
+  
+  // Relations
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  
+  supplierId Int?
+  supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  
+  // Approval tracking
+  submittedBy String
+  submitter   User   @relation("ProductSubmittedBy", fields: [submittedBy], references: [id], onDelete: Cascade)
+  
+  reviewedBy String?
+  reviewer   User?  @relation("ProductReviewedBy", fields: [reviewedBy], references: [id], onDelete: SetNull)
+  
+  status     ApprovalStatus @default(PENDING)
+  notes      String?        // Admin notes for approval/rejection
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @default(now()) @updatedAt
+  
+  @@unique([name, categoryId])
+}
+
+model PendingCategory {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  
+  // Approval tracking
+  submittedBy String
+  submitter   User   @relation("CategorySubmittedBy", fields: [submittedBy], references: [id], onDelete: Cascade)
+  
+  reviewedBy String?
+  reviewer   User?  @relation("CategoryReviewedBy", fields: [reviewedBy], references: [id], onDelete: SetNull)
+  
+  status    ApprovalStatus @default(PENDING)
+  notes     String?        // Admin notes for approval/rejection
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @default(now()) @updatedAt
 }
 
 // STOCK RECORDS & REQUESTS //////////////////////////////////////////////////////
@@ -161,4 +222,10 @@ enum ActionType {
   STOCK_REQUEST_CREATED
   STOCK_REQUEST_APPROVED
   STOCK_REQUEST_REJECTED
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
