@@ -7,37 +7,7 @@ import { ProductHeader } from './ProductHeader';
 import { NewProductForm } from './NewProductForm';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
-
-// --- Define a client-friendly, serialized type ---
-export interface SerializableStockItem {
-  id: number;
-  productId: string;
-  serialNumber: string;
-  status: string;
-  quantity: number;
-  createdAt: string;
-  updatedAt: string;
-  product: {
-    id: string;
-    name: string;
-    costPrice: string; // Decimal serialized as string
-    sellingPrice: string | null; // Decimal serialized as string
-    createdAt: string;
-    updatedAt: string;
-    category: {
-      id: number;
-      name: string;
-      description: string | null;
-      createdAt: string;
-      updatedAt: string;
-    };
-    supplier: {
-      id: number;
-      name: string;
-      contactInfo: string | null;
-    } | null;
-  };
-}
+import { SerializableStockItem } from '@/app/(main)/products/page';
 
 interface ProductsPageContentProps {
   initialItems: SerializableStockItem[];
