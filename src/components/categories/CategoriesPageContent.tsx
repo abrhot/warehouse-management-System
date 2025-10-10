@@ -76,6 +76,7 @@ export function CategoriesPageContent({
   totalProducts: number;
 }) {
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [showNewCategoryForm, setShowNewCategoryForm] = useState(false);
 
   const toggleExpand = (id: string) => {
     setExpanded(expanded === id ? null : id);
@@ -85,10 +86,21 @@ export function CategoriesPageContent({
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Categories</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Total Products: {totalProducts}
-          </p>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle>Categories</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Total Products: {totalProducts}
+              </p>
+            </div>
+            <Button
+              onClick={() => setShowNewCategoryForm(true)}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Add New Category
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {categories.length === 0 ? (
