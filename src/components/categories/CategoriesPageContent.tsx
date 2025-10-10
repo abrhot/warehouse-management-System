@@ -170,6 +170,12 @@ export function CategoriesPageContent({
           )}
         </CardContent>
       </Card>
+      
+      <NewCategoryForm
+        open={showNewCategoryForm}
+        onOpenChange={setShowNewCategoryForm}
+        onSuccess={() => window.location.reload()}
+      />
     </div>
   );
 }
