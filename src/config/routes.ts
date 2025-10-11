@@ -19,6 +19,7 @@ const baseRoutes: NavRoute[] = [
 const adminRoutes: NavRoute[] = [
   { label: "Admin Users", path: "/admin/users" },
   { label: "Pending Requests", path: "/admin/requests" },
+  { label: "Pending Approvals", path: "/admin/approvals" },
 ];
 
 /**

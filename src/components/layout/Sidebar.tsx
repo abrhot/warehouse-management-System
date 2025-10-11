@@ -18,6 +18,7 @@ import {
   Boxes,
   Layers3,
   Bell,
+  CheckCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import clsx from 'clsx';
@@ -40,6 +41,7 @@ const iconMap: { [key: string]: LucideIcon } = {
   '/settings': Settings,
   '/admin/users': Users,
   '/admin/requests': Bell,
+  '/admin/approvals': CheckCircle,
 };
 
 export function Sidebar({ user }: SidebarProps) {
