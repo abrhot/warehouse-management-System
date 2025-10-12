@@ -85,7 +85,9 @@ export function NewProductForm({ open, onOpenChange, onSuccess }: NewProductForm
 
   const fetchSuppliers = async () => {
     try {
-      const response = await fetch('/api/suppliers');
+      const response = await fetch('/api/suppliers', {
+        credentials: 'include',
+      });
       if (response.ok) {
         const data = await response.json();
         setSuppliers(data);
@@ -114,6 +116,7 @@ export function NewProductForm({ open, onOpenChange, onSuccess }: NewProductForm
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify(submitData),
       });
 

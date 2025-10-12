@@ -46,6 +46,7 @@ export function NewCategoryForm({ open, onOpenChange, onSuccess }: NewCategoryFo
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify(submitData),
       });
 

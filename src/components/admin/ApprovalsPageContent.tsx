@@ -117,8 +117,8 @@ export function ApprovalsPageContent() {
     try {
       setIsLoading(true);
       const [productsResponse, categoriesResponse] = await Promise.all([
-        fetch('/api/pending-products'),
-        fetch('/api/pending-categories'),
+        fetch('/api/pending-products', { credentials: 'include' }),
+        fetch('/api/pending-categories', { credentials: 'include' }),
       ]);
 
       if (productsResponse.ok) {
