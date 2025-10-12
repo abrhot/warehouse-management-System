@@ -160,6 +160,7 @@ export function ApprovalsPageContent() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           notes: reviewNotes || undefined,
         }),
