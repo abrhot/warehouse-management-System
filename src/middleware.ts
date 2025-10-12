@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 
 const PUBLIC_PATHS = ["/login"];
-const ADMIN_PATHS = ["/admin/users", "/admin/requests"];
+const ADMIN_PATHS = ["/admin/users", "/admin/requests", "/admin/approvals"];
 
 export async function middleware(req: NextRequest) {
   const token = req.cookies.get("authToken")?.value;
@@ -87,6 +87,7 @@ export const config = {
   matcher: [
     "/dashboard/:path*",
     "/products/:path*",
+    "/categories/:path*",
     "/reports",
     "/settings",
     "/admin/:path*",
@@ -101,5 +102,8 @@ export const config = {
     "/api/stock/process/:path*",
     "/api/stock/request/:path*",
     "/api/categories/:path*",
+    "/api/pending-products/:path*",
+    "/api/pending-categories/:path*",
+    "/api/suppliers/:path*",
   ],
 };
