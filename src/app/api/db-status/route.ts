@@ -2,14 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
 export async function GET() {
-  try {
-    // Test database connection
-    const userCount = await prisma.user.count();
-    const categoryCount = await prisma.category.count();
-    const productCount = await prisma.product.count();
-    const stockItemCount = await prisma.stockItem.count();
-    const requestCount = await prisma.stockRequest.count();
-
+  
     // Get database URL info (without exposing the full URL)
     const dbUrl = process.env.DATABASE_URL;
     const isNeon = dbUrl?.includes('neon.tech') || dbUrl?.includes('neon.db');
