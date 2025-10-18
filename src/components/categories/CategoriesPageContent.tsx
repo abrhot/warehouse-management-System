@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { NewCategoryForm } from './NewCategoryForm';
+import { useAuth } from '@/context/AuthContext';
 import {
   PlusCircle,
   Package,
@@ -75,6 +76,7 @@ export function CategoriesPageContent({
   categories: CategoryWithProducts[];
   totalProducts: number;
 }) {
+  const { user } = useAuth();
   const [expanded, setExpanded] = useState<string | null>(null);
   const [showNewCategoryForm, setShowNewCategoryForm] = useState(false);
 
@@ -95,7 +97,7 @@ export function CategoriesPageContent({
             </div>
             <Button
               onClick={() => setShowNewCategoryForm(true)}
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-blue-600 hover:bg-blue-700 text-white"
             >
               <PlusCircle className="mr-2 h-4 w-4" />
               Add New Category
@@ -175,6 +177,7 @@ export function CategoriesPageContent({
         open={showNewCategoryForm}
         onOpenChange={setShowNewCategoryForm}
         onSuccess={() => window.location.reload()}
+        userRole={user?.role}
       />
     </div>
   );

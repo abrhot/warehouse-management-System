@@ -40,13 +40,15 @@ interface NewProductFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
+  userRole?: string;
 }
 
-export function NewProductForm({ open, onOpenChange, onSuccess }: NewProductFormProps) {
+export function NewProductForm({ open, onOpenChange, onSuccess, userRole }: NewProductFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [submitType, setSubmitType] = useState<'approval' | 'direct'>('approval');
   const [formData, setFormData] = useState({
     sku: '',
     name: '',
@@ -111,7 +113,10 @@ export function NewProductForm({ open, onOpenChange, onSuccess }: NewProductForm
         weight: formData.weight ? parseFloat(formData.weight) : undefined,
       };
 
-      const response = await fetch('/api/pending-products', {
+      // Choose endpoint based on submit type
+      const endpoint = submitType === 'direct' ? '/api/products' : '/api/pending-products';
+      
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -121,14 +126,20 @@ export function NewProductForm({ open, onOpenChange, onSuccess }: NewProductForm
       });
 
       if (response.ok) {
-        toast.success('Product submitted for approval successfully!');
+        const successMessage = submitType === 'direct' 
+          ? 'Product created successfully!' 
+          : 'Product submitted for approval successfully!';
+        toast.success(successMessage);
         onOpenChange(false);
         resetForm();
         onSuccess?.();
         router.refresh();
       } else {
         const error = await response.json();
-        toast.error(error.error || 'Failed to submit product');
+        const errorMessage = submitType === 'direct'
+          ? 'Failed to create product'
+          : 'Failed to submit product';
+        toast.error(error.error || errorMessage);
       }
     } catch (error) {
       console.error('Error submitting product:', error);
@@ -165,13 +176,47 @@ export function NewProductForm({ open, onOpenChange, onSuccess }: NewProductForm
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Submit New Product for Approval</DialogTitle>
+          <DialogTitle>
+            {submitType === 'direct' ? 'Create New Product' : 'Submit New Product for Approval'}
+          </DialogTitle>
           <DialogDescription>
-            Fill out the product details below. Your submission will be reviewed by an administrator.
+            {submitType === 'direct' 
+              ? 'Fill out the product details below. The product will be created immediately.'
+              : 'Fill out the product details below. Your submission will be reviewed by an administrator.'
+            }
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {userRole === 'ADMIN' && (
+            <div className="space-y-2 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <Label className="text-sm font-medium text-blue-800">Submission Type</Label>
+              <div className="flex gap-4">
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="submitType"
+                    value="direct"
+                    checked={submitType === 'direct'}
+                    onChange={(e) => setSubmitType(e.target.value as 'direct' | 'approval')}
+                    className="text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-blue-700">Create Directly</span>
+                </label>
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="submitType"
+                    value="approval"
+                    checked={submitType === 'approval'}
+                    onChange={(e) => setSubmitType(e.target.value as 'direct' | 'approval')}
+                    className="text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-blue-700">Submit for Approval</span>
+                </label>
+              </div>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="sku">SKU *</Label>
@@ -335,9 +380,9 @@ export function NewProductForm({ open, onOpenChange, onSuccess }: NewProductForm
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading}>
+            <Button type="submit" disabled={isLoading} className="bg-blue-600 hover:bg-blue-700 text-white">
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Submit for Approval
+              {submitType === 'direct' ? 'Create Product' : 'Submit for Approval'}
             </Button>
           </DialogFooter>
         </form>

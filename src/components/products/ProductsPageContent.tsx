@@ -8,6 +8,7 @@ import { NewProductForm } from './NewProductForm';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { SerializableStockItem } from '@/app/(main)/products/page';
+import { useAuth } from '@/context/AuthContext';
 
 interface ProductsPageContentProps {
   initialItems: SerializableStockItem[];
@@ -15,6 +16,7 @@ interface ProductsPageContentProps {
 
 export function ProductsPageContent({ initialItems }: ProductsPageContentProps) {
   const router = useRouter();
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedAvailability, setSelectedAvailability] = useState("All");
@@ -68,7 +70,7 @@ export function ProductsPageContent({ initialItems }: ProductsPageContentProps) 
           />
           <Button
             onClick={() => setShowNewProductForm(true)}
-            className="ml-4 bg-green-600 hover:bg-green-700"
+            className="ml-4 bg-blue-600 hover:bg-blue-700 text-white"
           >
             <PlusCircle className="mr-2 h-4 w-4" />
             Add New Product
@@ -105,6 +107,7 @@ export function ProductsPageContent({ initialItems }: ProductsPageContentProps) 
         open={showNewProductForm}
         onOpenChange={setShowNewProductForm}
         onSuccess={handleRequestSuccess}
+        userRole={user?.role}
       />
     </div>
   );
