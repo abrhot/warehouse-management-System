@@ -50,6 +50,7 @@ export async function POST(
       const product = await tx.product.create({
         data: {
           sku: pendingProduct.sku,
+          barcode: pendingProduct.barcode,
           name: pendingProduct.name,
           location: pendingProduct.location,
           reorderLevel: pendingProduct.reorderLevel,
@@ -63,6 +64,20 @@ export async function POST(
         },
       });
 
+      // Create stock items for the specified quantity
+      const stockItems = [];
+      for (let i = 0; i < pendingProduct.quantity; i++) {
+        const stockItem = await tx.stockItem.create({
+          data: {
+            serialNumber: `${pendingProduct.sku}-${String(i + 1).padStart(4, '0')}`,
+            status: 'IN_STOCK',
+            location: pendingProduct.location,
+            productId: product.id,
+          },
+        });
+        stockItems.push(stockItem);
+      }
+
       // Update pending product status
       const updatedPending = await tx.pendingProduct.update({
         where: { id: params.id },
@@ -73,12 +88,13 @@ export async function POST(
         },
       });
 
-      return { product, updatedPending };
+      return { product, stockItems, updatedPending };
     });
 
     return NextResponse.json({
       message: 'Product approved successfully',
       productId: result.product.id,
+      stockItemsCreated: result.stockItems.length,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

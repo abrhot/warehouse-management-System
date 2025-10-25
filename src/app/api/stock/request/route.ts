@@ -13,13 +13,31 @@ export async function POST(req: Request) {
   }
 
   try {
+    // First, verify the user exists in the database
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+
+    if (!user) {
+      console.error(`User not found in database: ${userId}`);
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
     const body = await req.json();
     const { stockItemId, notes, reason, type } = body;
     if (!stockItemId) {
         return NextResponse.json({ error: 'Stock Item ID is required.' }, { status: 400 });
     }
-    
-    // userId is already available from headers
+
+    // Verify the stock item exists
+    const stockItem = await prisma.stockItem.findUnique({
+      where: { id: stockItemId }
+    });
+
+    if (!stockItem) {
+      console.error(`Stock item not found: ${stockItemId}`);
+      return NextResponse.json({ error: 'Stock item not found' }, { status: 404 });
+    }
     
     const existingRequest = await prisma.stockRequest.findFirst({
       where: { 

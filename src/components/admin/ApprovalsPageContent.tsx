@@ -111,6 +111,10 @@ export function ApprovalsPageContent() {
 
   useEffect(() => {
     fetchPendingItems();
+    
+    // Set up real-time updates every 15 seconds
+    const interval = setInterval(fetchPendingItems, 15000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchPendingItems = async () => {

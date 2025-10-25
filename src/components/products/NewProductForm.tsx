@@ -51,6 +51,7 @@ export function NewProductForm({ open, onOpenChange, onSuccess, userRole }: NewP
   const [submitType, setSubmitType] = useState<'approval' | 'direct'>('approval');
   const [formData, setFormData] = useState({
     sku: '',
+    barcode: '',
     name: '',
     location: '',
     reorderLevel: 10,
@@ -149,9 +150,18 @@ export function NewProductForm({ open, onOpenChange, onSuccess, userRole }: NewP
     }
   };
 
+  const generateSKU = () => {
+    const timestamp = Date.now().toString().slice(-6);
+    const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    const categoryPrefix = categories.find(cat => cat.id.toString() === formData.categoryId)?.name.substring(0, 3).toUpperCase() || 'PRD';
+    const generatedSKU = `${categoryPrefix}-${timestamp}-${randomNum}`;
+    setFormData(prev => ({ ...prev, sku: generatedSKU }));
+  };
+
   const resetForm = () => {
     setFormData({
       sku: '',
+      barcode: '',
       name: '',
       location: '',
       reorderLevel: 10,
@@ -220,13 +230,27 @@ export function NewProductForm({ open, onOpenChange, onSuccess, userRole }: NewP
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="sku">SKU *</Label>
-              <Input
-                id="sku"
-                value={formData.sku}
-                onChange={(e) => handleInputChange('sku', e.target.value)}
-                placeholder="Enter product SKU"
-                required
-              />
+              <div className="flex gap-2">
+                <Input
+                  id="sku"
+                  value={formData.sku}
+                  onChange={(e) => handleInputChange('sku', e.target.value)}
+                  placeholder="Enter product SKU"
+                  required
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={generateSKU}
+                  className="px-3 whitespace-nowrap"
+                  disabled={!formData.categoryId}
+                >
+                  Auto Generate
+                </Button>
+              </div>
+              {!formData.categoryId && (
+                <p className="text-xs text-muted-foreground">Select a category first to auto-generate SKU</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -237,6 +261,29 @@ export function NewProductForm({ open, onOpenChange, onSuccess, userRole }: NewP
                 onChange={(e) => handleInputChange('name', e.target.value)}
                 placeholder="Enter product name"
                 required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="barcode">Barcode</Label>
+              <Input
+                id="barcode"
+                value={formData.barcode}
+                onChange={(e) => handleInputChange('barcode', e.target.value)}
+                placeholder="Enter barcode number (optional)"
+              />
+              <p className="text-xs text-muted-foreground">For future barcode integration</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="location">Location</Label>
+              <Input
+                id="location"
+                value={formData.location}
+                onChange={(e) => handleInputChange('location', e.target.value)}
+                placeholder="Enter storage location"
               />
             </div>
           </div>
@@ -348,16 +395,6 @@ export function NewProductForm({ open, onOpenChange, onSuccess, userRole }: NewP
                 placeholder="0.00"
               />
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="location">Location</Label>
-            <Input
-              id="location"
-              value={formData.location}
-              onChange={(e) => handleInputChange('location', e.target.value)}
-              placeholder="Warehouse location"
-            />
           </div>
 
           <div className="space-y-2">

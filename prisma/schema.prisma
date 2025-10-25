@@ -54,6 +54,7 @@ model AuditLog {
 model Product {
   id           String     @id @default(uuid())
   sku          String     @unique
+  barcode      String?    @unique
   name         String
   location     String?
   reorderLevel Int        @default(10)
@@ -119,6 +120,7 @@ model Supplier {
 model PendingProduct {
   id           String   @id @default(uuid())
   sku          String   @unique
+  barcode      String?  @unique
   name         String
   location     String?
   reorderLevel Int      @default(10)

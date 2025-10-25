@@ -4,6 +4,7 @@ import { z } from 'zod';
 
 const createPendingProductSchema = z.object({
   sku: z.string().min(1, 'SKU is required'),
+  barcode: z.string().optional(),
   name: z.string().min(1, 'Product name is required'),
   location: z.string().optional(),
   reorderLevel: z.number().int().min(0).default(10),

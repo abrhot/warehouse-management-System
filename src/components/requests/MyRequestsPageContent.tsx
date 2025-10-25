@@ -2,7 +2,7 @@
 // src/components/requests/MyRequestsPageContent.tsx
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { toast } from 'sonner';
 import { RequestsHeader } from './RequestsHeader';
 import { RequestsTable } from './RequestsTable';
@@ -28,6 +28,31 @@ export function MyRequestsPageContent({
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [view, setView] = useState<'table' | 'board'>('table');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Real-time updates - refresh every 30 seconds
+  useEffect(() => {
+    const refreshRequests = async () => {
+      try {
+        setIsRefreshing(true);
+        const response = await fetch('/api/my-requests', {
+          credentials: 'include',
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setRequests(data);
+        }
+      } catch (error) {
+        console.error('Error refreshing requests:', error);
+      } finally {
+        setIsRefreshing(false);
+      }
+    };
+
+    const interval = setInterval(refreshRequests, 30000); // 30 seconds
+    return () => clearInterval(interval);
+  }, []);
 
   const handleDeleteRequest = async (requestId: string) => {
     try {
@@ -79,7 +104,6 @@ export function MyRequestsPageContent({
           <RequestsTable
             requests={filteredRequests}
             onSearchChange={setSearchTerm}
-            onDeleteRequest={handleDeleteRequest}
           />
         ) : (
           <RequestsBoardView requests={filteredRequests} />

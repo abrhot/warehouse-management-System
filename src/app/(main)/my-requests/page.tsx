@@ -1,8 +1,7 @@
 // src/app/(main)/my-requests/page.tsx
 import prisma from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
-import { getServerSession } from 'next-auth';
-import { authOptions } from "@/lib/auth";
+import { headers } from 'next/headers';
 import { MyRequestsPageContent } from '@/components/requests/MyRequestsPageContent';
 
 // Define the query arguments to reuse for type generation and the actual query
@@ -25,12 +24,13 @@ export type UserRequestWithRelations = Prisma.StockRequestGetPayload<typeof requ
 
 // Main Server Component
 export default async function MyRequestsPage() {
-  const session = await getServerSession(authOptions);
+  const headersList = headers();
+  const userId = headersList.get('x-user-id');
 
   // Fetch requests for the current user
-  const requests: UserRequestWithRelations[] = session?.user?.id
+  const requests: UserRequestWithRelations[] = userId
     ? await prisma.stockRequest.findMany({
-        where: { requestedBy: session.user.id },
+        where: { requestedBy: userId },
         ...requestWithRelationsArgs,
       })
     : [];
