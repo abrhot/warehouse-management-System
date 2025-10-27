@@ -5,7 +5,10 @@ import { LowStockSection } from '@/components/dashboard/LowStockSection';
 import { Footer } from '@/components/dashboard/Footer';
 import prisma from '@/lib/prisma';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Activity } from 'lucide-react';
+import { Activity, Clock, AlertTriangle, Package, RefreshCw } from 'lucide-react';
+
+// Revalidate every 5 minutes
+const revalidate = 300;
 
 // Utility: get date 30 days ago
 const getThirtyDaysAgo = () => {
@@ -13,6 +16,96 @@ const getThirtyDaysAgo = () => {
   date.setDate(date.getDate() - 30);
   return date;
 };
+
+// Fetch all dashboard data in parallel
+async function getDashboardData() {
+  try {
+    // Run all queries in parallel
+    const [
+      totalProducts,
+      pendingRequests,
+      stockOutCount,
+      newProductsCount,
+      productsWithStockCount,
+      productsForCategoryChart,
+    ] = await Promise.all([
+      prisma.product.count(),
+      prisma.stockRequest.count({ where: { status: 'PENDING' } }),
+      prisma.product.count({
+        where: { stockItems: { none: { status: 'IN_STOCK' } } },
+      }),
+      prisma.product.count({
+        where: { createdAt: { gte: getThirtyDaysAgo() } },
+      }),
+      prisma.product.findMany({
+        include: {
+          _count: { select: { stockItems: { where: { status: 'IN_STOCK' } } } },
+          category: true,
+        },
+        orderBy: { name: 'asc' },
+        take: 50, // Limit to 50 products for performance
+      }),
+      prisma.product.findMany({
+        select: {
+          category: { select: { name: true } },
+          _count: { select: { stockItems: { where: { status: 'IN_STOCK' } } } },
+        },
+        take: 100, // Limit to 100 products for the chart
+      }),
+    ]);
+
+    // Process low stock items
+    const lowStockItems = productsWithStockCount
+      .filter(p => p._count.stockItems <= p.reorderLevel)
+      .map(p => ({
+        id: p.id,
+        name: p.name,
+        quantity: p._count.stockItems,
+        reorderLevel: p.reorderLevel,
+        category: p.category?.name || 'Uncategorized',
+      }))
+      .slice(0, 4);
+
+    // Process categories data
+    const categoryTotals = productsForCategoryChart.reduce((acc, product) => {
+      const categoryName = product.category?.name || 'Uncategorized';
+      const stockCount = product._count.stockItems;
+      acc[categoryName] = (acc[categoryName] || 0) + stockCount;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const categoriesChartData = Object.entries(categoryTotals)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value) // Sort by value descending
+      .slice(0, 8); // Limit to top 8 categories
+
+    // Sample data for main chart (replace with actual data if available)
+    const mainChartData = [
+      { month: 'Jan', revenue: 4000 },
+      { month: 'Feb', revenue: 3000 },
+      { month: 'Mar', revenue: 5000 },
+      { month: 'Apr', revenue: 4500 },
+      { month: 'May', revenue: 6000 },
+      { month: 'Jun', revenue: 5500 },
+      { month: 'Jul', revenue: 7000 },
+    ];
+
+    return {
+      kpiData: {
+        totalProducts,
+        stockOut: stockOutCount,
+        pendingRequests,
+        newProducts: newProductsCount,
+      },
+      lowStockItems,
+      categoriesChartData,
+      mainChartData,
+    };
+  } catch (error) {
+    console.error('Error fetching dashboard data:', error);
+    throw error;
+  }
+}
 
 // Placeholder component for recent activity items
 const ActivityItem = ({ title, description, time }: { title: string; description: string; time: string }) => (
@@ -30,70 +123,7 @@ const ActivityItem = ({ title, description, time }: { title: string; description
 
 export default async function DashboardPage() {
   try {
-    // --- KPI Data ---
-    const totalProducts = await prisma.product.count();
-    const pendingRequests = await prisma.stockRequest.count({ where: { status: 'PENDING' } });
-    const stockOutCount = await prisma.product.count({
-      where: { stockItems: { none: { status: 'IN_STOCK' } } },
-    });
-    const newProductsCount = await prisma.product.count({
-      where: { createdAt: { gte: getThirtyDaysAgo() } },
-    });
-
-    const kpiData = {
-      totalProducts,
-      stockOut: stockOutCount,
-      pendingRequests,
-      newProducts: newProductsCount,
-    };
-
-    // --- Products for low stock ---
-    const productsWithStockCount = await prisma.product.findMany({
-      include: {
-        _count: { select: { stockItems: { where: { status: 'IN_STOCK' } } } },
-        category: true, // ✅ include category for LowStockItem
-      },
-      orderBy: { name: 'asc' },
-    });
-
-    const lowStockItems = productsWithStockCount
-      .filter(p => p._count.stockItems <= p.reorderLevel)
-      .map(p => ({
-        id: p.id,
-        name: p.name,
-        quantity: p._count.stockItems,
-        reorderLevel: p.reorderLevel,
-        category: p.category?.name || 'Uncategorized', // ✅ category included
-      }))
-      .slice(0, 4);
-
-    // --- Data for Categories Chart ---
-    const productsForCategoryChart = await prisma.product.findMany({
-      select: {
-        category: { select: { name: true } },
-        _count: { select: { stockItems: { where: { status: 'IN_STOCK' } } } },
-      },
-    });
-
-    const categoryTotals = productsForCategoryChart.reduce((acc, product) => {
-      const categoryName = product.category?.name || 'Uncategorized';
-      const stockCount = product._count.stockItems;
-      acc[categoryName] = (acc[categoryName] || 0) + stockCount;
-      return acc;
-    }, {} as Record<string, number>);
-
-    const categoriesChartData = Object.entries(categoryTotals).map(([name, value]) => ({ name, value }));
-
-    // --- Main Chart Placeholder ---
-    const mainChartData = [
-      { month: 'Jan', revenue: 4000 },
-      { month: 'Feb', revenue: 3000 },
-      { month: 'Mar', revenue: 5000 },
-      { month: 'Apr', revenue: 4500 },
-      { month: 'May', revenue: 6000 },
-      { month: 'Jun', revenue: 5500 },
-      { month: 'Jul', revenue: 7000 },
-    ];
+    const { kpiData, lowStockItems, categoriesChartData, mainChartData } = await getDashboardData();
 
     // --- Render Dashboard ---
     return (
