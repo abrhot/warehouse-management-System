@@ -92,6 +92,7 @@ export const config = {
     "/my-requests/:path*",
     "/api/me/:path*",
     "/api/users/:path*",
+    "/api/products/:path*",
     "/api/stock/:path*",
     "/api/my-requests/:path*",
     "/api/notifications/:path*",
@@ -100,5 +101,8 @@ export const config = {
     "/api/pending-categories/:path*",
     "/api/suppliers/:path*",
     "/api/fix-stock-items/:path*",
+    "/api/requests/:path*",
+    "/api/reports/:path*",
+    "/api/dashboard/:path*",
   ],
 };

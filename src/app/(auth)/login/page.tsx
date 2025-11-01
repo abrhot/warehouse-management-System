@@ -13,12 +13,14 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showCredentials, setShowCredentials] = useState(false);
   const { login } = useAuth();
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -114,9 +116,54 @@ export default function LoginPage() {
             </Button>
           </CardFooter>
         </form>
-        <div className="p-4 text-center text-sm text-gray-600">
-          <p>Test credentials:</p>
-          <p><strong>test@example.com</strong> / <strong>test123</strong></p>
+        <div className="px-4 pb-4 border-t border-gray-200">
+          <button
+            type="button"
+            onClick={() => setShowCredentials(!showCredentials)}
+            className="w-full py-3 flex items-center justify-between text-sm font-semibold text-gray-700 hover:text-blue-600 transition-colors"
+          >
+            <span>Demo Credentials</span>
+            {showCredentials ? (
+              <ChevronUp className="w-4 h-4" />
+            ) : (
+              <ChevronDown className="w-4 h-4" />
+            )}
+          </button>
+          
+          <div
+            className={`overflow-hidden transition-all duration-300 ease-in-out ${
+              showCredentials ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+            }`}
+          >
+            <div className="space-y-2 pt-2">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-xs font-semibold text-blue-900 mb-2">Admin Account</p>
+                <div className="space-y-1 text-xs">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Email:</span>
+                    <code className="bg-white px-2 py-1 rounded text-blue-700">admin@warehouse.com</code>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Password:</span>
+                    <code className="bg-white px-2 py-1 rounded text-blue-700">test123</code>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                <p className="text-xs font-semibold text-green-900 mb-2">User Account</p>
+                <div className="space-y-1 text-xs">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Email:</span>
+                    <code className="bg-white px-2 py-1 rounded text-green-700">test@example.com</code>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Password:</span>
+                    <code className="bg-white px-2 py-1 rounded text-green-700">test123</code>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </Card>
     </div>
