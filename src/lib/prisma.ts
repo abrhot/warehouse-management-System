@@ -22,33 +22,6 @@ if (process.env.NODE_ENV !== 'production') {
   globalThis.prisma = client;
 }
 
-// Add error handling middleware
-client.$use(async (params, next) => {
-  const before = Date.now();
-  try {
-    const result = await next(params);
-    const after = Date.now();
-    if (after - before > 1000) { // Log slow queries
-      console.warn(`[PRISMA] Slow query (${after - before}ms)`, {
-        model: params.model,
-        action: params.action,
-        query: params.runInTransaction ? 'transaction' : params.action,
-      });
-    }
-    return result;
-  } catch (error) {
-    console.error('[PRISMA] Error in query:', {
-      error,
-      model: params.model,
-      action: params.action,
-      args: JSON.stringify(params.args, (_, v) => 
-        typeof v === 'bigint' ? v.toString() : v
-      ).substring(0, 500),
-    });
-    throw error;
-  }
-});
-
 // Named export
 export const prisma = client;
 
