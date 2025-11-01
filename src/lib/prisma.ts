@@ -8,11 +8,13 @@ declare global {
 // Create or reuse the global prisma instance with connection pooling
 const client = globalThis.prisma || new PrismaClient({
   log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL + (process.env.NODE_ENV === 'production' ? '?connection_limit=20' : ''),
+  ...(process.env.DATABASE_URL && {
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL + (process.env.NODE_ENV === 'production' ? '?connection_limit=20' : ''),
+      },
     },
-  },
+  }),
 });
 
 // In development, store the client globally to prevent multiple instances
