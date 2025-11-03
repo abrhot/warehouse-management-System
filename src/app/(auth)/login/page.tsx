@@ -145,7 +145,7 @@ export default function LoginPage() {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Password:</span>
-                    <code className="bg-white px-2 py-1 rounded text-blue-700">test123</code>
+                    <code className="bg-white px-2 py-1 rounded text-blue-700">123123</code>
                   </div>
                 </div>
               </div>
@@ -154,11 +154,11 @@ export default function LoginPage() {
                 <div className="space-y-1 text-xs">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Email:</span>
-                    <code className="bg-white px-2 py-1 rounded text-green-700">test@example.com</code>
+                    <code className="bg-white px-2 py-1 rounded text-green-700">user@warehouse.com</code>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Password:</span>
-                    <code className="bg-white px-2 py-1 rounded text-green-700">test123</code>
+                    <code className="bg-white px-2 py-1 rounded text-green-700">123123</code>
                   </div>
                 </div>
               </div>

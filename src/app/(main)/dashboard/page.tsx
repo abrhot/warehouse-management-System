@@ -6,9 +6,11 @@ import { Footer } from '@/components/dashboard/Footer';
 import prisma from '@/lib/prisma';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Activity, Clock, AlertTriangle, Package, RefreshCw } from 'lucide-react';
+import { cookies } from 'next/headers';
+import { jwtVerify } from 'jose';
 
-// Revalidate every 5 minutes
-const revalidate = 300;
+// Force dynamic rendering to get fresh user data
+export const dynamic = 'force-dynamic';
 
 // Utility: get date 30 days ago
 const getThirtyDaysAgo = () => {
@@ -123,11 +125,43 @@ const ActivityItem = ({ title, description, time }: { title: string; description
 
 export default async function DashboardPage() {
   try {
+    // Get user info from JWT token
+    const cookieStore = cookies();
+    const token = cookieStore.get('authToken')?.value;
+    
+    let userName = 'User';
+    let userRole = 'USER';
+    
+    if (token) {
+      try {
+        const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-key');
+        const { payload } = await jwtVerify(token, secret);
+        userName = (payload as any).name || (payload as any).email?.split('@')[0] || 'User';
+        userRole = (payload as any).role || 'USER';
+      } catch (error) {
+        console.error('JWT verification failed:', error);
+      }
+    }
+
     const { kpiData, lowStockItems, categoriesChartData, mainChartData } = await getDashboardData();
+
+    // Get greeting based on time of day
+    const hour = new Date().getHours();
+    const greeting = hour < 12 ? 'Good Morning' : hour < 18 ? 'Good Afternoon' : 'Good Evening';
 
     // --- Render Dashboard ---
     return (
       <main className="p-4 sm:px-6 md:p-8 bg-gray-50 min-h-screen">
+        {/* Welcome Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">
+            {greeting}, {userName}! 👋
+          </h1>
+          <p className="text-gray-600 mt-2">
+            Here's what's happening with your warehouse today.
+          </p>
+        </div>
+
         {/* KPI Section */}
         <KpiSection data={kpiData} />
 

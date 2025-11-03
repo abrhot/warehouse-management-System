@@ -96,13 +96,30 @@ export function Sidebar({ user }: SidebarProps) {
           })}
         </nav>
 
-        <div className="pt-4">
+        <div className="space-y-2">
+          {isOpen && (
+            <div className="px-3 py-2 border-t border-gray-200">
+              <p className="text-xs font-semibold text-gray-500 mb-1">Logged in as</p>
+              <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
+              <p className="text-xs text-gray-500 truncate">{user.email}</p>
+              <span className={clsx(
+                'inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded',
+                user.role === 'ADMIN' 
+                  ? 'bg-blue-100 text-blue-700' 
+                  : 'bg-green-100 text-green-700'
+              )}>
+                {user.role}
+              </span>
+            </div>
+          )}
+          <div className="px-3">
             <div className={clsx('flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors cursor-pointer text-slate-700 hover:bg-red-50 hover:text-red-600')}
                 onClick={() => logout()}
             >
                 <LogOut className="h-5 w-5 flex-shrink-0" />
                 {isOpen && <span>Log out</span>}
             </div>
+          </div>
         </div>
       </div>
     </aside>

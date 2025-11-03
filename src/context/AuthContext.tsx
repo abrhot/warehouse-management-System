@@ -37,6 +37,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = (userData: User) => {
     setUser(userData);
     router.push('/dashboard');
+    // Force refresh to update server components with new user data
+    router.refresh();
   };
 
   const logout = async () => {
@@ -56,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     
     setUser(null);
-    router.push('/login');
+    router.push('/');
   };
 
   return (

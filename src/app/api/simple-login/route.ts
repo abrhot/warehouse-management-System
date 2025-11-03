@@ -13,8 +13,8 @@ export async function POST(req: Request) {
     
     // Check for hardcoded test users first (from memory)
     const testUsers = [
-      { id: 'test-user', email: 'test@example.com', password: 'test123', role: 'USER', name: 'Test User' },
-      { id: 'admin-user', email: 'admin@warehouse.com', password: 'test123', role: 'ADMIN', name: 'Admin User' }
+      { id: 'user-demo', email: 'user@warehouse.com', password: '123123', role: 'USER', name: 'John Smith' },
+      { id: 'admin-demo', email: 'admin@warehouse.com', password: '123123', role: 'ADMIN', name: 'Sarah Johnson' }
     ];
 
     const testUser = testUsers.find(u => u.email === email.toLowerCase().trim());
@@ -27,6 +27,7 @@ export async function POST(req: Request) {
       const token = await new SignJWT({ 
         id: testUser.id, 
         email: testUser.email, 
+        name: testUser.name,
         role: testUser.role 
       })
         .setProtectedHeader({ alg: 'HS256' })
@@ -127,6 +128,7 @@ export async function POST(req: Request) {
     const token = await new SignJWT({ 
       id: user.id, 
       email: user.email, 
+      name: user.name,
       role: user.role 
     })
       .setProtectedHeader({ alg: 'HS256' })

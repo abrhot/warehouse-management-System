@@ -4,6 +4,9 @@ import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { cookies } from 'next/headers';
 import { jwtVerify } from 'jose';
 
+// Force dynamic rendering to ensure user data is always fresh
+export const dynamic = 'force-dynamic';
+
 export default async function MainLayout({ children }: { children: React.ReactNode }) {
   // Check for JWT token in cookies instead of NextAuth session
   const cookieStore = cookies();
