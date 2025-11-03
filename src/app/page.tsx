@@ -223,22 +223,16 @@ export default function LandingPage() {
               Showcasing full-stack development capabilities with TypeScript, React, Next.js, and PostgreSQL
             </p>
             <div className="flex gap-4 justify-center">
-              <a href="https://github.com" target="_blank" rel="noopener noreferrer">
+              <a href="https://github.com/abrhot" target="_blank" rel="noopener noreferrer">
                 <Button variant="outline" size="sm" className="gap-2">
                   <Github className="w-4 h-4" />
                   GitHub
                 </Button>
               </a>
-              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer">
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Linkedin className="w-4 h-4" />
-                  LinkedIn
-                </Button>
-              </a>
-              <a href="mailto:contact@example.com">
+              <a href="mailto:abrihott@gmail.com">
                 <Button variant="outline" size="sm" className="gap-2">
                   <Mail className="w-4 h-4" />
-                  Contact
+                  Email
                 </Button>
               </a>
             </div>
