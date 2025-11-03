@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+        }
+        h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        .controls {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        select, button {
+            padding: 10px 20px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        select {
+            background: white;
+            min-width: 200px;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            font-weight: 600;
+        }
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-1px);
+        }
+        .info {
+            padding: 15px 30px;
+            background: #e3f2fd;
+            border-bottom: 1px solid #90caf9;
+            font-size: 14px;
+            color: #1565c0;
+        }
+        .table-container {
+            padding: 30px;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        th {
+            background: #f8f9fa;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #e0e0e0;
+            position: sticky;
+            top: 0;
+        }
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            color: #555;
+        }
+        tr:hover {
+            background: #f8f9fa;
+        }
+        .loading {
+            text-align: center;
+            padding: 60px;
+            color: #999;
+            font-size: 16px;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 20px;
+            margin: 20px 30px;
+            border-radius: 6px;
+            border-left: 4px solid #c62828;
+        }
+        .json-cell {
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .json-cell:hover {
+            white-space: normal;
+            word-break: break-all;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-admin {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+        .badge-user {
+            background: #f3e5f5;
+            color: #6a1b9a;
+        }
+        .badge-pending {
+            background: #fff3e0;
+            color: #e65100;
+        }
+        .badge-approved {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .badge-rejected {
+            background: #ffebee;
+            color: #c62828;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Database Viewer</h1>
+            <p>Browse your warehouse management database tables</p>
+        </div>
+        
+        <div class="controls">
+            <label for="tableSelect" style="font-weight: 600;">Select Table:</label>
+            <select id="tableSelect">
+                <option value="user">Users</option>
+                <option value="product">Products</option>
+                <option value="category">Categories</option>
+                <option value="stockrequest">Stock Requests</option>
+                <option value="auditlog">Audit Logs</option>
+                <option value="pendingproduct">Pending Products</option>
+                <option value="pendingcategory">Pending Categories</option>
+            </select>
+            <button onclick="loadData()">🔄 Refresh</button>
+        </div>
+        
+        <div id="info" class="info" style="display: none;"></div>
+        <div id="error" class="error" style="display: none;"></div>
+        
+        <div class="table-container">
+            <div id="loading" class="loading">Select a table and click Refresh</div>
+            <div id="tableContent"></div>
+        </div>
+    </div>
+
+    <script>
+        async function loadData() {
+            const table = document.getElementById('tableSelect').value;
+            const loading = document.getElementById('loading');
+            const tableContent = document.getElementById('tableContent');
+            const info = document.getElementById('info');
+            const error = document.getElementById('error');
+            
+            loading.style.display = 'block';
+            tableContent.innerHTML = '';
+            info.style.display = 'none';
+            error.style.display = 'none';
+            
+            try {
+                const response = await fetch(`/api/admin/db-viewer?table=${table}&limit=100`);
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.error || 'Failed to fetch data');
+                }
+                
+                loading.style.display = 'none';
+                
+                // Show info
+                info.style.display = 'block';
+                info.textContent = `Table: ${result.table} | Total Records: ${result.count} | Showing: ${result.data.length}`;
+                
+                if (result.data.length === 0) {
+                    tableContent.innerHTML = '<p style="text-align: center; padding: 40px; color: #999;">No data found</p>';
+                    return;
+                }
+                
+                // Create table
+                const table = document.createElement('table');
+                const thead = document.createElement('thead');
+                const tbody = document.createElement('tbody');
+                
+                // Headers
+                const headers = Object.keys(result.data[0]);
+                const headerRow = document.createElement('tr');
+                headers.forEach(header => {
+                    const th = document.createElement('th');
+                    th.textContent = header;
+                    headerRow.appendChild(th);
+                });
+                thead.appendChild(headerRow);
+                
+                // Rows
+                result.data.forEach(row => {
+                    const tr = document.createElement('tr');
+                    headers.forEach(header => {
+                        const td = document.createElement('td');
+                        const value = row[header];
+                        
+                        if (value === null || value === undefined) {
+                            td.textContent = '—';
+                            td.style.color = '#ccc';
+                        } else if (typeof value === 'object') {
+                            td.className = 'json-cell';
+                            td.textContent = JSON.stringify(value);
+                            td.title = JSON.stringify(value, null, 2);
+                        } else if (header === 'role') {
+                            const badge = document.createElement('span');
+                            badge.className = value === 'ADMIN' ? 'badge badge-admin' : 'badge badge-user';
+                            badge.textContent = value;
+                            td.appendChild(badge);
+                        } else if (header === 'status') {
+                            const badge = document.createElement('span');
+                            badge.className = `badge badge-${value.toLowerCase()}`;
+                            badge.textContent = value;
+                            td.appendChild(badge);
+                        } else if (header.includes('At') || header.includes('Date')) {
+                            td.textContent = new Date(value).toLocaleString();
+                        } else {
+                            td.textContent = value;
+                        }
+                        tr.appendChild(td);
+                    });
+                    tbody.appendChild(tr);
+                });
+                
+                table.appendChild(thead);
+                table.appendChild(tbody);
+                tableContent.appendChild(table);
+                
+            } catch (err) {
+                loading.style.display = 'none';
+                error.style.display = 'block';
+                error.textContent = '❌ Error: ' + err.message;
+            }
+        }
+        
+        // Load users by default
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+        });
+    </script>
+</body>
+</html>
