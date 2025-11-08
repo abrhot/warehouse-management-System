@@ -40,10 +40,8 @@ export async function POST(req: Request) {
           where: { id: requestId },
           data: {
             status: 'APPROVED',
-            // Use 'connect' on the 'approver' relation field
-            approver: {
-              connect: { id: userId },
-            },
+            // Connect the approvedBy field to the user
+            approvedBy: userId,
           },
         }),
         prisma.stockItem.update({
@@ -60,10 +58,8 @@ export async function POST(req: Request) {
           data: {
             status: 'REJECTED',
             reason: remark, // Save the rejection remark
-             // Use 'connect' on the 'approver' relation field
-            approver: {
-              connect: { id: userId },
-            },
+            // Connect the approvedBy field to the user
+            approvedBy: userId,
           },
         }),
         prisma.stockItem.update({
