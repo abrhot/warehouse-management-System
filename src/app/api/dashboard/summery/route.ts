@@ -10,8 +10,7 @@ export async function GET() {
 
     // 1. KPI Data
     const totalRevenue = 45231; // Placeholder: Replace with actual revenue calculation
-    const stockOut = await prisma.stockRequest.aggregate({
-      _sum: { quantity: true },
+    const stockOutCount = await prisma.stockRequest.count({
       where: { type: 'OUT', status: 'APPROVED', updatedAt: { gte: sevenDaysAgo } },
     });
     const pendingRequests = await prisma.stockRequest.count({
@@ -31,7 +30,7 @@ export async function GET() {
     const summaryData = {
       kpis: {
         totalRevenue: totalRevenue,
-        stockOut: stockOut._sum.quantity || 0,
+        stockOut: stockOutCount,
         pendingRequests,
         newProducts,
       },
