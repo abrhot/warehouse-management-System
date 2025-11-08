@@ -9,39 +9,44 @@ async function createDemoUsers() {
     
     const hashedPassword = await bcrypt.hash('123123', 10);
     
-    // Create admin user
-    const adminUser = await prisma.user.upsert({
-      where: { email: 'admin@warehouse.com' },
-      update: { 
-        password: hashedPassword,
-        name: 'Sarah Johnson',
-        role: 'ADMIN'
-      },
-      create: {
+    // Fixed IDs that match the hardcoded test users in login API
+    const ADMIN_ID = 'admin-demo';
+    const USER_ID = 'user-demo';
+    
+    // Delete existing users with these emails first to avoid conflicts
+    await prisma.user.deleteMany({
+      where: {
+        OR: [
+          { email: 'admin@warehouse.com' },
+          { email: 'user@warehouse.com' }
+        ]
+      }
+    });
+    console.log('🗑️  Deleted existing demo users if any\n');
+    
+    // Create admin user with specific ID
+    const adminUser = await prisma.user.create({
+      data: {
+        id: ADMIN_ID,
         email: 'admin@warehouse.com',
         name: 'Sarah Johnson',
         password: hashedPassword,
         role: 'ADMIN'
       }
     });
-    console.log('✅ Admin user created/updated:', adminUser.email);
+    console.log('✅ Admin user created:', adminUser.email, '(ID:', adminUser.id + ')');
     
-    // Create regular user
-    const regularUser = await prisma.user.upsert({
-      where: { email: 'user@warehouse.com' },
-      update: { 
-        password: hashedPassword,
-        name: 'John Smith',
-        role: 'USER'
-      },
-      create: {
+    // Create regular user with specific ID
+    const regularUser = await prisma.user.create({
+      data: {
+        id: USER_ID,
         email: 'user@warehouse.com',
         name: 'John Smith',
         password: hashedPassword,
         role: 'USER'
       }
     });
-    console.log('✅ Regular user created/updated:', regularUser.email);
+    console.log('✅ Regular user created:', regularUser.email, '(ID:', regularUser.id + ')');
     
     console.log('\n✅ Demo users ready!');
     console.log('\nCredentials:');
