@@ -1,14 +1,8 @@
 {
   "version": 2,
-  "buildCommand": "npm install --legacy-peer-deps && npm install -g prisma && npx prisma generate && npm run build",
+  "buildCommand": "chmod +x vercel-build.sh && ./vercel-build.sh",
   "installCommand": "npm install --legacy-peer-deps",
   "framework": "nextjs",
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/"
-    }
-  ],
   "env": {
     "NODE_VERSION": "20.x"
   },
