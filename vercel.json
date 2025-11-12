@@ -1,12 +1,15 @@
 {
   "version": 2,
-  "buildCommand": "npm install -g prisma && npm install --legacy-peer-deps && npx prisma generate && npm run build",
-  "installCommand": "npm install --legacy-peer-deps",
-  "framework": "nextjs",
   "builds": [
     {
       "src": "package.json",
       "use": "@vercel/next"
     }
-  ]
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "buildCommand": "npm install --legacy-peer-deps && npx prisma generate && next build",
+  "installCommand": "npm install --legacy-peer-deps",
+  "framework": "nextjs"
 }
