@@ -23,6 +23,5 @@
       "maxDuration": 10
     }
   },
-  "public": true,
-  "cleanUrls": true
+  "public": true
 }
