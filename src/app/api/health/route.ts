@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
-const startTime = Date.now();
-
 export async function GET() {
   const status: any = {
     status: 'ok',
@@ -11,10 +9,16 @@ export async function GET() {
     node: process.version,
     memory: process.memoryUsage(),
     environment: process.env.NODE_ENV,
+    env: {
+      nodeEnv: process.env.NODE_ENV,
+      hasNextAuthSecret: !!process.env.NEXTAUTH_SECRET,
+      hasNextAuthUrl: !!process.env.NEXTAUTH_URL,
+      hasDatabaseUrl: !!process.env.DATABASE_URL
+    }
   };
 
-  // Check database connection
   try {
+    // Check database connection
     await prisma.$queryRaw`SELECT 1`;
     status.database = 'connected';
     
@@ -27,29 +31,16 @@ export async function GET() {
       ]);
       
       status.stats = { users, products, requests };
-    } catch (statsError) {
+    } catch (statsError: any) {
       status.statsError = statsError.message;
     }
-  } catch (dbError) {
-    status.database = 'error';
-    status.error = dbError.message;
-        userCount,
-        productCount,
-        categoryCount,
-        adminExists: !!adminUser
-      },
-      environment: {
-        nodeEnv: process.env.NODE_ENV,
-        hasNextAuthSecret: !!process.env.NEXTAUTH_SECRET,
-        hasNextAuthUrl: !!process.env.NEXTAUTH_URL,
-        hasDatabaseUrl: !!process.env.DATABASE_URL
-      }
-    });
-
+    
+    return NextResponse.json(status);
+    
   } catch (error: any) {
     console.error('Health check error:', error);
     return NextResponse.json({
-      success: false,
+      status: 'error',
       error: error.message,
       database: {
         connected: false
