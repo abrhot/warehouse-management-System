@@ -6,10 +6,12 @@
       "use": "@vercel/next"
     }
   ],
-  "buildCommand": "npm install --legacy-peer-deps && npx prisma generate && npx prisma migrate deploy && next build",
+  "buildCommand": "npm install -g prisma && npm install --legacy-peer-deps && npx prisma generate && next build",
   "installCommand": "npm install --legacy-peer-deps",
   "framework": "nextjs",
   "env": {
     "NODE_ENV": "production"
-  }
+  },
+  "regions": ["iad1"],
+  "public": true
 }
