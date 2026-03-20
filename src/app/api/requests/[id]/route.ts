@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-// Use string literals for enum values
 
 export async function PATCH(
   request: Request,
@@ -14,6 +13,19 @@ export async function PATCH(
   try {
     const body = await request.json();
     const { status } = body;
+
+    // Resolve the approver from the request headers (handles legacy demo tokens)
+    const rawUserId = request.headers.get('x-user-id');
+    let approverConnect: { id: string } | undefined;
+    if (rawUserId) {
+      let approver = await prisma.user.findUnique({ where: { id: rawUserId } });
+      if (!approver) {
+        approver = await prisma.user.findFirst({ where: { name: rawUserId } });
+      }
+      if (approver) {
+        approverConnect = { id: approver.id };
+      }
+    }
 
     // 1. Validate the incoming status
     if (!status || !['PENDING', 'APPROVED', 'REJECTED', 'RESERVED'].includes(status)) {
@@ -80,10 +92,15 @@ export async function PATCH(
         }
       }
 
-      // 3. Finally, update the request's status
+      // 3. Finally, update the request's status and approver
       const finalUpdatedRequest = await tx.stockRequest.update({
         where: { id: id },
-        data: { status: status },
+        data: {
+          status: status,
+          ...(approverConnect && ['APPROVED', 'REJECTED'].includes(status)
+            ? { approver: { connect: approverConnect } }
+            : {}),
+        },
       });
 
       return finalUpdatedRequest;

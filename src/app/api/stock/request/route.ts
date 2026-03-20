@@ -14,14 +14,21 @@ export async function POST(req: Request) {
 
   try {
     // First, verify the user exists in the database
-    const user = await prisma.user.findUnique({
-      where: { id: userId }
-    });
+    // Try by id first, then fall back to name (for legacy demo tokens)
+    let user = await prisma.user.findUnique({ where: { id: userId } });
+
+    if (!user) {
+      // Fallback: try to find by name (handles old demo tokens where id = name)
+      user = await prisma.user.findFirst({ where: { name: userId } });
+    }
 
     if (!user) {
       console.error(`User not found in database: ${userId}`);
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return NextResponse.json({ error: 'User not found. Please log out and log in again.' }, { status: 404 });
     }
+
+    // Use the real DB user id from here on
+    const realUserId = user.id;
 
     const body = await req.json();
     const { stockItemId, notes, reason, type } = body;
@@ -60,9 +67,8 @@ export async function POST(req: Request) {
           status: 'PENDING', 
           notes: notes || null,
           reason: reason || null,
-          // --- FIX: Use 'connect' for both relations ---
           requester: {
-            connect: { id: userId },
+            connect: { id: realUserId },
           },
           stockItem: { // Use the relation field 'stockItem'
             connect: { id: stockItemId }, // And connect it by its ID

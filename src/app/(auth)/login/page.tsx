@@ -34,7 +34,7 @@ export default function LoginPage() {
 
       console.log("Making API call to /api/simple-login"); // Debug log
 
-      const isTestUser = email.trim() === "test@example.com";
+      const isTestUser = email.trim().toLowerCase() === "lin@user.com";
 
       const response = await fetch("/api/simple-login", {
         method: "POST",
@@ -139,7 +139,7 @@ export default function LoginPage() {
                 <div className="space-y-1 text-xs">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Email:</span>
-                    <code className="bg-white px-2 py-1 rounded text-blue-700">admin@warehouse.com</code>
+                    <code className="bg-white px-2 py-1 rounded text-blue-700">Alex@admin.com</code>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Password:</span>
@@ -152,7 +152,7 @@ export default function LoginPage() {
                 <div className="space-y-1 text-xs">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Email:</span>
-                    <code className="bg-white px-2 py-1 rounded text-green-700">user@warehouse.com</code>
+                    <code className="bg-white px-2 py-1 rounded text-green-700">lin@user.com</code>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Password:</span>

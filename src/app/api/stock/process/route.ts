@@ -11,6 +11,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized - Admin access required' }, { status: 401 });
     }
 
+    // Resolve the real admin user from DB (handles legacy demo tokens where id = name)
+    let adminUser = await prisma.user.findUnique({ where: { id: userId } });
+    if (!adminUser) {
+      adminUser = await prisma.user.findFirst({ where: { name: userId } });
+    }
+    if (!adminUser) {
+      return NextResponse.json({ error: 'Admin user not found. Please log out and log in again.' }, { status: 404 });
+    }
+    const realAdminId = adminUser.id;
+
     const body = await req.json();
     const { requestId, newStatus, remark } = body;
 
@@ -40,34 +50,28 @@ export async function POST(req: Request) {
           where: { id: requestId },
           data: {
             status: 'APPROVED',
-            // Connect the approvedBy field to the user
-            approvedBy: userId,
+            approver: { connect: { id: realAdminId } },
           },
         }),
         prisma.stockItem.update({
           where: { id: request.stockItemId! },
-          data: {
-            status: 'SHIPPED', // Or whatever status is appropriate after approval
-          },
+          data: { status: 'SHIPPED' },
         }),
       ]);
-    } else { // If the status is REJECTED
+    } else {
       await prisma.$transaction([
         prisma.stockRequest.update({
           where: { id: requestId },
           data: {
             status: 'REJECTED',
-            reason: remark, // Save the rejection remark
-            // Connect the approvedBy field to the user
-            approvedBy: userId,
+            reason: remark,
+            approver: { connect: { id: realAdminId } },
           },
         }),
         prisma.stockItem.update({
           where: { id: request.stockItemId! },
-          data: {
-            status: 'IN_STOCK', // Revert item status to available
-          },
-        })
+          data: { status: 'IN_STOCK' },
+        }),
       ]);
     }
     
