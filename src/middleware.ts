@@ -1,108 +1,75 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 
-const PUBLIC_PATHS = ["/login"];
 const ADMIN_PATHS = ["/admin/users", "/admin/requests", "/admin/approvals"];
+
+async function decodeToken(token: string): Promise<{ id: string; role: string } | null> {
+  // Try JWT first
+  try {
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-key');
+    const { payload } = await jwtVerify(token, secret);
+    return { id: (payload as any).id, role: (payload as any).role };
+  } catch {}
+  // Fallback: base64 (legacy demo tokens)
+  try {
+    const decoded = JSON.parse(atob(token));
+    if (decoded.id && decoded.role) return { id: decoded.id, role: decoded.role };
+  } catch {}
+  return null;
+}
 
 export async function middleware(req: NextRequest) {
   const token = req.cookies.get("authToken")?.value;
   const { pathname } = req.nextUrl;
 
-  console.log(`[Middleware] ${pathname} - AuthToken exists: ${!!token}`);
-  if (token) {
-    console.log(`[Middleware] AuthToken value: ${token.substring(0, 20)}...`);
-  }
-
-  // Allow root path and login page
-  if (pathname === "/" || PUBLIC_PATHS.some(path => pathname.startsWith(path))) {
-    console.log(`[Middleware] Public path, allowing access`);
+  // Always allow API auth routes and static assets
+  if (pathname.startsWith("/api/auth") || pathname.startsWith("/_next") || pathname.startsWith("/favicon")) {
     return NextResponse.next();
   }
 
-  // Allow NextAuth routes without auth
-  if (pathname.startsWith("/api/auth")) {
-    console.log(`[Middleware] API auth route, allowing access`);
+  // Root "/" — redirect to dashboard if logged in, otherwise to login
+  if (pathname === "/") {
+    if (!token) return NextResponse.redirect(new URL("/login", req.url));
+    const user = await decodeToken(token);
+    if (!user) return NextResponse.redirect(new URL("/login", req.url));
+    return NextResponse.redirect(new URL("/dashboard", req.url));
+  }
+
+  // Login page — redirect to dashboard if already logged in
+  if (pathname.startsWith("/login")) {
+    if (token) {
+      const user = await decodeToken(token);
+      if (user) return NextResponse.redirect(new URL("/dashboard", req.url));
+    }
     return NextResponse.next();
   }
 
-  // Allow test and debug routes
-  if (pathname.startsWith("/test-")) {
-    console.log(`[Middleware] Test route, allowing access`);
-    return NextResponse.next();
-  }
-
+  // All other routes require authentication
   if (!token) {
-    console.log(`[Middleware] No authToken found, redirecting to login`);
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  // Process token validation
-  try {
-    let userId: string;
-    let userRole: string;
-
-    // Try to decode as JWT first
-    try {
-      const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-key');
-      const { payload } = await jwtVerify(token, secret);
-      userId = (payload as any).id as string;
-      userRole = (payload as any).role as string;
-      console.log(`[Middleware] JWT decoded successfully - User: ${userId}, Role: ${userRole}`);
-    } catch (jwtError) {
-      console.log(`[Middleware] JWT decode failed: ${(jwtError as Error).message}`);
-      // If JWT fails, try base64 decoding (for test user)
-      try {
-        const decoded = JSON.parse(atob(token));
-        userId = decoded.id;
-        userRole = decoded.role;
-        console.log(`[Middleware] Base64 decoded successfully - User: ${userId}, Role: ${userRole}`);
-      } catch (base64Error) {
-        console.log(`[Middleware] Base64 decode failed: ${(base64Error as Error).message}`);
-        throw new Error('Invalid token format');
-      }
-    }
-
-    if (ADMIN_PATHS.some(path => pathname.startsWith(path)) && userRole !== "ADMIN") {
-      return NextResponse.redirect(new URL("/dashboard", req.url));
-    }
-
-    // Clone request headers and add user info headers
-    const requestHeaders = new Headers(req.headers);
-    requestHeaders.set("x-user-id", userId);
-    requestHeaders.set("x-user-role", userRole);
-
-    // Create a new NextResponse and pass the modified request with new headers
-    return NextResponse.next({
-      request: {
-        headers: requestHeaders,
-      },
-    });
-  } catch (error) {
-    console.log(`[Middleware] Token validation failed, redirecting to login`);
+  const user = await decodeToken(token);
+  if (!user) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
+
+  // Admin-only paths — redirect non-admins to dashboard
+  if (ADMIN_PATHS.some(path => pathname.startsWith(path)) && user.role !== "ADMIN") {
+    return NextResponse.redirect(new URL("/dashboard", req.url));
+  }
+
+  // Inject user info into request headers for API routes
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-user-id", user.id);
+  requestHeaders.set("x-user-role", user.role);
+
+  return NextResponse.next({ request: { headers: requestHeaders } });
 }
 
 export const config = {
   matcher: [
-    "/dashboard/:path*",
-    "/products/:path*",
-    "/categories/:path*",
-    "/admin/:path*",
-    "/my-requests/:path*",
-    "/api/me/:path*",
-    "/api/users/:path*",
-    "/api/products/:path*",
-    "/api/stock/:path*",
-    "/api/my-requests/:path*",
-    "/api/notifications/:path*",
-    "/api/categories/:path*",
-    "/api/pending-products/:path*",
-    "/api/pending-categories/:path*",
-    "/api/suppliers/:path*",
-    "/api/fix-stock-items/:path*",
-    "/api/requests/:path*",
-    "/api/reports/:path*",
-    "/api/dashboard/:path*",
+    // Match everything except static files and _next internals
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
